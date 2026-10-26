@@ -6,5 +6,5 @@
 ## Entity Relationship Diagram
 ![Use case Diagram](img/Entity%20Relationship%20Diagram.png)
 
-## Entity Relationship Diagram
-![Entity Relationship Diagram](./img/Entity%20Relationship%20Diagram.png)
+## Sequence Diagram
+![Sequence Diagram](./img/Sequence%20Diagrams.png)
