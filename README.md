@@ -1,7 +1,7 @@
 # SarapatRabChang
 
-## Use Case Diagram.png
-![Use Case Diagr](img/Use Case Diagram.png)
+## Use Case Diagram
+![Use Case Diagram](./img/Use%20Case%20Diagram.png)
 
 ## Entity Relationship Diagram
 ![Use case Diagram](img/Entity%20Relationship%20Diagram.png)
