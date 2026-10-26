@@ -1,3 +1,3 @@
 # SarapatRabChang
-## 12. Use Case Diagram
-![Use case Diagram](img/usecase.png)
+## . Use Case Diagram
+![Use case Diagram](img/Untitled Diagram-Page-1.drawio.png)
