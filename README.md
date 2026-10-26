@@ -5,3 +5,6 @@
 
 ## Entity Relationship Diagram
 ![Use case Diagram](img/Entity%20Relationship%20Diagram.png)
+
+## Entity Relationship Diagram
+![Use case Diagram](img/Sequence%20Relationship%20Diagram.png)
