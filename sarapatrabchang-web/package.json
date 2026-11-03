@@ -1,0 +1,16 @@
+{
+  "name": "sarapatrabchang-web",
+  "version": "1.0.0",
+  "description": "SarapatRabChang - Frontend Web Application",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "sarapatrabchang",
+    "frontend",
+    "wireframe"
+  ],
+  "author": "",
+  "license": "ISC"
+}

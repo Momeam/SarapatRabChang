@@ -1,0 +1,2299 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SarapatRabChang - บริการใกล้บ้าน อุ่นใจทุกงาน</title>
+  <!-- Google Fonts: Prompt & Sarabun for Thai typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+  <!-- ========================================================================= -->
+  <!-- GLOBAL HEADER (Dynamic depending on page mode) -->
+  <!-- ========================================================================= -->
+  <header class="app-header" id="appHeader">
+    <div class="header-container">
+      <div class="header-left">
+        <a href="#page2" class="brand-logo" onclick="navigateTo('page2')">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="logo-text">SarapatRabChang</span>
+        </a>
+
+        <!-- Normal Navigation Links (Shown on Pages 2, 3, 6, 7, 8, 9) -->
+        <nav class="nav-links" id="standardNav">
+          <a href="#page2" class="nav-link active" onclick="navigateTo('page2')">ค้นหาบริการ</a>
+          <a href="#page2" class="nav-link" onclick="navigateTo('page2')">วิธีการใช้งาน</a>
+        </nav>
+
+        <!-- Search Bar Header (Shown on Pages 4, 5, 10) -->
+        <div class="header-search-container" id="headerSearchContainer">
+          <a href="#page2" class="nav-link-subtle" onclick="navigateTo('page2')">บริการทั้งหมด</a>
+          <div class="header-search-input-wrap">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" placeholder="ค้นหาบริการที่คุณต้องการ" class="header-search-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- Header Right: Auth vs User Bar -->
+      <div class="header-right">
+        <!-- Auth Header Right (Shown on Page 1) -->
+        <div class="auth-header-right" id="authHeaderRight">
+          <a href="#" class="help-link">ต้องการความช่วยเหลือ? ติดต่อเรา</a>
+        </div>
+
+        <!-- Logged-in Header Right (Shown on Pages 2-10) -->
+        <div class="user-header-right" id="userHeaderRight">
+          <button class="icon-btn" title="การแจ้งเตือน" onclick="alert('ไม่มีการแจ้งเตือนใหม่')">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+          </button>
+          <button class="icon-btn" title="ข้อความแชท" onclick="navigateTo('page7')">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-menu-btn" onclick="navigateTo('page10')">
+            <div class="user-avatar-small">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+            </div>
+            <div class="user-name-wrap">
+              <span class="user-account-label">บัญชีของฉัน</span>
+              <span class="user-name-title" id="headerUserName">คุณพิมพ์ชนก ▾</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN APP PAGES CONTAINER -->
+  <!-- ========================================================================= -->
+  <main class="app-main-content">
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 1: สมัครสมาชิก / เข้าสู่ระบบ (Auth) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page1">
+      <div class="auth-page-container">
+        <div class="auth-left-col">
+          <span class="auth-tag">สำหรับผู้ใช้บริการบุคคลทั่วไป</span>
+          <h1 class="auth-headline">ยินดีต้อนรับสู่SarapatRabChang</h1>
+          <p class="auth-subdesc">
+            เรื่องในบ้าน ให้SarapatRabChangช่วยดูแล<br>
+            สมัครสมาชิกเพื่อค้นหา พูดคุย และจองบริการ<br>
+            จากผู้ให้บริการที่ผ่านการยืนยันตัวตน
+          </p>
+
+          <div class="auth-feature-list">
+            <div class="auth-feature-item">
+              <div class="feature-icon-circle">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <strong>ค้นหาคนที่ใช่ ใกล้บ้านคุณ</strong>
+                <span>เลือกบริการและเปรียบเทียบราคาได้ในที่เดียว</span>
+              </div>
+            </div>
+
+            <div class="auth-feature-item">
+              <div class="feature-icon-circle">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <strong>มั่นใจในทุกการจ้างงาน</strong>
+                <span>ยืนยันตัวตนทั้งผู้ใช้และผู้ให้บริการ</span>
+              </div>
+            </div>
+
+            <div class="auth-feature-item">
+              <div class="feature-icon-circle">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+              </div>
+              <div class="feature-text">
+                <strong>จองง่าย ติดตามงานได้</strong>
+                <span>เลือกวันเวลาและดูประวัติการจองของคุณ</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="auth-security-notice">
+            <div class="security-notice-title">ข้อมูลของคุณได้รับการดูแลอย่างปลอดภัย</div>
+            <div class="security-notice-text">
+              เอกสารยืนยันตัวตนใช้เพื่อตรวจสอบความปลอดภัยเท่านั้น และจะไม่แสดงบนโปรไฟล์สาธารณะ
+            </div>
+          </div>
+        </div>
+
+        <div class="auth-right-col">
+          <div class="auth-card">
+            <div class="auth-tab-buttons">
+              <button class="auth-tab-btn active" id="tabRegisterBtn" onclick="switchAuthTab('register')">สมัครสมาชิกใหม่</button>
+              <button class="auth-tab-btn" id="tabLoginBtn" onclick="switchAuthTab('login')">เข้าสู่ระบบ</button>
+            </div>
+
+            <!-- Register Form Form -->
+            <form id="registerForm" onsubmit="handleAuthSubmit(event, 'register')">
+              <h2 class="form-title">สร้างบัญชีบุคคลทั่วไป</h2>
+              <p class="form-subtitle">กรอกข้อมูลของคุณเพื่อเริ่มต้นใช้งาน • จำเป็นต้องกรอกทุกช่อง</p>
+
+              <div class="form-row-2col">
+                <div class="form-group">
+                  <label class="form-label">อีเมล</label>
+                  <input type="email" class="form-input" placeholder="example@email.com" value="pimchanok@example.com" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">รหัสผ่าน</label>
+                  <div class="input-password-wrap">
+                    <input type="password" id="regPassword" class="form-input" placeholder="สร้างรหัสผ่าน" value="Password123" required>
+                    <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('regPassword')">👁</button>
+                  </div>
+                  <span class="input-hint">อย่างน้อย 8 ตัวอักษร มีตัวอักษรและตัวเลข</span>
+                </div>
+              </div>
+
+              <div class="form-row-2col">
+                <div class="form-group">
+                  <label class="form-label">ชื่อ-นามสกุล</label>
+                  <input type="text" class="form-input" placeholder="ชื่อและนามสกุลตามบัตรประชาชน" value="พิมพ์ชนก ใจดี" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">เบอร์โทรศัพท์</label>
+                  <input type="tel" class="form-input" placeholder="08X-XXX-XXXX" value="081-234-5678" required>
+                </div>
+              </div>
+
+              <div class="form-upload-tip">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>ใช้ภาพด้านหน้าที่เห็นข้อมูลชัดเจน และปิดเลขหลังบัตรก่อนอัปโหลด</span>
+              </div>
+
+              <div class="form-checkbox-wrap">
+                <label class="checkbox-label">
+                  <input type="checkbox" checked required>
+                  <span>ฉันยอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว และยินยอมให้ตรวจสอบข้อมูลเพื่อยืนยันตัวตน</span>
+                </label>
+              </div>
+
+              <button type="submit" class="btn-primary-block">สมัครสมาชิกบุคคลทั่วไป</button>
+
+              <div class="form-bottom-link">
+                มีบัญชีอยู่แล้ว? กลับเข้าใช้งานได้เลย <a href="javascript:void(0)" onclick="switchAuthTab('login')">เข้าสู่ระบบ</a>
+              </div>
+            </form>
+
+            <!-- Login Form (Hidden by default) -->
+            <form id="loginForm" class="hidden-view" onsubmit="handleAuthSubmit(event, 'login')">
+              <h2 class="form-title">เข้าสู่ระบบ</h2>
+              <p class="form-subtitle">ยินดีต้อนรับกลับมา เข้าสู่ระบบเพื่อจัดการการจ้างงานของคุณ</p>
+
+              <div class="form-group">
+                <label class="form-label">อีเมล</label>
+                <input type="email" class="form-input" placeholder="example@email.com" value="pimchanok@example.com" required>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">รหัสผ่าน</label>
+                <div class="input-password-wrap">
+                  <input type="password" id="loginPassword" class="form-input" placeholder="กรอกรหัสผ่าน" value="Password123" required>
+                  <button type="button" class="toggle-pwd-btn" onclick="togglePasswordVisibility('loginPassword')">👁</button>
+                </div>
+              </div>
+
+              <div class="login-options-row">
+                <label class="checkbox-label">
+                  <input type="checkbox" checked>
+                  <span>จดจำฉันในระบบ</span>
+                </label>
+                <a href="javascript:void(0)" class="forgot-link">ลืมรหัสผ่าน?</a>
+              </div>
+
+              <button type="submit" class="btn-primary-block">เข้าสู่ระบบ</button>
+
+              <div class="form-bottom-link">
+                ยังไม่มีบัญชี? <a href="javascript:void(0)" onclick="switchAuthTab('register')">สมัครสมาชิกใหม่</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 2: หน้าแรก / ค้นหาช่างและผู้ช่วยมืออาชีพใกล้บ้านคุณ -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page2">
+      <div class="home-page-container">
+        <!-- Hero Section -->
+        <div class="home-hero">
+          <div class="hero-greeting">สวัสดี คุณพิมพ์ชนก วันนี้ให้เราช่วยอะไรดี?</div>
+          <h1 class="hero-title">ค้นหาช่างและผู้ช่วยมืออาชีพใกล้บ้านคุณ</h1>
+          <p class="hero-subtitle">เลือกบริการที่ต้องการ เปรียบเทียบผู้ให้บริการ และจองเวลาที่สะดวก</p>
+
+          <!-- Search Widget -->
+          <div class="search-widget-card">
+            <div class="search-field-group">
+              <label class="search-label">พื้นที่ให้บริการ</label>
+              <div class="search-input-icon-wrap">
+                <input type="text" class="search-input" value="ห้วยขวาง, กรุงเทพมหานคร">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+              </div>
+            </div>
+
+            <div class="search-field-group">
+              <label class="search-label">หมวดหมู่บริการ</label>
+              <div class="search-select-wrap">
+                <select class="search-select">
+                  <option selected>เลือกหมวดหมู่บริการ</option>
+                  <option>ทำความสะอาดคอนโดและบ้าน (แม่บ้าน)</option>
+                  <option>ช่างไฟ/ประปา</option>
+                  <option>ขนย้ายของและเฟอร์นิเจอร์</option>
+                  <option>ซ่อมเครื่องใช้ไฟฟ้า / ช่างแอร์</option>
+                  <option>จัดสวนและตัดแต่งต้นไม้</option>
+                </select>
+              </div>
+            </div>
+
+            <button class="search-submit-btn" onclick="navigateTo('page3')">ค้นหา</button>
+          </div>
+
+          <div class="popular-searches">
+            <span>ค้นหายอดนิยม:</span>
+            <a href="javascript:void(0)" onclick="navigateTo('page3')">ทำความสะอาดคอนโด</a> ·
+            <a href="javascript:void(0)" onclick="navigateTo('page4')">ซ่อมแอร์</a> ·
+            <a href="javascript:void(0)">ย้ายหอพัก</a>
+          </div>
+        </div>
+
+        <!-- Service Categories Grid -->
+        <div class="section-block">
+          <h2 class="section-heading">เลือกบริการที่คุณต้องการ</h2>
+          <div class="categories-grid">
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 2v20M4 14l8-8 8 8"/>
+                </svg>
+              </div>
+              <span class="category-name">แม่บ้าน</span>
+            </div>
+
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                </svg>
+              </div>
+              <span class="category-name">ช่างไฟ/ประปา</span>
+            </div>
+
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="1" y="3" width="15" height="13"></rect>
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                  <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                  <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                </svg>
+              </div>
+              <span class="category-name">ขนย้าย</span>
+            </div>
+
+            <div class="category-card" onclick="navigateTo('page4')">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                  <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+              </div>
+              <span class="category-name">ซ่อมเครื่องใช้ไฟฟ้า</span>
+            </div>
+
+            <div class="category-card">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+              </div>
+              <span class="category-name">รับจ้างต่อคิว</span>
+            </div>
+
+            <div class="category-card">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M12 22v-9"></path>
+                  <path d="M12 13a5 5 0 0 0 5-5c0-4-5-6-5-6s-5 2-5 6a5 5 0 0 0 5 5z"></path>
+                </svg>
+              </div>
+              <span class="category-name">จัดสวน</span>
+            </div>
+
+            <div class="category-card">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path>
+                </svg>
+              </div>
+              <span class="category-name">ซักอบรีด</span>
+            </div>
+
+            <div class="category-card">
+              <div class="category-icon-box">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+              </div>
+              <span class="category-name">บริการทั้งหมด</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recommended Providers Section -->
+        <div class="section-block">
+          <div class="section-header-flex">
+            <div>
+              <h2 class="section-heading">ผู้ให้บริการแนะนำใกล้คุณ</h2>
+              <p class="section-subtext">ผู้ให้บริการที่ได้รับรีวิวดี พร้อมดูแลงานของคุณ</p>
+            </div>
+            <a href="javascript:void(0)" class="view-all-link">ดูทั้งหมด →</a>
+          </div>
+
+          <div class="providers-grid">
+            <!-- Provider Card 1: สุภาวดี ใจดี -->
+            <div class="provider-card">
+              <div class="provider-img-wrap" onclick="navigateTo('page3')">
+                <div class="provider-img-placeholder">
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span>รูปผู้ให้บริการ</span>
+                </div>
+              </div>
+              <div class="provider-card-body">
+                <h3 class="provider-card-name" onclick="navigateTo('page3')">สุภาวดี ใจดี</h3>
+                <p class="provider-card-service">ทำความสะอาดคอนโดและบ้าน</p>
+                <div class="provider-card-rating">
+                  <span class="star-rating">★ 4.9</span>
+                  <span class="rating-count">(128 รีวิว)</span>
+                </div>
+                <div class="provider-verified-badge">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>ยืนยันตัวตนแล้ว</span>
+                </div>
+                <div class="provider-location">📍 ห้วยขวาง · ดินแดง · รัชดา</div>
+                <div class="provider-card-footer">
+                  <div class="price-wrap">
+                    <span class="price-label">เริ่มต้น</span>
+                    <span class="price-amount">฿650</span>
+                  </div>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Provider Card 2: สมชาย การช่าง -->
+            <div class="provider-card">
+              <div class="provider-img-wrap" onclick="navigateTo('page3')">
+                <div class="provider-img-placeholder">
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span>รูปผู้ให้บริการ</span>
+                </div>
+              </div>
+              <div class="provider-card-body">
+                <h3 class="provider-card-name" onclick="navigateTo('page3')">สมชาย การช่าง</h3>
+                <p class="provider-card-service">ซ่อมไฟฟ้าและประปาภายในบ้าน</p>
+                <div class="provider-card-rating">
+                  <span class="star-rating">★ 4.8</span>
+                  <span class="rating-count">(96 รีวิว)</span>
+                </div>
+                <div class="provider-verified-badge">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>ยืนยันตัวตนแล้ว</span>
+                </div>
+                <div class="provider-location">📍 ลาดพร้าว · จตุจักร</div>
+                <div class="provider-card-footer">
+                  <div class="price-wrap">
+                    <span class="price-label">เริ่มต้น</span>
+                    <span class="price-amount">฿500</span>
+                  </div>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Provider Card 3: ณัฐพงษ์ พร้อมย้าย -->
+            <div class="provider-card">
+              <div class="provider-img-wrap" onclick="navigateTo('page3')">
+                <div class="provider-img-placeholder">
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span>รูปผู้ให้บริการ</span>
+                </div>
+              </div>
+              <div class="provider-card-body">
+                <h3 class="provider-card-name" onclick="navigateTo('page3')">ณัฐพงษ์ พร้อมย้าย</h3>
+                <p class="provider-card-service">ขนย้ายของและเฟอร์นิเจอร์</p>
+                <div class="provider-card-rating">
+                  <span class="star-rating">★ 4.9</span>
+                  <span class="rating-count">(74 รีวิว)</span>
+                </div>
+                <div class="provider-verified-badge">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>ยืนยันตัวตนแล้ว</span>
+                </div>
+                <div class="provider-location">📍 กรุงเทพฯ และปริมณฑล</div>
+                <div class="provider-card-footer">
+                  <div class="price-wrap">
+                    <span class="price-label">เริ่มต้น</span>
+                    <span class="price-amount">฿900</span>
+                  </div>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Provider Card 4: มาลี รักสวน -->
+            <div class="provider-card">
+              <div class="provider-img-wrap" onclick="navigateTo('page3')">
+                <div class="provider-img-placeholder">
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span>รูปผู้ให้บริการ</span>
+                </div>
+              </div>
+              <div class="provider-card-body">
+                <h3 class="provider-card-name" onclick="navigateTo('page3')">มาลี รักสวน</h3>
+                <p class="provider-card-service">ตัดแต่งต้นไม้และดูแลสวน</p>
+                <div class="provider-card-rating">
+                  <span class="star-rating">★ 4.8</span>
+                  <span class="rating-count">(62 รีวิว)</span>
+                </div>
+                <div class="provider-verified-badge">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  <span>ยืนยันตัวตนแล้ว</span>
+                </div>
+                <div class="provider-location">📍 บางกะปิ · บึงกุ่ม · ลาดพร้าว</div>
+                <div class="provider-card-footer">
+                  <div class="price-wrap">
+                    <span class="price-label">เริ่มต้น</span>
+                    <span class="price-amount">฿700</span>
+                  </div>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 3: หน้ารายละเอียดบริการ (Service Detail) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page3">
+      <div class="service-detail-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าแรก</a>
+          <span>/</span>
+          <a href="#page2" onclick="navigateTo('page2')">แม่บ้าน</a>
+          <span>/</span>
+          <span class="current">ทำความสะอาดคอนโดและบ้าน</span>
+        </div>
+
+        <!-- Provider Main Profile Card -->
+        <div class="service-profile-header-card">
+          <div class="sph-left">
+            <div class="sph-avatar">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="#94a3b8">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              <span>รูปผู้ให้บริการ</span>
+            </div>
+            <div class="sph-info">
+              <div class="sph-badges">
+                <span class="pill-badge">แม่บ้าน</span>
+                <span class="verified-pill">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="#0284c7"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                  ยืนยันตัวตนแล้ว
+                </span>
+              </div>
+              <h1 class="sph-title">ทำความสะอาดคอนโดและบ้าน</h1>
+              <div class="sph-name">สุภาวดี ใจดี</div>
+              <div class="sph-stats">
+                <span class="stars">★★★★★ 4.9</span>
+                <span class="review-total">(128 รีวิว) · ให้บริการแล้ว 186 งาน</span>
+              </div>
+              <div class="sph-location">📍 ห้วยขวาง · ดินแดง · รัชดา กรุงเทพมหานคร</div>
+            </div>
+          </div>
+
+          <div class="sph-right">
+            <button class="save-service-btn" onclick="this.classList.toggle('saved'); alert('บันทึกบริการเรียบร้อย!')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              บันทึกบริการ
+            </button>
+            <span class="response-time-text">ตอบกลับภายใน 1 ชั่วโมง</span>
+          </div>
+        </div>
+
+        <!-- Two Column Layout: Details vs Sticky Booking Card -->
+        <div class="service-layout-grid">
+          <!-- Left Column: Details, Past work, Rules, Reviews -->
+          <div class="service-left-content">
+            <div class="content-tabs-bar">
+              <span class="tab-item active">ดูรายละเอียดบริการ ผลงานที่ผ่านมา</span>
+            </div>
+
+            <div class="detail-section-block">
+              <h2 class="block-title">บ้านสะอาด ให้คุณมีเวลาพักมากขึ้น</h2>
+              <p class="block-desc">
+                สวัสดีค่ะ สุภาวดีมีประสบการณ์ดูแลบ้านและคอนโดมากกว่า 5 ปี ใส่ใจทุกมุมและตรงต่อเวลา
+                พร้อมนำอุปกรณ์และน้ำยาทำความสะอาดพื้นฐานไปให้ เหมาะสำหรับการทำความสะอาดประจำสัปดาห์หรือก่อนเข้าอยู่ค่ะ
+              </p>
+
+              <div class="feature-pills-row">
+                <div class="feature-pill">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                  <span>ประสบการณ์ 5 ปี</span>
+                </div>
+                <div class="feature-pill">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                  <span>มีอุปกรณ์ให้พร้อม</span>
+                </div>
+                <div class="feature-pill">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  <span>บริการ 09:00–18:00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Past Works -->
+            <div class="detail-section-block">
+              <div class="section-title-flex">
+                <h3 class="block-subheading">ผลงานที่ผ่านมา</h3>
+                <span class="subtext-muted">ภาพตัวอย่างจากงานจริง</span>
+              </div>
+              <div class="work-gallery-grid">
+                <div class="work-gallery-item">
+                  <div class="work-photo-box">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>ภาพผลงาน</span>
+                  </div>
+                  <span class="work-photo-caption">ทำความสะอาดห้องนั่งเล่น</span>
+                </div>
+
+                <div class="work-gallery-item">
+                  <div class="work-photo-box">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>ภาพผลงาน</span>
+                  </div>
+                  <span class="work-photo-caption">ทำความสะอาดห้องครัว</span>
+                </div>
+
+                <div class="work-gallery-item">
+                  <div class="work-photo-box">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>ภาพผลงาน</span>
+                  </div>
+                  <span class="work-photo-caption">ทำความสะอาดห้องน้ำ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pre-booking notes -->
+            <div class="detail-section-block notice-box">
+              <h4 class="notice-title">สิ่งที่ควรทราบก่อนจอง</h4>
+              <p class="notice-desc">
+                กรุณาเตรียมน้ำ ไฟฟ้า และแจ้งจุดที่ต้องการดูแลเป็นพิเศษล่วงหน้า<br>
+                ไม่รวมซักผ้าม่าน ล้างแอร์ ทำความสะอาดหลังงานก่อสร้าง และพื้นที่สูงภายนอกอาคาร
+              </p>
+            </div>
+
+            <!-- Reviews Section -->
+            <div class="detail-section-block">
+              <div class="section-title-flex">
+                <h3 class="block-subheading">รีวิวจากผู้ใช้บริการ</h3>
+                <span class="rating-highlight">★ 4.9 จาก 128 รีวิว</span>
+              </div>
+
+              <div class="review-item-card">
+                <div class="review-header-flex">
+                  <span class="reviewer-name">พิมพ์ชนก ส.</span>
+                  <span class="review-date-stars">★★★★★ · 24 ต.ค. 2569</span>
+                </div>
+                <p class="review-body-text">
+                  มาตรงเวลา อุปกรณ์ครบ ทำความสะอาดละเอียดมาก โดยเฉพาะครัวและห้องน้ำ ห้องสะอาดน่าอยู่ขึ้นเยอะค่ะ จะกลับมาใช้บริการอีกแน่นอน
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Sticky Booking Widget -->
+          <div class="service-right-booking">
+            <div class="booking-package-card">
+              <h3 class="booking-card-title">กำหนดราคาและรายละเอียดแพ็กเกจ</h3>
+
+              <div class="package-selector-item selected">
+                <div class="package-radio-row">
+                  <input type="radio" checked name="package" id="pkg1">
+                  <label for="pkg1" class="package-name">คอนโดสะอาดสบาย</label>
+                </div>
+                <div class="package-sub-info">พื้นที่ไม่เกิน 40 ตร.ม. • แม่บ้าน 1 คน</div>
+                <div class="package-price-row">
+                  <span class="pkg-price">฿650</span>
+                  <span class="pkg-duration">/ ครั้ง · ระยะเวลา 3 ชั่วโมง</span>
+                </div>
+              </div>
+
+              <div class="included-services-box">
+                <div class="included-title">บริการที่รวมในแพ็กเกจ</div>
+                <ul class="included-list">
+                  <li><span class="check-icon">✓</span> กวาด ดูดฝุ่น และถูพื้นทุกห้อง</li>
+                  <li><span class="check-icon">✓</span> เช็ดฝุ่นเฟอร์นิเจอร์และพื้นผิวทั่วไป</li>
+                  <li><span class="check-icon">✓</span> ทำความสะอาดห้องน้ำ 1 ห้อง และครัว</li>
+                  <li><span class="check-icon">✓</span> อุปกรณ์และน้ำยาทำความสะอาดพื้นฐาน</li>
+                </ul>
+              </div>
+
+              <!-- Date Picker -->
+              <div class="form-group">
+                <label class="form-label">วันที่ต้องการใช้บริการ</label>
+                <div class="input-date-wrap">
+                  <input type="date" class="form-input" id="bookingDateInput" value="2026-11-05">
+                </div>
+              </div>
+
+              <!-- Time Slot -->
+              <div class="form-group">
+                <label class="form-label">ช่วงเวลาเริ่มงาน</label>
+                <select class="form-input">
+                  <option>เลือกเวลา 09:00–12:00 น.</option>
+                  <option selected>เลือกเวลา 09:00–15:00 น.</option>
+                  <option>เลือกเวลา 13:00–16:00 น.</option>
+                </select>
+              </div>
+
+              <!-- Total and CTA -->
+              <div class="booking-total-row">
+                <span class="total-label">ยอดชำระทั้งหมด</span>
+                <span class="total-amount">฿650</span>
+              </div>
+
+              <button class="btn-primary-block" onclick="navigateTo('page4')">จองบริการและชำระเงิน</button>
+              <button class="btn-outline-block" onclick="navigateTo('page7')">ส่งข้อความพูดคุย</button>
+
+              <div class="escrow-safe-badge">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                <span>ชำระเงินอย่างปลอดภัยผ่านระบบSarapatRabChang</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 4: ระบุรายละเอียดงานและสถานที่ (Booking Step 2) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page4">
+      <div class="booking-flow-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าหลัก</a>
+          <span>/</span>
+          <a href="#page3" onclick="navigateTo('page3')">บริการช่างแอร์</a>
+          <span>/</span>
+          <a href="#page3" onclick="navigateTo('page3')">ล้างแอร์แบบติดผนัง</a>
+          <span>/</span>
+          <span class="current">รายละเอียดการจอง</span>
+        </div>
+
+        <!-- 3-Step Wizard Bar -->
+        <div class="booking-stepper">
+          <div class="step-item completed">
+            <span class="step-badge">✓</span>
+            <span class="step-label">เลือกบริการ</span>
+          </div>
+          <div class="step-line active"></div>
+          <div class="step-item active">
+            <span class="step-badge">2</span>
+            <span class="step-label">รายละเอียดงานและสถานที่</span>
+          </div>
+          <div class="step-line"></div>
+          <div class="step-item pending">
+            <span class="step-badge">3</span>
+            <span class="step-label">ชำระเงิน</span>
+          </div>
+        </div>
+
+        <!-- Two Columns: Job Details vs Map Pin -->
+        <div class="booking-two-cols">
+          <!-- Left: Work Details, Photos, Address -->
+          <div class="booking-left-pane">
+            <div class="step-page-heading">
+              <h1 class="step-main-title">ระบุรายละเอียดงานและสถานที่ให้บริการ</h1>
+              <p class="step-main-subtitle">แจ้งรายละเอียดให้ช่างเตรียมตัว พร้อมระบุที่อยู่และปักหมุดให้ตรงกัน</p>
+            </div>
+
+            <div class="form-group">
+              <div class="label-with-counter">
+                <label class="form-label">รายละเอียดงานเพิ่มเติม / หมายเหตุถึงช่าง</label>
+                <span class="char-count" id="charCount">0 / 500</span>
+              </div>
+              <textarea class="form-textarea" rows="4" placeholder="เช่น แอร์อยู่ชั้น 2 มีน้ำหยด หรือมีข้อควรทราบก่อนเข้าบริการ" oninput="updateCharCount(this)"></textarea>
+            </div>
+
+            <!-- Photo Upload Area -->
+            <div class="form-group">
+              <label class="form-label">อัปโหลดรูปภาพบริเวณที่ต้องการให้ทำงาน (ถ้ามี)</label>
+              <div class="upload-dropzone" onclick="document.getElementById('photoInput').click()">
+                <input type="file" id="photoInput" multiple accept="image/*" class="hidden-input" onchange="handlePhotoUpload(this)">
+                <div class="dropzone-icon">
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#64748b" stroke-width="1.8">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                  </svg>
+                </div>
+                <div class="dropzone-title">คลิกเพื่อเลือกรูปภาพ หรือลากไฟล์มาวางที่นี่</div>
+                <div class="dropzone-meta">JPG, PNG สูงสุด 5 รูป • ไม่เกิน 10 MB ต่อรูป</div>
+              </div>
+              <div class="uploaded-previews-row" id="photoPreviews"></div>
+            </div>
+
+            <!-- Contact & Address Section -->
+            <div class="form-card-block">
+              <h3 class="form-card-title">ข้อมูลติดต่อและที่อยู่</h3>
+
+              <div class="form-row-2col">
+                <div class="form-group">
+                  <label class="form-label">ชื่อผู้ติดต่อ</label>
+                  <input type="text" class="form-input" value="พิมพ์ชนก ใจดี">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">เบอร์โทรศัพท์</label>
+                  <input type="text" class="form-input" value="081 234 5678">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">ที่อยู่โดยละเอียด (บ้านเลขที่, ซอย, ถนน, แขวง/ตำบล)</label>
+                <textarea class="form-textarea" rows="2">88/12 ซอยสุขุมวิท 39 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110</textarea>
+              </div>
+
+              <div class="address-privacy-note">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>ข้อมูลนี้ใช้สำหรับติดต่อและเข้ารับบริการตามการจองเท่านั้น</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Map Pinning Mockup -->
+          <div class="booking-right-pane">
+            <div class="map-card-block">
+              <h3 class="map-card-title">ปักหมุดจุดนัดหมายบนแผนที่</h3>
+              <p class="map-card-subtitle">ระบุจุดนัดหมายให้ใกล้ทางเข้าที่พักมากที่สุด</p>
+
+              <!-- Search map input -->
+              <div class="map-search-bar">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748b" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input type="text" placeholder="ค้นหาสถานที่ หรือชื่ออาคาร" value="ซอยสุขุมวิท 39">
+              </div>
+
+              <!-- Map Visual Mockup -->
+              <div class="mockup-map-canvas">
+                <div class="map-road-1"></div>
+                <div class="map-road-2"></div>
+                <div class="map-block map-block-1"></div>
+                <div class="map-block map-block-2"></div>
+                <div class="map-block map-block-3"></div>
+                <div class="map-street-label street-sukhumvit39">ซอยสุขุมวิท 39</div>
+                <div class="map-street-label street-sukhumvit">ถนนสุขุมวิท</div>
+                <div class="map-bts-label">🚆 BTS พร้อมพงษ์</div>
+
+                <!-- Draggable / Highlighted Pin -->
+                <div class="map-marker-wrap">
+                  <div class="map-marker-pin"></div>
+                  <div class="marker-pulse"></div>
+                  <div class="marker-tooltip">จุดนัดหมายของคุณ</div>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="map-zoom-controls">
+                  <button>+</button>
+                  <button>−</button>
+                  <button>🎯</button>
+                </div>
+                <div class="map-scale-label">100 ม.</div>
+                <div class="map-watermark">แผนที่จำลอง</div>
+              </div>
+
+              <button class="btn-use-current-location">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                </svg>
+                ใช้ตำแหน่งปัจจุบันของฉัน
+              </button>
+
+              <div class="pinned-location-summary">
+                <div class="pls-header">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="pin-icon-red">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                  <strong>สถานที่ปักหมุดปัจจุบัน</strong>
+                </div>
+                <div class="pls-address">บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ</div>
+                <div class="pls-coords">13.7326, 100.5703</div>
+                <div class="pls-disclaimer">ชื่อสถานที่และพิกัดเป็นข้อมูลตัวอย่างประกอบ</div>
+              </div>
+
+              <div class="map-verify-tip">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748b" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>โปรดตรวจสอบให้หมุดตรงกับที่อยู่ เพื่อให้ช่างเดินทางไปยังจุดนัดหมายได้ถูกต้อง</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Bottom Navigation Bar -->
+        <div class="wizard-bottom-bar">
+          <button class="btn-back-link" onclick="navigateTo('page3')">← กลับไปหน้ารายละเอียดบริการ</button>
+          <div class="wizard-next-flex">
+            <div class="next-step-hint">
+              <strong>ขั้นตอนถัดไป: ตรวจสอบและชำระเงิน</strong>
+              <span>ยังไม่มีการเรียกเก็บเงินในขั้นตอนนี้</span>
+            </div>
+            <button class="btn-primary-action" onclick="navigateTo('page5')">ดำเนินการต่อเพื่อชำระเงิน →</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 5: ตรวจสอบและชำระเงิน (Booking Step 3) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page5">
+      <div class="booking-flow-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าหลัก</a>
+          <span>/</span>
+          <a href="#page3" onclick="navigateTo('page3')">บริการช่างแอร์</a>
+          <span>/</span>
+          <a href="#page3" onclick="navigateTo('page3')">ล้างแอร์แบบติดผนัง</a>
+          <span>/</span>
+          <span class="current">ชำระเงิน</span>
+        </div>
+
+        <!-- 3-Step Wizard Bar -->
+        <div class="booking-stepper">
+          <div class="step-item completed">
+            <span class="step-badge">✓</span>
+            <span class="step-label">เลือกบริการ</span>
+          </div>
+          <div class="step-line active"></div>
+          <div class="step-item completed">
+            <span class="step-badge">✓</span>
+            <span class="step-label">รายละเอียดงานและสถานที่</span>
+          </div>
+          <div class="step-line active"></div>
+          <div class="step-item active">
+            <span class="step-badge">3</span>
+            <span class="step-label">ชำระเงิน</span>
+          </div>
+        </div>
+
+        <div class="step-page-heading">
+          <h1 class="step-main-title">ตรวจสอบและชำระเงิน</h1>
+          <p class="step-main-subtitle">ตรวจสอบรายละเอียดการจอง เลือกวิธีชำระเงิน และระบุข้อมูลใบกำกับภาษี</p>
+        </div>
+
+        <div class="booking-two-cols">
+          <!-- Left: Payment Options & e-Tax Invoice Form -->
+          <div class="booking-left-pane">
+            <div class="form-card-block">
+              <h2 class="form-card-title">เลือกวิธีชำระเงิน</h2>
+              <p class="form-card-subtitle">เลือกช่องทางที่สะดวกสำหรับคุณ</p>
+
+              <!-- Payment Method 1: PromptPay QR (Selected) -->
+              <div class="payment-method-box selected" id="methodPromptPay" onclick="selectPaymentMethod('promptpay')">
+                <div class="pm-radio-header">
+                  <label class="radio-label">
+                    <input type="radio" name="paymentMethod" checked id="radioPromptPay">
+                    <div class="pm-title-wrap">
+                      <div class="pm-icon-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                          <path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/>
+                        </svg>
+                        <strong>พร้อมเพย์ (PromptPay QR Code)</strong>
+                      </div>
+                      <span class="pm-desc">สแกนจ่ายผ่านแอปธนาคารของคุณ</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div class="promptpay-qr-mockup">
+                  <div class="qr-code-box">
+                    <div class="qr-dummy-pattern"></div>
+                  </div>
+                  <div class="qr-notes">
+                    <div class="qr-notice-main">QR สำหรับชำระเงินจะแสดงหลังยืนยันรายการ</div>
+                    <div class="qr-notice-sub">QR ตัวอย่างประกอบเท่านั้น ไม่สามารถใช้ชำระเงิน</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment Method 2: Credit Card -->
+              <div class="payment-method-box" id="methodCreditCard" onclick="selectPaymentMethod('creditcard')">
+                <div class="pm-radio-header">
+                  <label class="radio-label">
+                    <input type="radio" name="paymentMethod" id="radioCreditCard">
+                    <div class="pm-title-wrap">
+                      <div class="pm-icon-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <strong>บัตรเครดิต / บัตรเดบิต</strong>
+                      </div>
+                      <span class="pm-desc">Visa, Mastercard และ JCB</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Payment Method 3: Mobile Banking -->
+              <div class="payment-method-box" id="methodMobileBanking" onclick="selectPaymentMethod('mobilebanking')">
+                <div class="pm-radio-header">
+                  <label class="radio-label">
+                    <input type="radio" name="paymentMethod" id="radioMobileBanking">
+                    <div class="pm-title-wrap">
+                      <div class="pm-icon-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        </svg>
+                        <strong>โมบายแบงก์กิ้ง (Mobile Banking)</strong>
+                      </div>
+                      <span class="pm-desc">ชำระผ่านแอปธนาคารที่รองรับ</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tax Invoice Section -->
+            <div class="form-card-block">
+              <h2 class="form-card-title">ใบกำกับภาษี</h2>
+              <div class="form-checkbox-wrap">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="taxInvoiceToggle" checked onchange="toggleTaxForm(this)">
+                  <span>ต้องการรับใบกำกับภาษีแบบอิเล็กทรอนิกส์ (e-Tax Invoice)</span>
+                </label>
+              </div>
+
+              <div id="taxInvoiceFields">
+                <div class="form-group">
+                  <label class="form-label">ประเภทผู้ขอใบกำกับภาษี</label>
+                  <div class="radio-group-row">
+                    <label class="radio-inline">
+                      <input type="radio" name="taxType" checked>
+                      <span>บุคคลธรรมดา</span>
+                    </label>
+                    <label class="radio-inline">
+                      <input type="radio" name="taxType">
+                      <span>นิติบุคคล/บริษัท</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">เลขประจำตัวผู้เสียภาษี (Tax ID)</label>
+                  <input type="text" class="form-input" placeholder="กรอกเลขประจำตัวผู้เสียภาษี 13 หลัก" value="1 1004 00123 45 6">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">ชื่อ-นามสกุล/ชื่อบริษัท</label>
+                  <input type="text" class="form-input" value="พิมพ์ชนก ใจดี">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">ที่อยู่ตามบัตรประชาชน/ที่อยู่จดทะเบียน</label>
+                  <textarea class="form-textarea" rows="2">88/12 ซอยสุขุมวิท 39 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110</textarea>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">อีเมลรับเอกสาร</label>
+                  <input type="email" class="form-input" placeholder="เช่น pimchanok@example.com" value="pimchanok@example.com">
+                </div>
+
+                <div class="tax-info-notice">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  <span>ระบบจะจัดส่งใบกำกับภาษีเข้าอีเมลนี้โดยอัตโนมัติเมื่อชำระเงินสำเร็จ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Order Summary & Escrow Guarantee -->
+          <div class="booking-right-pane">
+            <div class="summary-card-block">
+              <div class="summary-header-row">
+                <h3 class="summary-card-title">สรุปรายการจอง</h3>
+                <a href="#page4" class="edit-link" onclick="navigateTo('page4')">แก้ไข</a>
+              </div>
+
+              <!-- Service mini item -->
+              <div class="summary-service-row">
+                <div class="service-type-icon">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                  </svg>
+                </div>
+                <div class="service-summary-texts">
+                  <div class="service-name-bold">ล้างแอร์แบบติดผนัง</div>
+                  <div class="service-dept">บริการช่างแอร์ • จำนวน 1 เครื่อง</div>
+                </div>
+                <div class="service-price-bold">฿650</div>
+              </div>
+
+              <!-- Appointment info -->
+              <div class="summary-meta-item">
+                <div class="meta-label">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  วันและเวลาเข้ารับบริการ
+                </div>
+                <div class="meta-value">10 พฤศจิกายน 2569 • 09:00–10:00 น.</div>
+                <div class="meta-sub">วันและเวลาเป็นข้อมูลตัวอย่างประกอบ</div>
+              </div>
+
+              <!-- Location info -->
+              <div class="summary-meta-item">
+                <div class="meta-label">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  สถานที่ให้บริการ
+                </div>
+                <div class="meta-value">88/12 ซอยสุขุมวิท 39 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110</div>
+                <div class="meta-contact">พิมพ์ชนก ใจดี • 081 234 5678</div>
+              </div>
+
+              <!-- Mini map thumbnail -->
+              <div class="summary-map-thumbnail">
+                <div class="smt-bg"></div>
+                <div class="smt-pin">📍 จุดนัดหมายของคุณ</div>
+                <div class="smt-caption">พิกัด 13.7326, 100.5703 • สถานที่และพิกัดเป็นข้อมูลตัวอย่าง</div>
+              </div>
+
+              <!-- Price breakdown -->
+              <div class="price-breakdown-list">
+                <div class="price-item-row">
+                  <span>ค่าบริการ</span>
+                  <span>฿650</span>
+                </div>
+                <div class="price-item-row">
+                  <span>ค่าธรรมเนียมการชำระเงิน</span>
+                  <span>฿0</span>
+                </div>
+                <div class="price-item-row total-row">
+                  <strong>ยอดชำระทั้งหมด</strong>
+                  <strong class="total-big">฿650</strong>
+                </div>
+              </div>
+
+              <!-- Escrow Box -->
+              <div class="escrow-card-highlight">
+                <div class="ech-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  ชำระเงินปลอดภัยผ่านระบบประกันกลาง (Escrow)
+                </div>
+                <div class="ech-desc">
+                  เงินจะถูกเก็บไว้ในระบบ และส่งให้ผู้ให้บริการเมื่อคุณตรวจรับงานเรียบร้อยแล้ว
+                </div>
+              </div>
+
+              <div class="checkout-terms-note">
+                เมื่อยืนยันการชำระเงิน ถือว่าคุณยอมรับข้อกำหนดการใช้บริการและนโยบายการยกเลิกการจอง
+              </div>
+
+              <!-- Confirm Payment Button -->
+              <button class="btn-primary-block" onclick="navigateTo('page6')">🔒 ยืนยันการชำระเงิน ฿650</button>
+
+              <div class="help-center-link">
+                มีปัญหาในการชำระเงิน? <a href="javascript:void(0)" onclick="alert('กรุณาติดต่อ support@sarapatrabchang.local หรือโทร 02-000-0000')">ติดต่อศูนย์ช่วยเหลือ</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-bottom-bar single-left">
+          <button class="btn-back-link" onclick="navigateTo('page4')">← กลับไปแก้ไขรายละเอียดงานและสถานที่</button>
+          <span class="preview-disclaimer">หน้าจอตัวอย่าง • ไม่มีการเรียกเก็บเงินจริง</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 6: ชำระเงินส่วนบุคคล (Checkout / Credit Card Alternative View) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page6">
+      <div class="service-detail-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าแรก</a>
+          <span>/</span>
+          <a href="#page10" onclick="navigateTo('page10')">บัญชีของฉัน</a>
+          <span>/</span>
+          <span class="current">Page 5 - ชำระเงินส่วนบุคคล</span>
+        </div>
+
+        <div class="step-page-heading">
+          <h1 class="step-main-title">ชำระเงินส่วนบุคคล</h1>
+          <p class="step-main-subtitle">ตรวจสอบรายละเอียดการจองและเลือกวิธีชำระเงินอย่างปลอดภัย</p>
+        </div>
+
+        <div class="service-layout-grid">
+          <!-- Left: Payment details with Credit card fields -->
+          <div class="service-left-content">
+            <div class="form-card-block">
+              <div class="payment-section-header">
+                <h2 class="form-card-title">เลือกวิธีชำระเงิน</h2>
+                <span class="sub-amount-hint">ยอดที่ต้องชำระ: ฿650 • ไม่มีค่าธรรมเนียมเพิ่มเติม</span>
+              </div>
+
+              <!-- Method 1: Credit Card (Active) -->
+              <div class="payment-method-box selected">
+                <div class="pm-radio-header">
+                  <label class="radio-label">
+                    <input type="radio" checked name="p6method">
+                    <div class="pm-title-wrap">
+                      <div class="pm-icon-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                          <line x1="1" y1="10" x2="23" y2="10"></line>
+                        </svg>
+                        <strong>บัตรเครดิต</strong>
+                        <span class="selected-pill">เลือกแล้ว</span>
+                      </div>
+                      <span class="pm-desc">Visa / Mastercard • ชำระเต็มจำนวน</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Method 2: PromptPay -->
+              <div class="payment-method-box">
+                <div class="pm-radio-header">
+                  <label class="radio-label">
+                    <input type="radio" name="p6method">
+                    <div class="pm-title-wrap">
+                      <div class="pm-icon-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                          <path d="M4 4h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 10h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4zM4 16h4v4H4zm6 0h4v4h-4zm6 0h4v4h-4z"/>
+                        </svg>
+                        <strong>พร้อมเพย์ (PromptPay)</strong>
+                      </div>
+                      <span class="pm-desc">สแกน QR Code ผ่านแอปธนาคาร</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Method 3: Mobile Banking -->
+              <div class="payment-method-box">
+                <div class="pm-radio-header">
+                  <label class="radio-label">
+                    <input type="radio" name="p6method">
+                    <div class="pm-title-wrap">
+                      <div class="pm-icon-title">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                          <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                        </svg>
+                        <strong>โมบายแบงก์กิ้ง (Mobile Banking)</strong>
+                      </div>
+                      <span class="pm-desc">ชำระผ่านแอปธนาคารที่คุณใช้งาน</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Credit Card Fields -->
+              <div class="credit-card-fields-box">
+                <h3 class="cc-form-title">ข้อมูลบัตรเครดิต</h3>
+
+                <div class="form-group">
+                  <label class="form-label">หมายเลขบัตร</label>
+                  <input type="text" class="form-input" value="4242 4242 4242 4242">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">ชื่อผู้ถือบัตร</label>
+                  <input type="text" class="form-input" value="PHIMCHANOK S.">
+                </div>
+
+                <div class="form-row-2col">
+                  <div class="form-group">
+                    <label class="form-label">วันหมดอายุ (เดือน/ปี)</label>
+                    <input type="text" class="form-input" value="08 / 29">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">รหัสความปลอดภัย (CVV)</label>
+                    <input type="password" class="form-input" value="123">
+                  </div>
+                </div>
+
+                <div class="cc-security-note">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <span>ข้อมูลบัตรถูกเข้ารหัส และจะไม่แสดงให้ผู้ให้บริการทราบ</span>
+                </div>
+              </div>
+
+              <!-- Escrow notice banner -->
+              <div class="escrow-bottom-banner">
+                <div class="ebb-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  ชำระเงินเข้าสู่ระบบประกันกลาง (Escrow)
+                </div>
+                <div class="ebb-desc">
+                  เงิน ฿650 จะถูกเก็บไว้ในระบบประกันกลาง ยังไม่โอนให้สุภาวดี จนกว่าคุณจะตรวจสอบงานและอนุมัติรับงานหลังให้บริการเสร็จ
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Summary & Confirm -->
+          <div class="service-right-booking">
+            <div class="booking-package-card">
+              <div class="summary-header-row">
+                <h3 class="booking-card-title">สรุปการจอง</h3>
+                <span class="status-pill-warning">รอชำระเงิน</span>
+              </div>
+              <div class="order-id-label">หมายเลขงาน KM-691105-024</div>
+
+              <!-- Provider preview -->
+              <div class="provider-mini-card">
+                <div class="pmc-avatar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div>
+                  <div class="pmc-name">สุภาวดี ใจดี</div>
+                  <div class="pmc-verified">ยืนยันตัวตนแล้ว • แม่บ้าน</div>
+                </div>
+              </div>
+
+              <div class="order-service-heading">
+                <strong>ทำความสะอาดคอนโดและบ้าน</strong>
+                <span>คอนโดสะอาดสบาย</span>
+                <span class="sub-specs">พื้นที่ไม่เกิน 40 ตร.ม. • แม่บ้าน 1 คน<br>ระยะเวลา 3 ชั่วโมง</span>
+              </div>
+
+              <div class="order-schedule-info">
+                <div class="osi-row">
+                  <span>วันที่นัดหมาย</span>
+                  <strong>5 พ.ย. 2569</strong>
+                </div>
+                <div class="osi-row">
+                  <span>เวลาบริการ</span>
+                  <strong>09:00–12:00 น.</strong>
+                </div>
+                <div class="osi-location">คอนโดของคุณพิมพ์ชนก • ห้วยขวาง กรุงเทพฯ</div>
+              </div>
+
+              <div class="order-price-breakdown">
+                <div class="osi-row">
+                  <span>ราคาที่ตกลง</span>
+                  <strong>฿650</strong>
+                </div>
+                <div class="osi-row">
+                  <span>วิธีชำระเงิน</span>
+                  <span>บัตรเครดิต</span>
+                </div>
+                <div class="osi-row total-order-row">
+                  <strong>ยอดชำระทั้งหมด</strong>
+                  <strong class="total-big">฿650</strong>
+                </div>
+                <div class="no-extra-fee-note">รวมบริการตามข้อตกลง • ไม่มีค่าใช้จ่ายเพิ่มเติม</div>
+              </div>
+
+              <button class="btn-primary-block" onclick="navigateTo('page8')">ยืนยันและชำระเงิน</button>
+
+              <div class="order-disclaimer-small">
+                เมื่อยืนยัน ถือว่าคุณยอมรับข้อตกลงการจองและการชำระเงินผ่านระบบประกันกลาง
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 7: แชทพูดคุยส่วนตัว (Chat View) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page7">
+      <div class="service-detail-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าแรก</a>
+          <span>/</span>
+          <a href="#page10" onclick="navigateTo('page10')">บัญชีของฉัน</a>
+          <span>/</span>
+          <span class="current">Page 4 - แชทพูดคุยส่วนตัว</span>
+        </div>
+
+        <div class="step-page-heading">
+          <h1 class="step-main-title">แชทพูดคุยส่วนตัว</h1>
+          <p class="step-main-subtitle">พูดคุยรายละเอียดและตกลงบริการกับผู้ให้บริการก่อนชำระเงิน</p>
+        </div>
+
+        <!-- Chat Container Grid -->
+        <div class="chat-app-grid">
+          <!-- Left: Conversations List -->
+          <div class="chat-sidebar">
+            <h3 class="chat-sidebar-title">ข้อความของฉัน</h3>
+            <div class="chat-search-wrap">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#64748b" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" placeholder="ค้นหาบทสนทนา" class="chat-search-input">
+            </div>
+
+            <div class="conversations-list">
+              <!-- Active conversation -->
+              <div class="conversation-item active">
+                <div class="conv-avatar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div class="conv-details">
+                  <div class="conv-header">
+                    <strong class="conv-name">สุภาวดี ใจดี</strong>
+                    <span class="conv-time">วันนี้ 10:12 น.</span>
+                  </div>
+                  <div class="conv-tag">แม่บ้าน • ยืนยันตัวตนแล้ว</div>
+                  <div class="conv-preview">ยืนยันตามรายละเอียดนี้ค่ะ</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Safe payment banner in sidebar -->
+            <div class="chat-safety-box">
+              <div class="csb-icon">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+              </div>
+              <div>
+                <strong>จ้างงานอย่างอุ่นใจ</strong>
+                <p>พูดคุยและชำระเงินผ่านSarapatRabChangเท่านั้น เพื่อให้คำสั่งซื้อของคุณได้รับการคุ้มครอง</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Active Chat Area -->
+          <div class="chat-main-window">
+            <!-- Chat Header -->
+            <div class="active-chat-header">
+              <div class="ach-user-info">
+                <div class="ach-avatar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div>
+                  <h3 class="ach-name">สุภาวดี ใจดี</h3>
+                  <div class="ach-status">ทำความสะอาดคอนโดและบ้าน • ตอบกลับภายใน 1 ชั่วโมง</div>
+                </div>
+              </div>
+              <button class="btn-profile-view" onclick="navigateTo('page3')">ดูโปรไฟล์</button>
+            </div>
+
+            <!-- Chat Stream -->
+            <div class="chat-messages-stream" id="chatStream">
+              <div class="chat-date-separator">2 พ.ย. 2569 • เริ่มการสนทนาจากบริการทำความสะอาด</div>
+
+              <!-- Message 1 (Customer) -->
+              <div class="chat-bubble-row outgoing">
+                <div class="chat-bubble-content">
+                  <p>สวัสดีค่ะ สนใจแพ็กเกจคอนโดสะอาดสบาย ห้อง 35 ตร.ม. ที่ห้วยขวาง วันที่ 5 พ.ย. เวลา 09:00 น. ว่างไหมคะ?</p>
+                  <span class="bubble-meta">คุณ • 10:02 • อ่านแล้ว</span>
+                </div>
+              </div>
+
+              <!-- Message 2 (Provider) -->
+              <div class="chat-bubble-row incoming">
+                <div class="chat-bubble-content">
+                  <p>ว่างค่ะ ราคา ฿650 แม่บ้าน 1 คน ใช้เวลา 3 ชั่วโมง ตั้งแต่ 09:00–12:00 น. พร้อมอุปกรณ์และน้ำยาพื้นฐานค่ะ</p>
+                  <span class="bubble-meta">สุภาวดี • 10:05</span>
+                </div>
+              </div>
+
+              <!-- Message 3 (Customer) -->
+              <div class="chat-bubble-row outgoing">
+                <div class="chat-bubble-content">
+                  <p>ขอเน้นครัวกับห้องน้ำ 1 ห้อง รวมดูดฝุ่น ถูพื้น และเช็ดเฟอร์นิเจอร์ด้วยนะคะ ราคานี้รวมแล้วใช่ไหมคะ?</p>
+                  <span class="bubble-meta">คุณ • 10:07 • อ่านแล้ว</span>
+                </div>
+              </div>
+
+              <!-- Message 4 (Provider) -->
+              <div class="chat-bubble-row incoming">
+                <div class="chat-bubble-content">
+                  <p>รวมทั้งหมดค่ะ สำหรับพื้นที่ไม่เกิน 40 ตร.ม. ไม่รวมซักผ้าม่าน ล้างแอร์ งานหลังการก่อสร้าง และพื้นที่สูงภายนอกอาคาร รบกวนเตรียมน้ำและไฟฟ้าด้วยนะคะ</p>
+                  <span class="bubble-meta">สุภาวดี • 10:10</span>
+                </div>
+              </div>
+
+              <!-- Message 5 (Customer) -->
+              <div class="chat-bubble-row outgoing">
+                <div class="chat-bubble-content">
+                  <p>ตกลงค่ะ จองวันที่ 5 พ.ย. 2569 เวลา 09:00–12:00 น. ยอดรวม ฿650 ตามนี้นะคะ</p>
+                  <span class="bubble-meta">คุณ • 10:11 • อ่านแล้ว</span>
+                </div>
+              </div>
+
+              <!-- In-Chat Agreement Card -->
+              <div class="chat-agreement-card">
+                <div class="cac-header">
+                  <div class="cac-title">สรุปข้อตกลงบริการ</div>
+                  <span class="cac-badge">ตกลงรายละเอียดแล้ว</span>
+                </div>
+                <div class="cac-job-no">หมายเลขงาน KM-691105-024</div>
+                <div class="cac-service-name">คอนโดสะอาดสบาย • พื้นที่ไม่เกิน 40 ตร.ม. • แม่บ้าน 1 คน</div>
+                <ul class="cac-checklist">
+                  <li>✓ กวาด ดูดฝุ่น และถูพื้นทุกห้อง</li>
+                  <li>✓ เช็ดฝุ่นเฟอร์นิเจอร์และพื้นผิวทั่วไป</li>
+                  <li>✓ ทำความสะอาดห้องน้ำ 1 ห้อง และครัว</li>
+                  <li>✓ อุปกรณ์และน้ำยาทำความสะอาดพื้นฐาน</li>
+                </ul>
+                <div class="cac-schedule-row">
+                  <span>5 พ.ย. 2569 • 09:00–12:00 น. • 3 ชั่วโมง</span>
+                  <span class="cac-price">฿650</span>
+                </div>
+                <button class="btn-primary-block" onclick="navigateTo('page6')">ดำเนินการชำระเงิน</button>
+              </div>
+
+              <!-- Message 6 (Provider Confirmation) -->
+              <div class="chat-bubble-row incoming">
+                <div class="chat-bubble-content">
+                  <p>สุภาวดี • ยืนยันตามรายละเอียดนี้ค่ะ • 10:12 น.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Input Box -->
+            <form class="chat-input-container" onsubmit="sendChatMessage(event)">
+              <div class="chat-input-wrap">
+                <input type="text" id="chatInputMessage" placeholder="พิมพ์ข้อความถึงสุภาวดี..." class="chat-input-text">
+                <button type="submit" class="btn-send-chat">ส่งข้อความ</button>
+              </div>
+              <div class="chat-attachment-note">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                </svg>
+                <span>แนบรูปภาพเพื่อแจ้งจุดที่ต้องการดูแล • JPG, PNG ขนาดไม่เกิน 5 MB</span>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 8: ติดตามงานและตรวจรับงาน (Tracking & Inspection) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page8">
+      <div class="service-detail-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าแรก</a>
+          <span>/</span>
+          <a href="#page10" onclick="navigateTo('page10')">บัญชีของฉัน</a>
+          <span>/</span>
+          <span class="current">Page 6 - ติดตามงานและตรวจรับงาน</span>
+        </div>
+
+        <div class="step-page-heading">
+          <h1 class="step-main-title">ติดตามงานและตรวจรับงานส่วนบุคคล</h1>
+          <p class="step-main-subtitle">หมายเลขงาน KM-691105-024 • นัดหมาย 5 พ.ย. 2569 เวลา 09:00–12:00 น.</p>
+        </div>
+
+        <!-- Service Status 3-Step Bar -->
+        <div class="service-status-timeline-card">
+          <div class="sst-header">
+            <span class="sst-title">สถานะการให้บริการ</span>
+            <span class="status-pill-warning">ส่งมอบแล้ว • รอคุณตรวจรับงาน</span>
+          </div>
+
+          <div class="sst-steps-row">
+            <div class="sst-step completed">
+              <div class="sst-icon">✓</div>
+              <div class="sst-name">ชำระเงินแล้ว</div>
+              <div class="sst-time">2 พ.ย. 2569 • 10:18 น.</div>
+            </div>
+            <div class="sst-line active"></div>
+
+            <div class="sst-step completed">
+              <div class="sst-icon">✓</div>
+              <div class="sst-name">กำลังดำเนินการ</div>
+              <div class="sst-time">5 พ.ย. 2569 • 09:00 น.</div>
+            </div>
+            <div class="sst-line active"></div>
+
+            <div class="sst-step active">
+              <div class="sst-icon">●</div>
+              <div class="sst-name">ส่งมอบงาน</div>
+              <div class="sst-time">5 พ.ย. 2569 • 12:00 น.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="service-layout-grid">
+          <!-- Left: Inspection, Photos, Approval Actions -->
+          <div class="service-left-content">
+            <div class="form-card-block">
+              <div class="section-title-flex">
+                <h2 class="form-card-title">ตรวจสอบผลงานที่ส่งมอบ</h2>
+                <span class="subtext-muted">รูปภาพ 3 ไฟล์</span>
+              </div>
+
+              <!-- Message from provider -->
+              <div class="provider-submission-box">
+                <strong class="psb-title">ข้อความจากสุภาวดี ใจดี</strong>
+                <p class="psb-text">
+                  ทำความสะอาดครบตามแพ็กเกจแล้วค่ะ ทั้งพื้น เฟอร์นิเจอร์ ครัว และห้องน้ำ 1 ห้อง แนบภาพหลังทำงานให้ตรวจสอบ ขอบคุณที่ใช้บริการค่ะ
+                </p>
+                <span class="psb-time">ส่งมอบเมื่อ 5 พ.ย. 2569 เวลา 12:00 น.</span>
+              </div>
+
+              <!-- Inspection Photos Grid -->
+              <div class="proof-photos-grid">
+                <div class="proof-photo-item" onclick="openPhotoModal('พื้นและห้องนั่งเล่น')">
+                  <div class="proof-photo-box">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>ภาพหลังทำความสะอาด</span>
+                  </div>
+                  <div class="proof-label">พื้นและห้องนั่งเล่น</div>
+                  <a href="javascript:void(0)" class="file-link">ห้องนั่งเล่น.jpg • ดูไฟล์</a>
+                </div>
+
+                <div class="proof-photo-item" onclick="openPhotoModal('ห้องครัว')">
+                  <div class="proof-photo-box">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>ภาพหลังทำความสะอาด</span>
+                  </div>
+                  <div class="proof-label">ห้องครัว</div>
+                  <a href="javascript:void(0)" class="file-link">ห้องครัว.jpg • ดูไฟล์</a>
+                </div>
+
+                <div class="proof-photo-item" onclick="openPhotoModal('ห้องน้ำ 1 ห้อง')">
+                  <div class="proof-photo-box">
+                    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>ภาพหลังทำความสะอาด</span>
+                  </div>
+                  <div class="proof-label">ห้องน้ำ 1 ห้อง</div>
+                  <a href="javascript:void(0)" class="file-link">ห้องน้ำ.jpg • ดูไฟล์</a>
+                </div>
+              </div>
+
+              <!-- Checklist -->
+              <div class="inspection-checklist-box">
+                <h4 class="icb-title">รายการงานตามข้อตกลง</h4>
+                <ul class="included-list">
+                  <li><span class="check-icon">✓</span> กวาด ดูดฝุ่น และถูพื้นทุกห้อง</li>
+                  <li><span class="check-icon">✓</span> เช็ดฝุ่นเฟอร์นิเจอร์และพื้นผิวทั่วไป</li>
+                  <li><span class="check-icon">✓</span> ทำความสะอาดห้องน้ำ 1 ห้อง และครัว</li>
+                  <li><span class="check-icon">✓</span> อุปกรณ์และน้ำยาทำความสะอาดพื้นฐาน</li>
+                </ul>
+              </div>
+
+              <!-- Approval Action Section -->
+              <div class="release-escrow-action-card">
+                <h3 class="reac-title">ตรวจรับงานก่อนปล่อยเงิน</h3>
+                <p class="reac-desc">
+                  กรุณาตรวจสอบผลงานให้ครบถ้วน เมื่อกดอนุมัติ ระบบจะปล่อยเงินที่พักไว้ ฿650 ให้สุภาวดี ใจดี และเปลี่ยนสถานะงานเป็นเสร็จสมบูรณ์
+                </p>
+
+                <div class="action-buttons-stack">
+                  <button class="btn-green-approve" onclick="navigateTo('page9')">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    ตรวจสอบงานและอนุมัติรับงาน
+                  </button>
+
+                  <div class="secondary-actions-row">
+                    <button class="btn-amber-revise" onclick="alert('ส่งคำขอแก้ไขงานไปยังสุภาวดี ใจดี แล้ว')">ส่งคำขอแก้ไขงาน</button>
+                    <a href="javascript:void(0)" class="dispute-link" onclick="alert('เปิดฟอร์มแจ้งข้อพิพาท/ขอคืนเงิน')">แจ้งข้อพิพาท/ขอคืนเงิน</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Summary & Escrow Box -->
+          <div class="service-right-booking">
+            <div class="booking-package-card">
+              <div class="summary-header-row">
+                <h3 class="booking-card-title">สรุปการจอง</h3>
+                <span class="status-pill-warning">รอตรวจรับงาน</span>
+              </div>
+              <div class="order-id-label">หมายเลขงาน KM-691105-024</div>
+
+              <div class="provider-mini-card">
+                <div class="pmc-avatar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div>
+                  <div class="pmc-name">สุภาวดี ใจดี</div>
+                  <div class="pmc-verified">ยืนยันตัวตนแล้ว • แม่บ้าน</div>
+                </div>
+              </div>
+
+              <div class="order-service-heading">
+                <strong>ทำความสะอาดคอนโดและบ้าน</strong>
+                <span>คอนโดสะอาดสบาย</span>
+                <span class="sub-specs">พื้นที่ไม่เกิน 40 ตร.ม. • แม่บ้าน 1 คน<br>ระยะเวลา 3 ชั่วโมง</span>
+              </div>
+
+              <div class="order-schedule-info">
+                <div class="osi-row">
+                  <span>วันที่นัดหมาย</span>
+                  <strong>5 พ.ย. 2569</strong>
+                </div>
+                <div class="osi-row">
+                  <span>เวลาบริการ</span>
+                  <strong>09:00–12:00 น.</strong>
+                </div>
+                <div class="osi-location">คอนโดของคุณพิมพ์ชนก • ห้วยขวาง กรุงเทพฯ</div>
+              </div>
+
+              <div class="order-price-breakdown">
+                <div class="osi-row">
+                  <span>ราคาที่ตกลง</span>
+                  <strong>฿650</strong>
+                </div>
+              </div>
+
+              <!-- Escrow Status Card -->
+              <div class="escrow-card-highlight">
+                <div class="ech-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  เงินยังอยู่ในระบบประกันกลาง
+                </div>
+                <div class="escrow-locked-amount">
+                  <span>ยอดที่พักไว้</span>
+                  <strong>฿650</strong>
+                </div>
+                <div class="ech-desc">
+                  ยังไม่โอนให้ผู้ให้บริการจนกว่าคุณจะอนุมัติรับงาน หากงานไม่ตรงข้อตกลง สามารถขอแก้ไขหรือแจ้งข้อพิพาทได้
+                </div>
+              </div>
+
+              <button class="btn-outline-block" onclick="navigateTo('page7')">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                พูดคุยกับผู้ให้บริการ
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 9: ประเมินและให้คะแนน (Review & Rating) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page9">
+      <div class="service-detail-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าแรก</a>
+          <span>/</span>
+          <a href="#page10" onclick="navigateTo('page10')">บัญชีของฉัน</a>
+          <span>/</span>
+          <span class="current">Page 7 - ประเมินและให้คะแนน</span>
+        </div>
+
+        <div class="step-page-heading">
+          <h1 class="step-main-title">ประเมินและให้คะแนน</h1>
+          <p class="step-main-subtitle">ขอบคุณที่ใช้บริการ แบ่งปันประสบการณ์ของคุณเพื่อช่วยให้คนใกล้บ้านเลือกบริการได้อย่างมั่นใจขึ้น</p>
+        </div>
+
+        <!-- Success Banner -->
+        <div class="job-completed-banner">
+          <div class="jcb-left">
+            <div class="jcb-icon">✓</div>
+            <div>
+              <strong class="jcb-title">งานเสร็จสมบูรณ์ • อนุมัติรับงานแล้ว</strong>
+              <p class="jcb-text">คุณอนุมัติรับงานเมื่อ 5 พ.ย. 2569 เวลา 12:30 น. ระบบปล่อยเงิน ฿650 ให้สุภาวดี ใจดี เรียบร้อยแล้ว</p>
+            </div>
+          </div>
+          <span class="status-pill-warning">รอให้คะแนน</span>
+        </div>
+
+        <div class="service-layout-grid">
+          <!-- Left: Rating Card Form -->
+          <div class="service-left-content">
+            <div class="form-card-block">
+              <h2 class="form-card-title">รีวิวบริการของคุณ</h2>
+
+              <!-- Provider preview -->
+              <div class="provider-mini-card">
+                <div class="pmc-avatar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div>
+                  <div class="pmc-name">สุภาวดี ใจดี</div>
+                  <div class="pmc-verified">ยืนยันตัวตนแล้ว • แม่บ้าน</div>
+                </div>
+              </div>
+
+              <!-- Interactive Star Rating -->
+              <div class="star-rating-form-block">
+                <h3 class="srf-title">ให้คะแนนดาวและรีวิวบริการ</h3>
+                <p class="srf-question">คุณพึงพอใจกับบริการครั้งนี้มากน้อยแค่ไหน?</p>
+
+                <div class="interactive-stars-row">
+                  <div class="stars-picker" id="starsPicker">
+                    <span class="star-interactive active" data-rating="1" onclick="setRating(1)">★</span>
+                    <span class="star-interactive active" data-rating="2" onclick="setRating(2)">★</span>
+                    <span class="star-interactive active" data-rating="3" onclick="setRating(3)">★</span>
+                    <span class="star-interactive active" data-rating="4" onclick="setRating(4)">★</span>
+                    <span class="star-interactive active" data-rating="5" onclick="setRating(5)">★</span>
+                  </div>
+                  <div class="rating-verbal-score">
+                    <strong class="score-num" id="scoreNum">5 / 5</strong>
+                    <span class="score-text" id="scoreText">ดีเยี่ยม</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">เขียนรีวิวบริการ</label>
+                  <textarea class="form-textarea" rows="4" id="reviewTextInput">มาตรงเวลา เตรียมอุปกรณ์มาครบ ทำความสะอาดพื้นและเฟอร์นิเจอร์เรียบร้อย โดยเฉพาะครัวกับห้องน้ำสะอาดมากค่ะ งานครบตามที่ตกลง คุ้มค่ากับราคา ฿650 จะกลับมาใช้บริการอีกค่ะ</textarea>
+                  <span class="input-hint">เล่าประสบการณ์จริงเกี่ยวกับคุณภาพงาน ความตรงต่อเวลา และการสื่อสาร</span>
+                </div>
+
+                <div class="review-submit-footer">
+                  <span class="author-disclaimer">รีวิวจะแสดงบนโปรไฟล์ของผู้ให้บริการในชื่อ พิมพ์ชนก ส.</span>
+                  <button class="btn-primary-action" onclick="submitReviewAction()">ส่งรีวิว</button>
+                </div>
+              </div>
+
+              <!-- Helpful review guidelines -->
+              <div class="review-tips-box">
+                <div class="rtb-title">💡 รีวิวที่เป็นประโยชน์ เริ่มจากประสบการณ์จริง</div>
+                <p class="rtb-desc">
+                  กรุณาใช้ถ้อยคำสุภาพ และไม่ระบุเบอร์โทรศัพท์ ที่อยู่ หรือข้อมูลส่วนตัวในรีวิว ความคิดเห็นของคุณช่วยพัฒนาคุณภาพบริการในชุมชน
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Summary Card (Completed) -->
+          <div class="service-right-booking">
+            <div class="booking-package-card">
+              <div class="summary-header-row">
+                <h3 class="booking-card-title">สรุปการจอง</h3>
+                <span class="status-pill-success">เสร็จสมบูรณ์</span>
+              </div>
+              <div class="order-id-label">หมายเลขงาน KM-691105-024</div>
+
+              <div class="provider-mini-card">
+                <div class="pmc-avatar">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+                <div>
+                  <div class="pmc-name">สุภาวดี ใจดี</div>
+                  <div class="pmc-verified">ยืนยันตัวตนแล้ว • แม่บ้าน</div>
+                </div>
+              </div>
+
+              <div class="order-service-heading">
+                <strong>ทำความสะอาดคอนโดและบ้าน</strong>
+                <span>คอนโดสะอาดสบาย</span>
+                <span class="sub-specs">พื้นที่ไม่เกิน 40 ตร.ม. • แม่บ้าน 1 คน<br>ระยะเวลา 3 ชั่วโมง</span>
+              </div>
+
+              <div class="order-schedule-info">
+                <div class="osi-row">
+                  <span>วันที่นัดหมาย</span>
+                  <strong>5 พ.ย. 2569</strong>
+                </div>
+                <div class="osi-row">
+                  <span>เวลาบริการ</span>
+                  <strong>09:00–12:00 น.</strong>
+                </div>
+                <div class="osi-location">คอนโดของคุณพิมพ์ชนก • ห้วยขวาง กรุงเทพฯ</div>
+              </div>
+
+              <div class="order-price-breakdown">
+                <div class="osi-row total-order-row">
+                  <strong>ราคาที่ตกลง</strong>
+                  <strong class="total-big">฿650</strong>
+                </div>
+              </div>
+
+              <div class="escrow-paid-out-box">
+                <div class="epb-title">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                  ชำระเงินให้ผู้ให้บริการแล้ว
+                </div>
+                <div class="epb-desc">
+                  ยอด ฿650 จากระบบประกันกลางถูกปล่อยหลังคุณอนุมัติรับงาน ไม่มียอดค้างชำระสำหรับงานนี้
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- PAGE 10: โปรไฟล์และข้อมูลส่วนตัว (User Profile) -->
+    <!-- ======================================================================= -->
+    <section class="page-view" id="page10">
+      <div class="profile-page-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-trail">
+          <a href="#page2" onclick="navigateTo('page2')">หน้าหลัก</a>
+          <span>/</span>
+          <a href="#page10" onclick="navigateTo('page10')">บัญชีของฉัน</a>
+          <span>/</span>
+          <span class="current">โปรไฟล์และข้อมูลส่วนตัว</span>
+        </div>
+
+        <div class="profile-page-header">
+          <div>
+            <h1 class="step-main-title">โปรไฟล์และข้อมูลส่วนตัว</h1>
+            <p class="step-main-subtitle">จัดการโปรไฟล์ ข้อมูลสำหรับใช้บริการ และความคิดเห็นจากผู้ร่วมงาน</p>
+          </div>
+          <span class="view-mode-pill">🔒 มุมมองเจ้าของบัญชี</span>
+        </div>
+
+        <!-- User Bio & Identity Card -->
+        <div class="user-identity-card">
+          <div class="uic-main">
+            <div class="uic-avatar-wrap">
+              <div class="uic-avatar-box">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              </div>
+              <button class="change-photo-btn">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                เปลี่ยนรูปโปรไฟล์
+              </button>
+            </div>
+
+            <div class="uic-text-wrap">
+              <div class="uic-name-row">
+                <h2 class="uic-name">พิมพ์ชนก ใจดี</h2>
+                <span class="public-badge">โปรไฟล์สาธารณะ</span>
+              </div>
+              <div class="uic-roles">ผู้ใช้งานทั่วไป / ผู้ว่าจ้าง</div>
+              <div class="uic-meta-info">สมาชิกตั้งแต่ มกราคม 2569 • กรุงเทพฯ</div>
+              <div class="uic-rating-row">
+                <span class="star-rating">★ 4.7</span>
+                <span>จาก 5 · 3 รีวิวจากผู้ร่วมงาน</span>
+              </div>
+
+              <!-- Bio Box -->
+              <div class="uic-bio-box">
+                <div class="bio-label-row">
+                  <strong>แนะนำตัว / เกี่ยวกับฉัน</strong>
+                  <span class="bio-scope">ข้อความนี้จะแสดงบนโปรไฟล์สาธารณะ</span>
+                </div>
+                <p class="bio-text">
+                  ชอบดูแลบ้านและสวนให้เป็นพื้นที่พักผ่อน มองหาผู้ให้บริการที่ใส่ใจรายละเอียด ตรงต่อเวลา และพูดคุยเรื่องงานได้ชัดเจนค่ะ
+                </p>
+                <div class="bio-edit-hint">กดแก้ไขข้อมูลส่วนตัวเพื่อเปลี่ยนข้อความ • สูงสุด 300 ตัวอักษร</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="uic-actions">
+            <button class="btn-edit-profile" onclick="alert('เปิดหน้าต่างแก้ไขข้อมูลส่วนตัว')">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              แก้ไขข้อมูลส่วนตัว
+            </button>
+            <span class="owner-only-note">เจ้าของบัญชีเท่านั้นที่แก้ไขได้</span>
+          </div>
+        </div>
+
+        <!-- 3 Cards Grid -->
+        <div class="profile-cards-grid">
+          <!-- Card 1: Categories of Interest -->
+          <div class="profile-info-card">
+            <h3 class="pic-title">ประเภทงานที่สนใจ / ความเชี่ยวชาญ</h3>
+            <p class="pic-subtitle">เลือกประเภทงานเพื่อให้เราช่วยแนะนำบริการที่เหมาะกับคุณ</p>
+
+            <div class="interest-tags-wrap" id="interestTags">
+              <span class="tag-pill">แม่บ้าน <button onclick="this.parentElement.remove()">×</button></span>
+              <span class="tag-pill">ช่างไฟ <button onclick="this.parentElement.remove()">×</button></span>
+              <span class="tag-pill">จัดสวน <button onclick="this.parentElement.remove()">×</button></span>
+            </div>
+
+            <button class="btn-add-tag" onclick="promptAddTag()">+ เพิ่ม/แก้ไขประเภทงาน</button>
+
+            <div class="pic-footnote">
+              ความสนใจใช้เพื่อแนะนำบริการให้คุณเท่านั้น ไม่แสดงบนโปรไฟล์สาธารณะ
+            </div>
+
+            <div class="visibility-guide-box">
+              <strong>ใครเห็นข้อมูลอะไรบ้าง?</strong>
+              <p><strong>สาธารณะ:</strong> รูป ชื่อ ประเภทผู้ใช้ คำแนะนำตัว และความคิดเห็น/รีวิว</p>
+              <p><strong>เฉพาะคุณ:</strong> ความสนใจ อีเมล เบอร์โทร ที่อยู่ และข้อมูลใบกำกับภาษี</p>
+            </div>
+          </div>
+
+          <!-- Card 2: Contact & Addresses -->
+          <div class="profile-info-card card-span-2">
+            <div class="pic-header-flex">
+              <div>
+                <h3 class="pic-title">ข้อมูลติดต่อและที่อยู่</h3>
+                <p class="pic-subtitle">ข้อมูลส่วนนี้ไม่แสดงต่อสาธารณะ ใช้สำหรับติดต่อ เข้ารับบริการ และออกเอกสารเท่านั้น</p>
+              </div>
+              <span class="private-badge">🔒 เฉพาะเจ้าของบัญชี</span>
+            </div>
+
+            <!-- Contact Row -->
+            <div class="contact-inputs-grid">
+              <div class="contact-box">
+                <div class="cb-label">อีเมลที่เชื่อมโยง • ยืนยันแล้ว</div>
+                <div class="cb-value">pimchanok@example.com</div>
+                <a href="javascript:void(0)" class="cb-edit">แก้ไข</a>
+              </div>
+              <div class="contact-box">
+                <div class="cb-label">เบอร์โทรศัพท์ • ยืนยันแล้ว</div>
+                <div class="cb-value">08X XXX 1234</div>
+                <a href="javascript:void(0)" class="cb-edit">แก้ไข</a>
+              </div>
+            </div>
+
+            <!-- Saved Addresses -->
+            <div class="saved-addresses-block">
+              <div class="sab-header">
+                <strong>ที่อยู่ที่บันทึกไว้ (2)</strong>
+                <button class="btn-add-address">+ เพิ่มที่อยู่</button>
+              </div>
+
+              <div class="addresses-two-cards">
+                <!-- Address 1 -->
+                <div class="address-mini-card">
+                  <div class="amc-header">
+                    <span class="amc-title">บ้าน • ค่าเริ่มต้น</span>
+                    <a href="javascript:void(0)" class="amc-edit">แก้ไข</a>
+                  </div>
+                  <div class="amc-person">พิมพ์ชนก ใจดี • 08X XXX 1234</div>
+                  <div class="amc-text">
+                    88/12 ซอยบ้านตัวอย่าง แขวงลาดพร้าว เขตลาดพร้าว กรุงเทพฯ 10230
+                  </div>
+                </div>
+
+                <!-- Address 2 -->
+                <div class="address-mini-card">
+                  <div class="amc-header">
+                    <span class="amc-title">คอนโด</span>
+                    <a href="javascript:void(0)" class="amc-edit">แก้ไข</a>
+                  </div>
+                  <div class="amc-person">พิมพ์ชนก ใจดี • 08X XXX 1234</div>
+                  <div class="amc-text">
+                    25/8 อาคารตัวอย่าง ถนนพหลโยธิน แขวงสามเสนใน เขตพญาไท กรุงเทพฯ 10400
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Default Tax Information -->
+            <div class="tax-info-summary-block">
+              <div class="tis-header">
+                <div>
+                  <strong>ข้อมูลใบกำกับภาษีเริ่มต้น</strong>
+                  <div class="tis-sub">บุคคลธรรมดา • พิมพ์ชนก ใจดี</div>
+                  <div class="tis-id">เลขผู้เสียภาษี: X XXXX XXXXX XX X</div>
+                </div>
+                <button class="btn-edit-tax">แก้ไขข้อมูลภาษี</button>
+              </div>
+              <div class="tis-meta-row">
+                <span>ที่อยู่ใบกำกับภาษี: ใช้ที่อยู่บ้าน (ค่าเริ่มต้น)</span>
+                <span>อีเมลรับเอกสาร: pimchanok@example.com</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Public Comments & Reviews Section -->
+        <div class="public-comments-block">
+          <div class="comments-section-header">
+            <div>
+              <div class="csh-title-row">
+                <h3 class="pic-title">ความคิดเห็นและรีวิวบนโปรไฟล์ (Public Comments)</h3>
+                <span class="public-badge">👁️ สาธารณะ</span>
+              </div>
+              <p class="pic-subtitle">ทุกคนสามารถอ่านได้ • กรุณาแสดงความคิดเห็นอย่างสุภาพและไม่เปิดเผยข้อมูลส่วนตัว</p>
+            </div>
+          </div>
+
+          <!-- Comment input box -->
+          <div class="comment-input-box">
+            <div class="cib-header">
+              <span>เขียนความคิดเห็นบนโปรไฟล์นี้...</span>
+              <span class="cib-hint">พื้นที่สำหรับผู้เยี่ยมชมที่เข้าสู่ระบบ</span>
+            </div>
+            <textarea class="form-textarea" rows="3" placeholder="แบ่งปันประสบการณ์หรือฝากข้อความถึงเจ้าของโปรไฟล์"></textarea>
+            <div class="cib-footer">
+              <span class="cib-note">คะแนนดาวมาจากรีวิวหลังจบงาน • ความคิดเห็นทั่วไปไม่จำเป็นต้องให้คะแนน</span>
+              <button class="btn-primary-action" onclick="alert('ส่งความคิดเห็นแล้ว!')">โพสต์ความคิดเห็น</button>
+            </div>
+          </div>
+
+          <!-- Feed tabs -->
+          <div class="comments-feed-filter-row">
+            <div class="cff-tabs">
+              <button class="cff-tab active">ทั้งหมด (3)</button>
+              <button class="cff-tab">รีวิวจากงาน (3)</button>
+            </div>
+            <div class="cff-sort">เรียงตาม: ล่าสุด ▾</div>
+          </div>
+
+          <!-- Comments Feed -->
+          <div class="comments-feed-list">
+            <!-- Comment 1 -->
+            <div class="comment-feed-item">
+              <div class="cfi-avatar" style="background:#e0f2fe; color:#0369a1;">ส</div>
+              <div class="cfi-content">
+                <div class="cfi-header">
+                  <div>
+                    <strong class="cfi-author">สมชาย งานช่าง</strong>
+                    <span class="cfi-meta">ช่างไฟ • ผู้ให้บริการ · 28 ตุลาคม 2569</span>
+                  </div>
+                  <span class="cfi-rating">★★★★★ 5.0</span>
+                </div>
+                <p class="cfi-text">
+                  แจ้งรายละเอียดปัญหาและส่งรูปให้ดูก่อนเข้าหน้างาน ทำให้เตรียมอุปกรณ์ได้ครบ นัดหมายชัดเจนและตรวจรับงานเรียบร้อย ขอบคุณที่ไว้วางใจครับ
+                </p>
+                <div class="cfi-reply-btn">↩ ตอบกลับ</div>
+
+                <!-- Nested Reply -->
+                <div class="comment-feed-item nested-reply">
+                  <div class="cfi-avatar" style="background:#fce7f3; color:#be185d;">พ</div>
+                  <div class="cfi-content">
+                    <div class="cfi-header">
+                      <div>
+                        <strong class="cfi-author">พิมพ์ชนก ใจดี</strong>
+                        <span class="owner-tag">เจ้าของโปรไฟล์</span>
+                        <span class="cfi-meta">· 29 ตุลาคม 2569</span>
+                      </div>
+                    </div>
+                    <p class="cfi-text">
+                      ขอบคุณค่ะ แก้ปัญหาได้ตรงจุดและอธิบายวิธีดูแลต่อได้เข้าใจง่ายมากค่ะ
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Comment 2 -->
+            <div class="comment-feed-item">
+              <div class="cfi-avatar" style="background:#fef3c7; color:#b45309;">ว</div>
+              <div class="cfi-content">
+                <div class="cfi-header">
+                  <div>
+                    <strong class="cfi-author">วราภรณ์ สะอาดดี</strong>
+                    <span class="cfi-meta">แม่บ้าน • ผู้ให้บริการ · 20 ตุลาคม 2569</span>
+                  </div>
+                  <span class="cfi-rating">★★★★★ 5.0</span>
+                </div>
+                <p class="cfi-text">
+                  คุณพิมพ์ชนกสื่อสารสุภาพ แจ้งพื้นที่ที่ต้องการดูแลเป็นพิเศษไว้ชัดเจน และจัดเตรียมพื้นที่ให้ทำงานสะดวก ยินดีให้บริการอีกครั้งค่ะ
+                </p>
+                <div class="cfi-reply-btn">↩ ตอบกลับ</div>
+              </div>
+            </div>
+
+            <!-- Comment 3 -->
+            <div class="comment-feed-item">
+              <div class="cfi-avatar" style="background:#dcfce7; color:#15803d;">ก</div>
+              <div class="cfi-content">
+                <div class="cfi-header">
+                  <div>
+                    <strong class="cfi-author">กิตติ ดูแลสวน</strong>
+                    <span class="cfi-meta">จัดสวน • ผู้ให้บริการ · 12 ตุลาคม 2569</span>
+                  </div>
+                  <span class="cfi-rating">★★★★☆ 4.0</span>
+                </div>
+                <p class="cfi-text">
+                  พูดคุยขอบเขตงานและงบประมาณเข้าใจตรงกัน มีปรับเวลานัดเล็กน้อยแต่แจ้งล่วงหน้า ทำงานได้ราบรื่นและตรวจรับงานตรงเวลาครับ
+                </p>
+                <div class="cfi-reply-btn">↩ ตอบกลับ</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="comments-end-note">
+            <span>แสดงครบทั้ง 3 รีวิวแล้ว</span>
+            <p>ชื่อ รูปบุคคล ที่อยู่ และรีวิวเป็นข้อมูลสมมติสำหรับประกอบการออกแบบ หน้าจอตัวอย่าง • ไม่บันทึกข้อมูลหรือโพสต์จริง</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- GLOBAL FOOTER (Present on all pages) -->
+  <!-- ========================================================================= -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        © 2569 SarapatRabChang • บริการใกล้บ้าน อุ่นใจทุกงาน
+      </div>
+      <div class="footer-right">
+        <a href="javascript:void(0)" class="footer-link">ศูนย์ช่วยเหลือ</a>
+        <a href="javascript:void(0)" class="footer-link">ข้อกำหนดการใช้งาน</a>
+        <a href="javascript:void(0)" class="footer-link">นโยบายความเป็นส่วนตัว</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal for Work/Inspection Photos -->
+  <div class="photo-modal-overlay" id="photoModalOverlay" onclick="closePhotoModal()">
+    <div class="photo-modal-card" onclick="event.stopPropagation()">
+      <div class="pmc-header">
+        <h4 id="photoModalTitle">ภาพผลงาน</h4>
+        <button class="pmc-close-btn" onclick="closePhotoModal()">×</button>
+      </div>
+      <div class="pmc-image-canvas">
+        <div class="mockup-full-photo">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="#94a3b8" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          <span id="photoModalDesc">ภาพหลังทำความสะอาดจริง</span>
+        </div>
+      </div>
+      <div class="pmc-footer">
+        <span class="meta-tag">ตรวจสอบคุณภาพงาน</span>
+        <button class="btn-primary-action" onclick="closePhotoModal()">ปิดหน้าต่าง</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
