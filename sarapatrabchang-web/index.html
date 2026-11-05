@@ -69,15 +69,182 @@
             </svg>
             <span class="badge-dot"></span>
           </button>
-          <div class="user-menu-btn" onclick="navigateTo('page10')">
-            <div class="user-avatar-small">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-              </svg>
+          <!-- User Menu with Settings Flyout Panel -->
+          <div class="user-menu-container" id="userMenuContainer">
+            <div class="user-menu-btn" id="userMenuBtn" onclick="toggleUserMenu(event)" title="คลิกเพื่อเปิดการตั้งค่าบัญชี">
+              <div class="user-avatar-small" title="โปรไฟล์ คุณพิมพ์ชนก">
+                <svg viewBox="0 0 36 36" width="32" height="32" fill="none">
+                  <defs>
+                    <linearGradient id="userGradSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#fff7ed"/>
+                      <stop offset="100%" stop-color="#fed7aa"/>
+                    </linearGradient>
+                    <linearGradient id="userShirtSmall" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ff6b00"/>
+                      <stop offset="100%" stop-color="#e65100"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="36" height="36" rx="18" fill="url(#userGradSmall)"/>
+                  <path d="M10 14 C10 6, 26 6, 26 14 C26 20, 25 21, 24 21 C22 21, 22 17, 22 15 C20 16, 16 16, 14 15 C14 17, 14 21, 12 21 Z" fill="#18181b"/>
+                  <rect x="16" y="19" width="4" height="4" rx="1" fill="#fed7aa"/>
+                  <ellipse cx="18" cy="14" rx="5.2" ry="5.6" fill="#fde68a"/>
+                  <path d="M12.5 12 C14 9.5, 22 9.5, 23.5 12 C21.5 10.5, 14.5 10.5, 12.5 12 Z" fill="#18181b"/>
+                  <circle cx="16.2" cy="14" r="0.75" fill="#18181b"/>
+                  <circle cx="19.8" cy="14" r="0.75" fill="#18181b"/>
+                  <circle cx="15.2" cy="15.5" r="0.9" fill="#f87171" opacity="0.55"/>
+                  <circle cx="20.8" cy="15.5" r="0.9" fill="#f87171" opacity="0.55"/>
+                  <path d="M16.8 16.3 Q18 17.3 19.2 16.3" stroke="#ea580c" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+                  <path d="M8 32 C8 24.5, 13 22, 18 22 C23 22, 28 24.5, 28 32 Z" fill="url(#userShirtSmall)"/>
+                  <path d="M15.5 22 L18 25.5 L20.5 22 Z" fill="#ffffff"/>
+                </svg>
+              </div>
+              <div class="user-name-wrap">
+                <span class="user-account-label">บัญชีของฉัน</span>
+                <span class="user-name-title" id="headerUserName">คุณพิมพ์ชนก ▾</span>
+              </div>
             </div>
-            <div class="user-name-wrap">
-              <span class="user-account-label">บัญชีของฉัน</span>
-              <span class="user-name-title" id="headerUserName">คุณพิมพ์ชนก ▾</span>
+
+            <!-- Settings Dropdown Panel -->
+            <div class="user-settings-dropdown" id="userSettingsDropdown">
+              <!-- Dropdown Header / Identity -->
+              <div class="usd-header">
+                <div class="usd-user-row">
+                  <div class="usd-avatar">
+                    <svg viewBox="0 0 36 36" width="44" height="44" fill="none">
+                      <rect width="36" height="36" rx="18" fill="url(#userGradSmall)"/>
+                      <path d="M10 14 C10 6, 26 6, 26 14 C26 20, 25 21, 24 21 C22 21, 22 17, 22 15 C20 16, 16 16, 14 15 C14 17, 14 21, 12 21 Z" fill="#18181b"/>
+                      <rect x="16" y="19" width="4" height="4" rx="1" fill="#fed7aa"/>
+                      <ellipse cx="18" cy="14" rx="5.2" ry="5.6" fill="#fde68a"/>
+                      <circle cx="16.2" cy="14" r="0.75" fill="#18181b"/>
+                      <circle cx="19.8" cy="14" r="0.75" fill="#18181b"/>
+                      <circle cx="15.2" cy="15.5" r="0.9" fill="#f87171" opacity="0.55"/>
+                      <circle cx="20.8" cy="15.5" r="0.9" fill="#f87171" opacity="0.55"/>
+                      <path d="M16.8 16.3 Q18 17.3 19.2 16.3" stroke="#ea580c" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+                      <path d="M8 32 C8 24.5, 13 22, 18 22 C23 22, 28 24.5, 28 32 Z" fill="url(#userShirtSmall)"/>
+                      <path d="M15.5 22 L18 25.5 L20.5 22 Z" fill="#ffffff"/>
+                    </svg>
+                  </div>
+                  <div class="usd-info">
+                    <div class="usd-name">พิมพ์ชนก ใจดี</div>
+                    <div class="usd-role-badge">👑 สมาชิกผู้ว่าจ้าง (ยืนยันตัวตนแล้ว)</div>
+                    <div class="usd-email">pimchanok.j@sarapatrabchang.local</div>
+                  </div>
+                </div>
+                <button class="usd-view-profile-btn" onclick="navigateTo('page10'); closeUserMenu();">
+                  ดูและแก้ไขโปรไฟล์ส่วนตัว →
+                </button>
+              </div>
+
+              <!-- Quick Stats / Balances -->
+              <div class="usd-stats-bar">
+                <div class="usd-stat-box" onclick="navigateTo('page8'); closeUserMenu();">
+                  <span class="usd-stat-val">1 งาน</span>
+                  <span class="usd-stat-lbl">กำลังดำเนินการ</span>
+                </div>
+                <div class="usd-stat-box" onclick="navigateTo('page7'); closeUserMenu();">
+                  <span class="usd-stat-val orange">1 แชท</span>
+                  <span class="usd-stat-lbl">ข้อความใหม่</span>
+                </div>
+                <div class="usd-stat-box" onclick="navigateTo('page6'); closeUserMenu();">
+                  <span class="usd-stat-val">฿0.00</span>
+                  <span class="usd-stat-lbl">ยอดเงินในวอลเล็ท</span>
+                </div>
+              </div>
+
+              <!-- Menu Items Group: Settings -->
+              <div class="usd-menu-section">
+                <div class="usd-section-title">การตั้งค่าที่สำคัญ</div>
+                
+                <a href="javascript:void(0)" class="usd-item" onclick="navigateTo('page10'); closeUserMenu();">
+                  <div class="usd-item-icon orange">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  </div>
+                  <div class="usd-item-text">
+                    <strong>ข้อมูลส่วนตัว & ความปลอดภัย</strong>
+                    <span>แก้ไขชื่อ เบอร์โทร และรหัสผ่าน</span>
+                  </div>
+                  <span class="usd-item-arrow">›</span>
+                </a>
+
+                <a href="javascript:void(0)" class="usd-item" onclick="navigateTo('page10'); closeUserMenu();">
+                  <div class="usd-item-icon blue">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                  </div>
+                  <div class="usd-item-text">
+                    <strong>จัดการที่อยู่จัดส่ง & ปักหมุด</strong>
+                    <span>บันทึกบ้าน คอนโด หรือที่ทำงาน (2 ที่อยู่)</span>
+                  </div>
+                  <span class="usd-item-arrow">›</span>
+                </a>
+
+                <a href="javascript:void(0)" class="usd-item" onclick="navigateTo('page6'); closeUserMenu();">
+                  <div class="usd-item-icon green">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+                  </div>
+                  <div class="usd-item-text">
+                    <strong>บัตรเครดิต & ช่องทางชำระเงิน</strong>
+                    <span>จัดการบัตรเครดิต / พร้อมเพย์ / ใบกำกับภาษี</span>
+                  </div>
+                  <span class="usd-item-arrow">›</span>
+                </a>
+
+                <div class="usd-item no-hover">
+                  <div class="usd-item-icon purple">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                  </div>
+                  <div class="usd-item-text">
+                    <strong>การแจ้งเตือนงานผ่าน SMS/LINE</strong>
+                    <span>รับสถานะงานและใบเสร็จอัตโนมัติ</span>
+                  </div>
+                  <label class="usd-toggle">
+                    <input type="checkbox" checked onchange="alert('บันทึกการตั้งค่าการแจ้งเตือนเรียบร้อย')">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Preferences / Theme Accent -->
+              <div class="usd-menu-section">
+                <div class="usd-section-title">การแสดงผล & ระบบ</div>
+                
+                <div class="usd-item no-hover">
+                  <div class="usd-item-icon orange">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path></svg>
+                  </div>
+                  <div class="usd-item-text">
+                    <strong>ธีมสีแอพพลิเคชัน</strong>
+                    <span>ส้ม ดำ ขาว (SarapatRabChang Pro)</span>
+                  </div>
+                  <span class="usd-theme-indicator">
+                    <span class="dot orange"></span>
+                    <span class="dot black"></span>
+                    <span class="dot white"></span>
+                  </span>
+                </div>
+
+                <div class="usd-item no-hover">
+                  <div class="usd-item-icon gray">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                  </div>
+                  <div class="usd-item-text">
+                    <strong>ภาษา (Language)</strong>
+                    <span>ภาษาไทย (Thai)</span>
+                  </div>
+                  <span class="usd-lang-pill">TH 🇹🇭</span>
+                </div>
+              </div>
+
+              <!-- Footer / Sign out -->
+              <div class="usd-footer">
+                <a href="javascript:void(0)" class="usd-footer-link" onclick="alert('ศูนย์ช่วยเหลือ SarapatRabChang พร้อมให้บริการ โทร 02-000-0000');">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                  ศูนย์ช่วยเหลือ
+                </a>
+                <button class="usd-logout-btn" onclick="navigateTo('page1'); closeUserMenu();">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                  ออกจากระบบ
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -257,135 +424,236 @@
     <!-- ======================================================================= -->
     <section class="page-view" id="page2">
       <div class="home-page-container">
-        <!-- Hero Section -->
-        <div class="home-hero">
-          <div class="hero-greeting">สวัสดี คุณพิมพ์ชนก วันนี้ให้เราช่วยอะไรดี?</div>
-          <h1 class="hero-title">ค้นหาช่างและผู้ช่วยมืออาชีพใกล้บ้านคุณ</h1>
-          <p class="hero-subtitle">เลือกบริการที่ต้องการ เปรียบเทียบผู้ให้บริการ และจองเวลาที่สะดวก</p>
+        <!-- Hero Section with Engaging Pro Banner -->
+        <div class="home-hero-card">
+          <div class="hero-top-badge">
+            <span class="pulse-dot"></span>
+            <span>แพลตฟอร์มรวมช่างและแม่บ้านอันดับ 1 ใกล้บ้านคุณ</span>
+          </div>
+          <div class="hero-greeting">👋 สวัสดี คุณพิมพ์ชนก วันนี้ให้เราช่วยดูแลงานบ้านเรื่องไหนดี?</div>
+          <h1 class="hero-title">
+            ค้นหาช่างและผู้ช่วยมืออาชีพ <span class="highlight-orange">ใกล้บ้านคุณ</span>
+          </h1>
+          <p class="hero-subtitle">
+            รวมช่างฝีมือดีและแม่บ้านมือโปร ตรวจสอบประวัติเข้มงวด คุ้มครองเงินด้วยระบบ Escrow ปลอดภัย 100%
+          </p>
 
           <!-- Search Widget -->
           <div class="search-widget-card">
             <div class="search-field-group">
-              <label class="search-label">พื้นที่ให้บริการ</label>
+              <label class="search-label">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                พื้นที่ให้บริการของคุณ
+              </label>
               <div class="search-input-icon-wrap">
-                <input type="text" class="search-input" value="ห้วยขวาง, กรุงเทพมหานคร">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" class="field-icon">
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                  <circle cx="12" cy="10" r="3"></circle>
-                </svg>
+                <input type="text" class="search-input" value="ห้วยขวาง, กรุงเทพมหานคร" placeholder="ระบุเขต หรือ รหัสไปรษณีย์">
+                <span class="field-icon-btn" title="ใช้ตำแหน่งปัจจุบัน">📍</span>
               </div>
             </div>
 
             <div class="search-field-group">
-              <label class="search-label">หมวดหมู่บริการ</label>
+              <label class="search-label">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                หมวดหมู่บริการ
+              </label>
               <div class="search-select-wrap">
                 <select class="search-select">
-                  <option selected>เลือกหมวดหมู่บริการ</option>
-                  <option>ทำความสะอาดคอนโดและบ้าน (แม่บ้าน)</option>
-                  <option>ช่างไฟ/ประปา</option>
-                  <option>ขนย้ายของและเฟอร์นิเจอร์</option>
-                  <option>ซ่อมเครื่องใช้ไฟฟ้า / ช่างแอร์</option>
-                  <option>จัดสวนและตัดแต่งต้นไม้</option>
+                  <option selected>เลือกหมวดหมู่บริการที่ต้องการ</option>
+                  <option>🧹 ทำความสะอาดคอนโดและบ้าน (แม่บ้าน)</option>
+                  <option>⚡ ซ่อมไฟฟ้าและประปาภายในบ้าน</option>
+                  <option>📦 บริการขนย้ายของและเฟอร์นิเจอร์</option>
+                  <option>❄️ ช่างล้างและซ่อมแอร์</option>
+                  <option>🌿 ดูแลสวนและตัดแต่งกิ่งไม้</option>
+                  <option>📺 ซ่อมเครื่องใช้ไฟฟ้าทั่วไป</option>
                 </select>
               </div>
             </div>
 
-            <button class="search-submit-btn" onclick="navigateTo('page3')">ค้นหา</button>
+            <button class="search-submit-btn" onclick="navigateTo('page3')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              ค้นหาช่างทันที
+            </button>
           </div>
 
-          <div class="popular-searches">
-            <span>ค้นหายอดนิยม:</span>
-            <a href="javascript:void(0)" onclick="navigateTo('page3')">ทำความสะอาดคอนโด</a> ·
-            <a href="javascript:void(0)" onclick="navigateTo('page4')">ซ่อมแอร์</a> ·
-            <a href="javascript:void(0)">ย้ายหอพัก</a>
+          <!-- Quick Filter Tags -->
+          <div class="popular-searches-row">
+            <span class="ps-label">🔥 บริการยอดนิยม:</span>
+            <button class="ps-chip" onclick="navigateTo('page3')">🧹 ทำความสะอาดคอนโด</button>
+            <button class="ps-chip" onclick="navigateTo('page4')">❄️ ล้างแอร์ติดผนัง</button>
+            <button class="ps-chip" onclick="navigateTo('page3')">⚡ ช่างไฟ/เปลี่ยนปลั๊ก</button>
+            <button class="ps-chip" onclick="navigateTo('page3')">📦 รถรับจ้างย้ายหอ</button>
+          </div>
+        </div>
+
+        <!-- Trust & Value Assurance Strip -->
+        <div class="trust-assurance-grid">
+          <div class="trust-item">
+            <div class="trust-icon-box orange">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="trust-text">
+              <strong>ตรวจสอบประวัติ 100%</strong>
+              <span>ผ่านการยืนยันตัวตน ID Verified</span>
+            </div>
+          </div>
+
+          <div class="trust-item">
+            <div class="trust-icon-box black">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <div class="trust-text">
+              <strong>คุ้มครองเงินด้วย Escrow</strong>
+              <span>ตรวจรับงานเรียบร้อย ช่างถึงได้รับเงิน</span>
+            </div>
+          </div>
+
+          <div class="trust-item">
+            <div class="trust-icon-box orange">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </div>
+            <div class="trust-text">
+              <strong>รีวิวเฉลี่ย 4.9 / 5 ดาว</strong>
+              <span>จากผู้ใช้งานจริงกว่า 10,000+ งาน</span>
+            </div>
+          </div>
+
+          <div class="trust-item">
+            <div class="trust-icon-box black">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="trust-text">
+              <strong>ตอบกลับไว ใน 15 นาที</strong>
+              <span>ช่างพร้อมรับงานและประเมินราคา</span>
+            </div>
           </div>
         </div>
 
         <!-- Service Categories Grid -->
         <div class="section-block">
-          <h2 class="section-heading">เลือกบริการที่คุณต้องการ</h2>
+          <div class="section-header-flex">
+            <div>
+              <h2 class="section-heading">เลือกหมวดหมู่บริการที่คุณต้องการ</h2>
+              <p class="section-subtext">ครอบคลุมทุกงานดูแลบ้าน อาคาร และงานช่างครบวงจร</p>
+            </div>
+            <span class="category-count-badge">8 หมวดหมู่ยอดนิยม</span>
+          </div>
           <div class="categories-grid">
             <div class="category-card" onclick="navigateTo('page3')">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <span class="cat-pill-badge hot">ยอดนิยม 🔥</span>
+              <div class="category-icon-box cat-maid">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 2v20M4 14l8-8 8 8"/>
                 </svg>
               </div>
-              <span class="category-name">แม่บ้าน</span>
+              <span class="category-name">แม่บ้านทำความสะอาด</span>
+              <span class="category-meta">เริ่ม ฿500</span>
             </div>
 
             <div class="category-card" onclick="navigateTo('page3')">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <span class="cat-pill-badge">จำเป็น ⚡</span>
+              <div class="category-icon-box cat-elec">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
                 </svg>
               </div>
-              <span class="category-name">ช่างไฟ/ประปา</span>
+              <span class="category-name">ช่างไฟและประปา</span>
+              <span class="category-meta">เริ่ม ฿450</span>
             </div>
 
             <div class="category-card" onclick="navigateTo('page3')">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <div class="category-icon-box cat-move">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="1" y="3" width="15" height="13"></rect>
-                  <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                  <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
                   <circle cx="5.5" cy="18.5" r="2.5"></circle>
                   <circle cx="18.5" cy="18.5" r="2.5"></circle>
                 </svg>
               </div>
-              <span class="category-name">ขนย้าย</span>
+              <span class="category-name">ขนย้ายและของหนัก</span>
+              <span class="category-meta">เริ่ม ฿800</span>
             </div>
 
             <div class="category-card" onclick="navigateTo('page4')">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <span class="cat-pill-badge hot">มาแรง ❄️</span>
+              <div class="category-icon-box cat-air">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
                   <polyline points="17 2 12 7 7 2"></polyline>
                 </svg>
               </div>
-              <span class="category-name">ซ่อมเครื่องใช้ไฟฟ้า</span>
+              <span class="category-name">ล้างและซ่อมแอร์</span>
+              <span class="category-meta">เริ่ม ฿600</span>
             </div>
 
-            <div class="category-card">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box cat-queue">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                   <circle cx="9" cy="7" r="4"></circle>
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                   <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
               </div>
-              <span class="category-name">รับจ้างต่อคิว</span>
+              <span class="category-name">รับจ้างต่อคิว/ธุระ</span>
+              <span class="category-meta">เริ่ม ฿300</span>
             </div>
 
-            <div class="category-card">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box cat-garden">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 22v-9"></path>
                   <path d="M12 13a5 5 0 0 0 5-5c0-4-5-6-5-6s-5 2-5 6a5 5 0 0 0 5 5z"></path>
                 </svg>
               </div>
-              <span class="category-name">จัดสวน</span>
+              <span class="category-name">จัดสวนและตัดกิ่งไม้</span>
+              <span class="category-meta">เริ่ม ฿700</span>
             </div>
 
-            <div class="category-card">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box cat-laundry">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"></path>
                 </svg>
               </div>
-              <span class="category-name">ซักอบรีด</span>
+              <span class="category-name">ซักอบรีด/ดูแลผ้า</span>
+              <span class="category-meta">เริ่ม ฿350</span>
             </div>
 
-            <div class="category-card">
-              <div class="category-icon-box">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <div class="category-card" onclick="navigateTo('page3')">
+              <div class="category-icon-box cat-all">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                   <rect x="3" y="3" width="7" height="7"></rect>
                   <rect x="14" y="3" width="7" height="7"></rect>
                   <rect x="14" y="14" width="7" height="7"></rect>
                   <rect x="3" y="14" width="7" height="7"></rect>
                 </svg>
               </div>
-              <span class="category-name">บริการทั้งหมด</span>
+              <span class="category-name">บริการทั้งหมด (40+)</span>
+              <span class="category-meta">ดูเพิ่มเติม →</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Escrow Guarantee Visual Banner -->
+        <div class="escrow-feature-banner">
+          <div class="efb-left">
+            <div class="efb-badge">🛡️ มาตรฐานความปลอดภัย SarapatRabChang Escrow</div>
+            <h3 class="efb-title">จ้างงานอย่างสบายใจ เงินไม่สูญหาย ช่างไม่ทิ้งงาน</h3>
+            <p class="efb-desc">
+              ระบบ SarapatRabChang จะพักเงินค่าบริการของคุณไว้ในบัญชีกลางที่ปลอดภัยอย่างสมบูรณ์ 
+              ช่างจะเริ่มงานทันที และคุณจะปล่อยเงินให้ช่างเมื่อตรวจสอบความเรียบร้อยของงานเสร็จสิ้นเท่านั้น
+            </p>
+            <div class="efb-features-row">
+              <span class="efb-tag">✔️ ไม่ต้องสำรองเงินสด</span>
+              <span class="efb-tag">✔️ ประกันงานทุกชิ้น 7 วัน</span>
+              <span class="efb-tag">✔️ คืนเงิน 100% หากช่างผิดสัญญา</span>
+            </div>
+          </div>
+          <div class="efb-right">
+            <div class="efb-stat-card">
+              <div class="efb-stat-number">100%</div>
+              <div class="efb-stat-label">รับประกันความพึงพอใจ</div>
+              <div class="efb-stat-sub">ดูแลทุกคำสั่งซื้อตลอดการทำงาน</div>
             </div>
           </div>
         </div>
@@ -395,34 +663,70 @@
           <div class="section-header-flex">
             <div>
               <h2 class="section-heading">ผู้ให้บริการแนะนำใกล้คุณ</h2>
-              <p class="section-subtext">ผู้ให้บริการที่ได้รับรีวิวดี พร้อมดูแลงานของคุณ</p>
+              <p class="section-subtext">ผ่านการตรวจสอบประวัติอาชญากรรม รีวิวการันตี พร้อมเริ่มงานทันที</p>
             </div>
-            <a href="javascript:void(0)" class="view-all-link">ดูทั้งหมด →</a>
+            <a href="javascript:void(0)" class="view-all-link">ดูผู้ให้บริการทั้งหมด (128 คน) →</a>
+          </div>
+
+          <!-- Quick Category Filters -->
+          <div class="provider-filter-tabs">
+            <button class="pft-btn active">⭐ ทั้งหมด (128 คน)</button>
+            <button class="pft-btn" onclick="navigateTo('page3')">🧹 แม่บ้านทำความสะอาด</button>
+            <button class="pft-btn" onclick="navigateTo('page3')">⚡ ช่างไฟ/ประปา</button>
+            <button class="pft-btn" onclick="navigateTo('page4')">❄️ ช่างแอร์</button>
+            <button class="pft-btn" onclick="navigateTo('page3')">📦 รถรับจ้างขนย้าย</button>
           </div>
 
           <div class="providers-grid">
             <!-- Provider Card 1: สุภาวดี ใจดี -->
             <div class="provider-card">
               <div class="provider-img-wrap" onclick="navigateTo('page3')">
-                <div class="provider-img-placeholder">
-                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                  <span>รูปผู้ให้บริการ</span>
-                </div>
+                <span class="provider-status-badge online">🟢 พร้อมเริ่มงานวันนี้</span>
+                <svg viewBox="0 0 100 100" width="100" height="100" class="provider-avatar-svg">
+                  <defs>
+                    <linearGradient id="p1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#fff7ed"/>
+                      <stop offset="100%" stop-color="#fed7aa"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="48" fill="url(#p1Grad)"/>
+                  <!-- Hair Bun -->
+                  <circle cx="50" cy="24" r="14" fill="#18181b"/>
+                  <!-- Head -->
+                  <circle cx="50" cy="42" r="17" fill="#fde68a"/>
+                  <!-- Hair bangs -->
+                  <path d="M34 38 C34 26, 66 26, 66 38 C60 32, 40 32, 34 38 Z" fill="#18181b"/>
+                  <!-- Eyes -->
+                  <circle cx="44" cy="42" r="2.2" fill="#18181b"/>
+                  <circle cx="56" cy="42" r="2.2" fill="#18181b"/>
+                  <!-- Blush -->
+                  <circle cx="41" cy="47" r="3" fill="#fca5a5" opacity="0.6"/>
+                  <circle cx="59" cy="47" r="3" fill="#fca5a5" opacity="0.6"/>
+                  <!-- Smile -->
+                  <path d="M46 48 Q50 52 54 48" stroke="#ea580c" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- Apron / Clothes -->
+                  <path d="M22 92 C22 68, 36 62, 50 62 C64 62, 78 68, 78 92 Z" fill="#ff6b00"/>
+                  <path d="M38 64 L50 78 L62 64 Z" fill="#ffffff"/>
+                  <!-- Sparkle -->
+                  <path d="M78 28 L80 34 L86 36 L80 38 L78 44 L76 38 L70 36 L76 34 Z" fill="#f59e0b"/>
+                </svg>
               </div>
               <div class="provider-card-body">
-                <h3 class="provider-card-name" onclick="navigateTo('page3')">สุภาวดี ใจดี</h3>
+                <div class="pc-top-row">
+                  <h3 class="provider-card-name" onclick="navigateTo('page3')">สุภาวดี ใจดี</h3>
+                  <span class="pro-tag">PRO</span>
+                </div>
                 <p class="provider-card-service">ทำความสะอาดคอนโดและบ้าน</p>
                 <div class="provider-card-rating">
                   <span class="star-rating">★ 4.9</span>
                   <span class="rating-count">(128 รีวิว)</span>
+                  <span class="job-count-badge">350+ งาน</span>
                 </div>
                 <div class="provider-verified-badge">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
-                  <span>ยืนยันตัวตนแล้ว</span>
+                  <span>ยืนยันตัวตน & ตรวจประวัติแล้ว</span>
                 </div>
                 <div class="provider-location">📍 ห้วยขวาง · ดินแดง · รัชดา</div>
                 <div class="provider-card-footer">
@@ -430,7 +734,7 @@
                     <span class="price-label">เริ่มต้น</span>
                     <span class="price-amount">฿650</span>
                   </div>
-                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงานทันที</button>
                 </div>
               </div>
             </div>
@@ -438,25 +742,47 @@
             <!-- Provider Card 2: สมชาย การช่าง -->
             <div class="provider-card">
               <div class="provider-img-wrap" onclick="navigateTo('page3')">
-                <div class="provider-img-placeholder">
-                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                  <span>รูปผู้ให้บริการ</span>
-                </div>
+                <span class="provider-status-badge online">🟢 พร้อมเริ่มงานวันนี้</span>
+                <svg viewBox="0 0 100 100" width="100" height="100" class="provider-avatar-svg">
+                  <defs>
+                    <linearGradient id="p2Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#fef3c7"/>
+                      <stop offset="100%" stop-color="#fde68a"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="48" fill="url(#p2Grad)"/>
+                  <!-- Cap -->
+                  <path d="M30 32 C30 22, 70 22, 70 32 L78 34 L78 37 L28 37 Z" fill="#18181b"/>
+                  <!-- Head -->
+                  <circle cx="50" cy="46" r="17" fill="#fed7aa"/>
+                  <!-- Eyes -->
+                  <circle cx="44" cy="46" r="2.2" fill="#18181b"/>
+                  <circle cx="56" cy="46" r="2.2" fill="#18181b"/>
+                  <!-- Smile -->
+                  <path d="M46 53 Q50 57 54 53" stroke="#b45309" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- Uniform -->
+                  <path d="M22 94 C22 70, 36 64, 50 64 C64 64, 78 70, 78 94 Z" fill="#18181b"/>
+                  <path d="M44 64 L50 78 L56 64 Z" fill="#ff6b00"/>
+                  <!-- Wrench Tool -->
+                  <path d="M74 38 L84 48 M80 34 L88 42" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/>
+                </svg>
               </div>
               <div class="provider-card-body">
-                <h3 class="provider-card-name" onclick="navigateTo('page3')">สมชาย การช่าง</h3>
+                <div class="pc-top-row">
+                  <h3 class="provider-card-name" onclick="navigateTo('page3')">สมชาย การช่าง</h3>
+                  <span class="pro-tag">PRO</span>
+                </div>
                 <p class="provider-card-service">ซ่อมไฟฟ้าและประปาภายในบ้าน</p>
                 <div class="provider-card-rating">
                   <span class="star-rating">★ 4.8</span>
                   <span class="rating-count">(96 รีวิว)</span>
+                  <span class="job-count-badge">210+ งาน</span>
                 </div>
                 <div class="provider-verified-badge">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
-                  <span>ยืนยันตัวตนแล้ว</span>
+                  <span>ยืนยันตัวตน & ตรวจประวัติแล้ว</span>
                 </div>
                 <div class="provider-location">📍 ลาดพร้าว · จตุจักร</div>
                 <div class="provider-card-footer">
@@ -464,7 +790,7 @@
                     <span class="price-label">เริ่มต้น</span>
                     <span class="price-amount">฿500</span>
                   </div>
-                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงานทันที</button>
                 </div>
               </div>
             </div>
@@ -472,25 +798,45 @@
             <!-- Provider Card 3: ณัฐพงษ์ พร้อมย้าย -->
             <div class="provider-card">
               <div class="provider-img-wrap" onclick="navigateTo('page3')">
-                <div class="provider-img-placeholder">
-                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                  <span>รูปผู้ให้บริการ</span>
-                </div>
+                <span class="provider-status-badge queue">📦 พร้อมรถกระบะตู้ทึบ</span>
+                <svg viewBox="0 0 100 100" width="100" height="100" class="provider-avatar-svg">
+                  <defs>
+                    <linearGradient id="p3Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#eff6ff"/>
+                      <stop offset="100%" stop-color="#bfdbfe"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="48" fill="url(#p3Grad)"/>
+                  <!-- Head -->
+                  <circle cx="50" cy="42" r="17" fill="#fde68a"/>
+                  <path d="M33 36 C33 24, 67 24, 67 36 Z" fill="#1e293b"/>
+                  <!-- Eyes -->
+                  <circle cx="44" cy="43" r="2.2" fill="#18181b"/>
+                  <circle cx="56" cy="43" r="2.2" fill="#18181b"/>
+                  <!-- Smile -->
+                  <path d="M46 50 Q50 54 54 50" stroke="#1d4ed8" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- Clothes -->
+                  <path d="M22 92 C22 68, 36 62, 50 62 C64 62, 78 68, 78 92 Z" fill="#2563eb"/>
+                  <!-- Box Icon -->
+                  <rect x="70" y="24" width="18" height="16" rx="2" fill="#d97706"/>
+                </svg>
               </div>
               <div class="provider-card-body">
-                <h3 class="provider-card-name" onclick="navigateTo('page3')">ณัฐพงษ์ พร้อมย้าย</h3>
+                <div class="pc-top-row">
+                  <h3 class="provider-card-name" onclick="navigateTo('page3')">ณัฐพงษ์ พร้อมย้าย</h3>
+                  <span class="pro-tag">PRO</span>
+                </div>
                 <p class="provider-card-service">ขนย้ายของและเฟอร์นิเจอร์</p>
                 <div class="provider-card-rating">
                   <span class="star-rating">★ 4.9</span>
                   <span class="rating-count">(74 รีวิว)</span>
+                  <span class="job-count-badge">180+ งาน</span>
                 </div>
                 <div class="provider-verified-badge">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
-                  <span>ยืนยันตัวตนแล้ว</span>
+                  <span>ยืนยันตัวตน & ตรวจประวัติแล้ว</span>
                 </div>
                 <div class="provider-location">📍 กรุงเทพฯ และปริมณฑล</div>
                 <div class="provider-card-footer">
@@ -498,7 +844,7 @@
                     <span class="price-label">เริ่มต้น</span>
                     <span class="price-amount">฿900</span>
                   </div>
-                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงานทันที</button>
                 </div>
               </div>
             </div>
@@ -506,25 +852,46 @@
             <!-- Provider Card 4: มาลี รักสวน -->
             <div class="provider-card">
               <div class="provider-img-wrap" onclick="navigateTo('page3')">
-                <div class="provider-img-placeholder">
-                  <svg viewBox="0 0 24 24" width="48" height="48" fill="#94a3b8">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                  <span>รูปผู้ให้บริการ</span>
-                </div>
+                <span class="provider-status-badge online">🟢 พร้อมเริ่มงานวันนี้</span>
+                <svg viewBox="0 0 100 100" width="100" height="100" class="provider-avatar-svg">
+                  <defs>
+                    <linearGradient id="p4Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#f0fdf4"/>
+                      <stop offset="100%" stop-color="#bbf7d0"/>
+                    </linearGradient>
+                  </defs>
+                  <circle cx="50" cy="50" r="48" fill="url(#p4Grad)"/>
+                  <!-- Garden Hat -->
+                  <path d="M24 38 Q50 20 76 38 L84 42 L16 42 Z" fill="#ca8a04"/>
+                  <!-- Head -->
+                  <circle cx="50" cy="46" r="16" fill="#fed7aa"/>
+                  <!-- Eyes -->
+                  <circle cx="44" cy="46" r="2.2" fill="#18181b"/>
+                  <circle cx="56" cy="46" r="2.2" fill="#18181b"/>
+                  <!-- Smile -->
+                  <path d="M46 52 Q50 56 54 52" stroke="#15803d" stroke-width="2" fill="none" stroke-linecap="round"/>
+                  <!-- Clothes -->
+                  <path d="M22 92 C22 70, 36 64, 50 64 C64 64, 78 70, 78 92 Z" fill="#16a34a"/>
+                  <!-- Leaf -->
+                  <path d="M74 24 Q86 20 84 32 Q72 34 74 24 Z" fill="#15803d"/>
+                </svg>
               </div>
               <div class="provider-card-body">
-                <h3 class="provider-card-name" onclick="navigateTo('page3')">มาลี รักสวน</h3>
+                <div class="pc-top-row">
+                  <h3 class="provider-card-name" onclick="navigateTo('page3')">มาลี รักสวน</h3>
+                  <span class="pro-tag">PRO</span>
+                </div>
                 <p class="provider-card-service">ตัดแต่งต้นไม้และดูแลสวน</p>
                 <div class="provider-card-rating">
                   <span class="star-rating">★ 4.8</span>
                   <span class="rating-count">(62 รีวิว)</span>
+                  <span class="job-count-badge">145+ งาน</span>
                 </div>
                 <div class="provider-verified-badge">
                   <svg viewBox="0 0 24 24" width="14" height="14" fill="#0284c7">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                   </svg>
-                  <span>ยืนยันตัวตนแล้ว</span>
+                  <span>ยืนยันตัวตน & ตรวจประวัติแล้ว</span>
                 </div>
                 <div class="provider-location">📍 บางกะปิ · บึงกุ่ม · ลาดพร้าว</div>
                 <div class="provider-card-footer">
@@ -532,7 +899,7 @@
                     <span class="price-label">เริ่มต้น</span>
                     <span class="price-amount">฿700</span>
                   </div>
-                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงาน</button>
+                  <button class="btn-hire" onclick="navigateTo('page3')">จ้างงานทันที</button>
                 </div>
               </div>
             </div>
@@ -559,10 +926,26 @@
         <div class="service-profile-header-card">
           <div class="sph-left">
             <div class="sph-avatar">
-              <svg viewBox="0 0 24 24" width="40" height="40" fill="#94a3b8">
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              <svg viewBox="0 0 100 100" width="84" height="84" class="sph-avatar-svg">
+                <defs>
+                  <linearGradient id="sphGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#fff7ed"/>
+                    <stop offset="100%" stop-color="#fed7aa"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="48" fill="url(#sphGrad)"/>
+                <circle cx="50" cy="24" r="14" fill="#18181b"/>
+                <circle cx="50" cy="42" r="17" fill="#fde68a"/>
+                <path d="M34 38 C34 26, 66 26, 66 38 C60 32, 40 32, 34 38 Z" fill="#18181b"/>
+                <circle cx="44" cy="42" r="2.2" fill="#18181b"/>
+                <circle cx="56" cy="42" r="2.2" fill="#18181b"/>
+                <circle cx="41" cy="47" r="3" fill="#fca5a5" opacity="0.6"/>
+                <circle cx="59" cy="47" r="3" fill="#fca5a5" opacity="0.6"/>
+                <path d="M46 48 Q50 52 54 48" stroke="#ea580c" stroke-width="2" fill="none" stroke-linecap="round"/>
+                <path d="M22 92 C22 68, 36 62, 50 62 C64 62, 78 68, 78 92 Z" fill="#ff6b00"/>
+                <path d="M38 64 L50 78 L62 64 Z" fill="#ffffff"/>
+                <path d="M78 28 L80 34 L86 36 L80 38 L78 44 L76 38 L70 36 L76 34 Z" fill="#f59e0b"/>
               </svg>
-              <span>รูปผู้ให้บริการ</span>
             </div>
             <div class="sph-info">
               <div class="sph-badges">

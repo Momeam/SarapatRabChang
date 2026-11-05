@@ -80,6 +80,9 @@ function navigateTo(pageId, updateHash = true) {
   document.title = PAGE_TITLES[pageId] || 'SarapatRabChang';
 
 
+  // Close user settings flyout if open
+  closeUserMenu();
+
   // Adjust Header elements based on page context
   updateHeaderForPage(pageId);
 
@@ -402,4 +405,37 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+/**
+ * User Settings Flyout Dropdown
+ */
+function toggleUserMenu(event) {
+  if (event) event.stopPropagation();
+  const dropdown = document.getElementById('userSettingsDropdown');
+  const btn = document.getElementById('userMenuBtn');
+  if (!dropdown) return;
+  const isOpen = dropdown.classList.contains('show');
+  if (isOpen) {
+    dropdown.classList.remove('show');
+    if (btn) btn.classList.remove('active');
+  } else {
+    dropdown.classList.add('show');
+    if (btn) btn.classList.add('active');
+  }
+}
+
+function closeUserMenu() {
+  const dropdown = document.getElementById('userSettingsDropdown');
+  const btn = document.getElementById('userMenuBtn');
+  if (dropdown) dropdown.classList.remove('show');
+  if (btn) btn.classList.remove('active');
+}
+
+// Close when clicking outside user settings flyout
+document.addEventListener('click', (e) => {
+  const container = document.getElementById('userMenuContainer');
+  if (container && !container.contains(e.target)) {
+    closeUserMenu();
+  }
+});
 
