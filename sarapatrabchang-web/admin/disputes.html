@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispute Resolution - SarapatRabChang</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316', // สีส้ม
+                        darkbg: '#0a0a0a',  // สีดำพื้นหลัง
+                        cardbg: '#171717',  // สีดำเทาสำหรับการ์ด
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="bg-darkbg text-white font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-black border-r border-gray-800 flex flex-col justify-between shrink-0">
+        <div>
+            <!-- Logo -->
+            <div class="h-16 flex items-center px-6 border-b border-gray-800">
+                <span class="text-primary font-bold text-xl border-2 border-primary px-2 py-1 rounded">SRC</span>
+                <span class="ml-3 font-semibold tracking-wide">ADMIN PANEL</span>
+            </div>
+            
+            <!-- Menu -->
+            <nav class="p-4 space-y-2 mt-4">
+                <p class="text-xs text-gray-500 font-semibold mb-2 px-2 uppercase">เมนูหลัก</p>
+                <a href="admin.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-border-all w-6"></i> <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="users.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-users w-6"></i> <span class="ml-3">จัดการผู้ใช้ & KYC</span>
+                </a>
+                <a href="jobs.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-briefcase w-6"></i> <span class="ml-3">จัดการประกาศงาน</span>
+                </a>
+                <!-- เมนูนี้ Active (แถบส้ม) -->
+                <a href="disputes.html" class="flex items-center px-4 py-3 bg-cardbg text-primary border-l-4 border-primary rounded-r-lg font-medium transition">
+                    <i class="fa-solid fa-scale-balanced w-6"></i> <span class="ml-3">ข้อพิพาท</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-gear w-6"></i> <span class="ml-3">ตั้งค่า</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Admin Profile -->
+        <div class="p-4 border-t border-gray-800">
+            <div class="flex items-center p-2 hover:bg-cardbg rounded-lg cursor-pointer mb-2">
+                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-white">Admin_01</p>
+                    <p class="text-xs text-gray-400">ผู้ดูแลระบบ</p>
+                </div>
+            </div>
+            <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-400 hover:text-primary transition">
+                <i class="fa-solid fa-arrow-right-from-bracket w-6"></i> <span class="ml-3">ออกจากระบบ</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Header -->
+        <header class="h-16 bg-black border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
+            <div class="text-sm text-gray-400">
+                <span>หน้าแรก</span> <span class="mx-2">></span> <span class="text-white">ข้อพิพาท</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-500"></i>
+                    <input type="text" placeholder="ผู้ใช้/งาน/ข้อพิพาท" class="bg-cardbg border border-gray-700 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-primary w-64">
+                </div>
+                <button class="relative text-gray-400 hover:text-white">
+                    <i class="fa-regular fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">5</span>
+                </button>
+                <div class="flex items-center cursor-pointer">
+                    <span class="text-sm font-medium mr-2">Admin</span>
+                    <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-8 bg-darkbg custom-scrollbar">
+            
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-white">ระบบพิจารณาข้อพิพาท</h1>
+                <p class="text-gray-400 text-sm mt-1">ตรวจสอบประวัติการจ้างงานและหลักฐานก่อนตัดสินข้อพิพาท[cite: 6]</p>
+            </div>
+
+            <!-- Dispute Card Container -->
+            <div class="bg-cardbg border border-gray-800 rounded-xl p-6 mb-6">
+                
+                <!-- Dispute Header Bar -->
+                <div class="flex justify-between items-center pb-4 mb-6 border-b border-gray-800">
+                    <h2 class="text-white font-semibold text-lg">ข้อพิพาท Dispute #DSP-005[cite: 6]</h2>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-gray-400">สถานะ:</span>
+                        <span class="bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 px-3 py-1 rounded-full text-xs font-medium flex items-center">
+                            <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 mr-2"></span> รอตัดสิน[cite: 6]
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Grid Split: Chat Evidence & Case Details -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    
+                    <!-- Left: Chat Evidence (2 Columns) -->
+                    <div class="lg:col-span-2 border border-gray-800 bg-black/40 rounded-xl p-5">
+                        <div class="flex items-center mb-4 text-gray-300 font-medium">
+                            <i class="fa-regular fa-comments text-primary mr-2"></i> ประวัติการจ้างงาน (Chat Evidence)[cite: 6]
+                        </div>
+                        
+                        <!-- Chat Box Simulation -->
+                        <div class="space-y-4 text-sm">
+                            <!-- Client Message -->
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Client - คุณมานะ</p>
+                                <div class="bg-gray-800 text-gray-200 p-3 rounded-lg rounded-tl-none max-w-lg">
+                                    ไม่ตรงบรีฟเลยครับ แก้รอบที่ 3 แล้ว[cite: 6]
+                                </div>
+                            </div>
+                            
+                            <!-- Freelancer Message -->
+                            <div class="flex flex-col items-end">
+                                <p class="text-xs text-gray-500 mb-1">Freelancer - คุณสมหญิง</p>
+                                <div class="bg-primary/20 border border-primary/40 text-gray-200 p-3 rounded-lg rounded-tr-none max-w-lg">
+                                    ทำตามที่แจ้งหมดแล้วค่ะ ที่เหลือขอเพิ่ม[cite: 6]
+                                </div>
+                            </div>
+
+                            <!-- Client Message 2 -->
+                            <div>
+                                <p class="text-xs text-gray-500 mb-1">Client - คุณมานะ</p>
+                                <div class="bg-gray-800 text-gray-200 p-3 rounded-lg rounded-tl-none max-w-lg">
+                                    ขอยกเลิกครับ ส่งเรื่องหาแอดมิน[cite: 6]
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Case Details (1 Column) -->
+                    <div class="border border-gray-800 bg-black/40 rounded-xl p-5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center mb-4 text-gray-300 font-medium">
+                                <i class="fa-regular fa-file-lines text-primary mr-2"></i> รายละเอียด & หลักฐาน (Case Details)[cite: 6]
+                            </div>
+                            
+                            <div class="text-sm space-y-4">
+                                <div>
+                                    <p class="text-xs text-gray-500">คู่กรณี</p>
+                                    <p class="text-gray-200 mt-0.5">Client: คุณมานะ กับ Freelancer: คุณสมหญิง[cite: 6]</p>
+                                </div>
+
+                                <div class="bg-black/60 p-4 rounded-lg border border-gray-800">
+                                    <p class="text-xs text-gray-400">มูลค่างาน (Escrow)</p>
+                                    <p class="text-2xl font-bold text-white mt-1">฿ 5,000[cite: 6]</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs text-gray-500">ข้อเรียกร้อง</p>
+                                    <p class="text-gray-200 mt-0.5 font-medium text-orange-400">Client ขอคืนเงิน 100%[cite: 6]</p>
+                                </div>
+
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-2">ไฟล์แนบ</p>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div class="flex items-center justify-between bg-gray-900 border border-gray-800 p-2.5 rounded-lg text-xs text-gray-300 hover:border-gray-700 cursor-pointer">
+                                            <span class="truncate"><i class="fa-regular fa-file-pdf text-red-400 mr-1.5"></i> สรุปบรีฟ.pdf</span>
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-gray-500"></i>
+                                        </div>
+                                        <div class="flex items-center justify-between bg-gray-900 border border-gray-800 p-2.5 rounded-lg text-xs text-gray-300 hover:border-gray-700 cursor-pointer">
+                                            <span class="truncate"><i class="fa-regular fa-file-zipper text-yellow-400 mr-1.5"></i> ไฟล์ส่งมอบ.zip</span>
+                                            <i class="fa-solid fa-arrow-up-right-from-square text-gray-500"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Admin Notes & Action Buttons -->
+                <div class="border border-gray-800 bg-black/40 rounded-xl p-5">
+                    <div class="flex items-center mb-3 text-gray-300 font-medium">
+                        <i class="fa-regular fa-pen-to-square text-primary mr-2"></i> บันทึกคำตัดสินของ Admin:[cite: 6]
+                    </div>
+                    
+                    <textarea rows="3" class="w-full bg-black border border-gray-700 text-white text-sm rounded-lg p-3 focus:outline-none focus:border-primary resize-none mb-4" placeholder="พิมพ์เหตุผลหรือคำตัดสินข้อพิพาทที่นี่...">ตรวจสอบแล้วฟรีแลนซ์ทำตามบรีฟครบถ้วน ไมอนุมัติคืนเงิน...</textarea>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <!-- ปุ่มทำไว้เฉยๆ ยังไม่ต้องเชื่อมตามที่ระบุ -->
+                        <button onclick="alert('จำลองการกด: คืนเงินให้ Client')" class="px-4 py-2 border border-gray-600 text-gray-300 rounded-lg text-sm hover:bg-gray-800 hover:text-white transition flex items-center">
+                            <i class="fa-solid fa-arrow-rotate-left mr-2"></i> คืนเงินให้ Client[cite: 6]
+                        </button>
+                        <button onclick="alert('จำลองการกด: โอนเงินให้ Freelancer')" class="px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-opacity-90 transition font-medium flex items-center">
+                            <i class="fa-solid fa-wallet mr-2"></i> โอนเงินให้ Freelancer[cite: 6]
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="flex justify-between text-xs text-gray-600 px-2">
+                <span>Admin Panel / ข้อพิพาท</span>
+                <span>โครงร่างหน้าจอ • ยังไม่กำหนดสี[cite: 6]</span>
+            </div>
+            
+        </div>
+    </main>
+
+</body>
+</html>

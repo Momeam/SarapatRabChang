@@ -1,0 +1,24 @@
+/* นำเข้าฟอนต์ Prompt จาก Google Fonts เพื่อให้อ่านภาษาไทยได้สวยงาม */
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
+body {
+    font-family: 'Prompt', sans-serif;
+}
+
+/* ปรับแต่ง Scrollbar สำหรับพื้นที่เนื้อหาหลักให้เข้ากับ Dark Theme */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #0a0a0a; /* สีพื้นหลังกลืนกับหน้าเว็บ */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #262626; /* สีเทาเข้ม */
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #f97316; /* เปลี่ยนเป็นสีส้มเมื่อโฮเวอร์ */
+}

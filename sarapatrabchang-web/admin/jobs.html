@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Jobs - SarapatRabChang</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316', // สีส้ม
+                        darkbg: '#0a0a0a',  // สีดำพื้นหลัง
+                        cardbg: '#171717',  // สีดำเทาสำหรับการ์ด
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="bg-darkbg text-white font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-black border-r border-gray-800 flex flex-col justify-between shrink-0">
+        <div>
+            <!-- Logo -->
+            <div class="h-16 flex items-center px-6 border-b border-gray-800">
+                <span class="text-primary font-bold text-xl border-2 border-primary px-2 py-1 rounded">SRC</span>
+                <span class="ml-3 font-semibold tracking-wide">ADMIN PANEL</span>
+            </div>
+            
+            <!-- Menu -->
+            <nav class="p-4 space-y-2 mt-4">
+                <p class="text-xs text-gray-500 font-semibold mb-2 px-2 uppercase">เมนูหลัก</p>
+                <a href="admin.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-border-all w-6"></i> <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="users.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-users w-6"></i> <span class="ml-3">จัดการผู้ใช้ & KYC</span>
+                </a>
+                <!-- เมนูนี้ Active (แถบส้ม) -->
+                <a href="jobs.html" class="flex items-center px-4 py-3 bg-cardbg text-primary border-l-4 border-primary rounded-r-lg font-medium transition">
+                    <i class="fa-solid fa-briefcase w-6"></i> <span class="ml-3">จัดการประกาศงาน</span>
+                </a>
+                <a href="disputes.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-scale-balanced w-6"></i> <span class="ml-3">ข้อพิพาท</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-gear w-6"></i> <span class="ml-3">ตั้งค่า</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Admin Profile -->
+        <div class="p-4 border-t border-gray-800">
+            <div class="flex items-center p-2 hover:bg-cardbg rounded-lg cursor-pointer mb-2">
+                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-white">Admin_01</p>
+                    <p class="text-xs text-gray-400">ผู้ดูแลระบบ</p>
+                </div>
+            </div>
+            <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-400 hover:text-primary transition">
+                <i class="fa-solid fa-arrow-right-from-bracket w-6"></i> <span class="ml-3">ออกจากระบบ</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Header -->
+        <header class="h-16 bg-black border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
+            <div class="text-sm text-gray-400">
+                <span>หน้าแรก</span> <span class="mx-2">></span> <span class="text-white">จัดการประกาศงาน</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-500"></i>
+                    <input type="text" placeholder="ค้นหาผู้ใช้/งาน/ข้อพิพาท" class="bg-cardbg border border-gray-700 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-primary w-64">
+                </div>
+                <button class="relative text-gray-400 hover:text-white">
+                    <i class="fa-regular fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">2</span>
+                </button>
+                <div class="flex items-center cursor-pointer">
+                    <span class="text-sm font-medium mr-2">Admin</span>
+                    <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content -->
+        <div class="flex-1 overflow-y-auto p-8 bg-darkbg custom-scrollbar">
+            
+            <div class="mb-6">
+                <h1 class="text-2xl font-bold text-white">ตรวจสอบประกาศบริการใหม่</h1>
+                <p class="text-gray-400 text-sm mt-1">ตรวจสอบตัวอย่างบริการก่อนอนุมัติหรือปฏิเสธประกาศ</p>
+            </div>
+
+            <!-- แจ้งเตือนเมื่อกดอนุมัติ/ปฏิเสธสำเร็จ -->
+            <div id="alert-message" class="hidden mb-4 px-4 py-3 rounded border" role="alert"></div>
+
+            <!-- Data Table Section -->
+            <div class="bg-cardbg border border-gray-800 rounded-xl overflow-hidden mb-6">
+                
+                <!-- Header & Filters -->
+                <div class="flex justify-between items-center border-b border-gray-800 px-6 py-4 bg-black/50">
+                    <h2 class="text-white font-medium">ประกาศบริการ</h2>
+                    <div class="flex items-center space-x-4 text-sm">
+                        <div class="flex items-center">
+                            <span class="text-gray-400 mr-2">ตัวกรองหมวดหมู่:</span>
+                            <select class="bg-black border border-gray-700 text-white text-sm rounded-lg px-3 py-1 focus:outline-none focus:border-primary">
+                                <option>ทั้งหมด</option>
+                                <option>กราฟิก</option>
+                                <option>โปรแกรมมิ่ง</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-gray-400 mr-2">สถานะ:</span>
+                            <select id="status-filter" class="bg-black border border-gray-700 text-white text-sm rounded-lg px-3 py-1 focus:outline-none focus:border-primary">
+                                <option value="PENDING">รอตรวจสอบ</option>
+                                <option value="APPROVED">อนุมัติแล้ว</option>
+                                <option value="REJECTED">ถูกปฏิเสธ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-gray-400 text-sm bg-black/30">
+                                <th class="p-4 font-medium border-b border-gray-800 w-24">ภาพปก</th>
+                                <th class="p-4 font-medium border-b border-gray-800">ชื่อประกาศบริการ</th>
+                                <th class="p-4 font-medium border-b border-gray-800">ฟรีแลนซ์</th>
+                                <th class="p-4 font-medium border-b border-gray-800">ราคาเริ่มต้น</th>
+                                <th class="p-4 font-medium border-b border-gray-800 text-right pr-6">การจัดการ (Action)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs-table-body" class="text-sm">
+                            <!-- ข้อมูลจะถูกโหลดผ่าน JS -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="p-4 border-t border-gray-800 bg-black/30 text-xs text-gray-500">
+                    แสดงรายการประกาศบริการที่รอตรวจสอบ
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="border border-gray-800 bg-cardbg rounded-xl p-5 flex items-start text-sm">
+                <i class="fa-solid fa-circle-info text-gray-400 mt-0.5 mr-3 text-lg"></i>
+                <div>
+                    <h4 class="text-white font-medium mb-1">การปฏิเสธประกาศบริการ</h4>
+                    <p class="text-gray-400">ระบบจะให้ระบุเหตุผลในกล่องข้อความ เช่น "รูปภาพไม่เหมาะสม" หรือ "เนื้อหาผิดกฎแพลตฟอร์ม" เพื่อแจ้งเตือนไปยังฟรีแลนซ์</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between text-xs text-gray-600 mt-4 px-2">
+                <span>Admin Panel / จัดการประกาศงาน</span>
+            </div>
+            
+        </div>
+    </main>
+
+    <script src="jobs.js"></script>
+</body>
+</html>

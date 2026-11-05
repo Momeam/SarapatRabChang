@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SarapatRabChang</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#f97316', // สีส้ม
+                        darkbg: '#0a0a0a',  // สีดำพื้นหลัง
+                        cardbg: '#171717',  // สีดำเทาสำหรับการ์ด
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Chart.js & FontAwesome -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="bg-darkbg text-white font-sans antialiased flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-black border-r border-gray-800 flex flex-col justify-between">
+        <div>
+            <!-- Logo -->
+            <div class="h-16 flex items-center px-6 border-b border-gray-800">
+                <span class="text-primary font-bold text-xl border-2 border-primary px-2 py-1 rounded">SRC</span>
+                <span class="ml-3 font-semibold tracking-wide">ADMIN PANEL</span>
+            </div>
+            
+            <!-- Menu -->
+            <nav class="p-4 space-y-2 mt-4">
+                <a href="admin.html" class="flex items-center px-4 py-3 bg-cardbg text-primary border-l-4 border-primary rounded-r-lg font-medium transition">
+                    <i class="fa-solid fa-border-all w-6"></i> <span class="ml-3">Dashboard</span>
+                </a>
+                <a href="users.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-users w-6"></i> <span class="ml-3">จัดการผู้ใช้ & KYC</span>
+                </a>
+                <a href="jobs.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-briefcase w-6"></i> <span class="ml-3">จัดการประกาศงาน</span>
+                </a>
+                <a href="disputes.html" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-scale-balanced w-6"></i> <span class="ml-3">ข้อพิพาท</span>
+                </a>
+                <a href="#" class="flex items-center px-4 py-3 text-gray-400 hover:text-white hover:bg-cardbg rounded-lg transition">
+                    <i class="fa-solid fa-gear w-6"></i> <span class="ml-3">ตั้งค่า</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Admin Profile -->
+        <div class="p-4 border-t border-gray-800">
+            <div class="flex items-center p-2 hover:bg-cardbg rounded-lg cursor-pointer mb-2">
+                <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-white">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-white">Admin_01</p>
+                    <p class="text-xs text-gray-400">ผู้ดูแลระบบ</p>
+                </div>
+            </div>
+            <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-400 hover:text-primary transition">
+                <i class="fa-solid fa-arrow-right-from-bracket w-6"></i> <span class="ml-3">ออกจากระบบ</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- Header -->
+        <header class="h-16 bg-black border-b border-gray-800 flex items-center justify-between px-6 shrink-0">
+            <div class="text-sm text-gray-400">
+                <span>หน้าแรก</span> <span class="mx-2">></span> <span class="text-white">Dashboard</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <div class="relative">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-500"></i>
+                    <input type="text" placeholder="ค้นหาผู้ใช้/งาน/ข้อพิพาท" class="bg-cardbg border border-gray-700 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-primary w-64">
+                </div>
+                <button class="relative text-gray-400 hover:text-white">
+                    <i class="fa-regular fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-primary text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full" id="noti-count">5</span>
+                </button>
+                <div class="flex items-center cursor-pointer">
+                    <span class="text-sm font-medium mr-2">Admin</span>
+                    <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="flex-1 overflow-y-auto p-8 bg-darkbg custom-scrollbar">
+            
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h1 class="text-2xl font-bold text-white">Admin Dashboard</h1>
+                    <p class="text-gray-400 text-sm mt-1">ภาพรวมระบบและรายการที่ต้องดำเนินการ</p>
+                </div>
+                <span class="text-xs border border-gray-700 text-gray-400 px-2 py-1 rounded">อัปเดตล่าสุด: <span id="last-update">-</span></span>
+            </div>
+
+            <!-- Overview Cards -->
+            <h2 class="text-lg font-semibold mb-4 text-white border-l-4 border-primary pl-2">สรุปข้อมูลสำคัญ (Overview)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Card 1 -->
+                <div class="bg-cardbg border border-gray-800 rounded-xl p-5 hover:border-primary transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-gray-400 text-sm">KYC รอตรวจสอบ</p>
+                        <i class="fa-solid fa-id-card-clip text-gray-500"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-kyc">--</h3>
+                    <p class="text-xs text-gray-500 mb-4">รายการรอตรวจสอบ</p>
+                    <a href="#" class="text-primary text-sm flex justify-between items-center hover:underline">
+                        ตรวจสอบ KYC <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+                <!-- Card 2 -->
+                <div class="bg-cardbg border border-gray-800 rounded-xl p-5 hover:border-primary transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-gray-400 text-sm">ประกาศงานใหม่รออนุมัติ</p>
+                        <i class="fa-solid fa-briefcase text-gray-500"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-jobs">--</h3>
+                    <p class="text-xs text-gray-500 mb-4">งานรออนุมัติ</p>
+                    <a href="#" class="text-primary text-sm flex justify-between items-center hover:underline">
+                        ตรวจสอบประกาศงาน <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+                <!-- Card 3 -->
+                <div class="bg-cardbg border border-gray-800 rounded-xl p-5 hover:border-primary transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-gray-400 text-sm">ข้อพิพาทที่เปิดอยู่</p>
+                        <i class="fa-solid fa-scale-balanced text-gray-500"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-disputes">--</h3>
+                    <p class="text-xs text-gray-500 mb-4">ข้อพิพาทรอดำเนินการ</p>
+                    <a href="#" class="text-primary text-sm flex justify-between items-center hover:underline">
+                        จัดการข้อพิพาท <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+                <!-- Card 4 -->
+                <div class="bg-cardbg border border-gray-800 rounded-xl p-5 hover:border-primary transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-gray-400 text-sm">ผู้ใช้งานในระบบทั้งหมด</p>
+                        <i class="fa-solid fa-users text-gray-500"></i>
+                    </div>
+                    <h3 class="text-3xl font-bold text-white mb-1" id="stat-users">--</h3>
+                    <p class="text-xs text-green-500 mb-4"><i class="fa-solid fa-arrow-trend-up"></i> +12 ในสัปดาห์นี้</p>
+                    <a href="#" class="text-primary text-sm flex justify-between items-center hover:underline">
+                        ดูรายชื่อผู้ใช้งาน <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="bg-cardbg border border-gray-800 rounded-xl p-6 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold text-white border-l-4 border-primary pl-2">รายงานสถิติการใช้งานแพลตฟอร์ม</h2>
+                    <select class="bg-black border border-gray-700 text-white text-sm rounded-lg px-3 py-1 focus:outline-none focus:border-primary">
+                        <option>เดือนนี้</option>
+                        <option>เดือนที่แล้ว</option>
+                        <option>ปีนี้</option>
+                    </select>
+                </div>
+                <div class="h-64 w-full">
+                    <canvas id="platformChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="bg-cardbg border border-gray-800 rounded-xl mb-8">
+                <div class="flex justify-between items-center p-6 border-b border-gray-800">
+                    <h2 class="text-lg font-semibold text-white border-l-4 border-primary pl-2">กิจกรรมล่าสุด (Recent Activities)</h2>
+                    <a href="#" class="text-gray-400 hover:text-primary text-sm">ดูทั้งหมด <i class="fa-solid fa-arrow-right ml-1"></i></a>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-gray-400 text-sm bg-[#111]">
+                                <th class="p-4 font-medium border-b border-gray-800">เวลา</th>
+                                <th class="p-4 font-medium border-b border-gray-800">ผู้ดำเนินการ</th>
+                                <th class="p-4 font-medium border-b border-gray-800">กิจกรรม</th>
+                                <th class="p-4 font-medium border-b border-gray-800">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-table-body" class="text-sm">
+                            <tr>
+                                <td colspan="4" class="p-4 text-center text-gray-500">กำลังโหลดข้อมูล...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Custom JS -->
+    <script src="admin.js"></script>
+</body>
+</html>
