@@ -19,13 +19,16 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNotificationStore } from "@/store/useNotificationStore";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading, signOut } = useAuth();
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const [authActionError, setAuthActionError] = useState("");
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -41,6 +44,22 @@ export default function Navbar() {
   } = useNotificationStore();
 
   const isAuthPage = pathname === "/auth";
+  const displayName =
+    typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name
+      : user?.email ?? "ผู้ใช้";
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      setShowProfileMenu(false);
+      router.push("/auth");
+    } catch (error) {
+      setAuthActionError(
+        error instanceof Error ? error.message : "ออกจากระบบไม่สำเร็จ",
+      );
+    }
+  };
 
   // Automatically mark messages as read if on /messages page
   useEffect(() => {
@@ -314,66 +333,83 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                {/* User Dropdown */}
-                <div className="relative" ref={profileRef}>
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(!showProfileMenu);
-                      setShowNotificationMenu(false);
-                    }}
-                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-zinc-100 border border-zinc-200 text-sm font-medium text-zinc-800 transition-colors cursor-pointer"
-                  >
-                    <div className="w-7 h-7 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-semibold">
-                      พ
-                    </div>
-                    <span className="hidden sm:inline-block">คุณพิมพ์ชนก</span>
-                    <ChevronDown className="w-4 h-4 text-zinc-400" />
-                  </button>
-
-                  {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-zinc-200 py-1.5 z-50 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
-                      <div className="px-4 py-2 border-b border-zinc-100">
-                        <p className="font-semibold text-zinc-900">พิมพ์ชนก ใจดี</p>
-                        <p className="text-xs text-zinc-500">pimchanok@example.com</p>
+                {loading ? (
+                  <span className="text-xs text-zinc-400">กำลังตรวจสอบบัญชี...</span>
+                ) : user ? (
+                  <div className="relative" ref={profileRef}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowProfileMenu(!showProfileMenu);
+                        setShowNotificationMenu(false);
+                        setAuthActionError("");
+                      }}
+                      className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-zinc-100 border border-zinc-200 text-sm font-medium text-zinc-800 transition-colors cursor-pointer"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-semibold">
+                        {displayName.slice(0, 1)}
                       </div>
-                      <Link
-                        href="/profile"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-                      >
-                        <User className="w-4 h-4" />
-                        โปรไฟล์และข้อมูลส่วนตัว
-                      </Link>
-                      <Link
-                        href="/orders/SRP-691105-024"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-                      >
-                        <ShieldCheck className="w-4 h-4" />
-                        ประวัติและติดตามงาน
-                      </Link>
-                      <Link
-                        href="/messages"
-                        onClick={() => {
-                          setShowProfileMenu(false);
-                          markMessagesAsRead();
-                        }}
-                        className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                        แชทข้อความของฉัน
-                      </Link>
-                      <div className="border-t border-zinc-100 my-1"></div>
-                      <Link
-                        href="/auth"
-                        onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        ออกจากระบบ / สลับบัญชี
-                      </Link>
-                    </div>
-                  )}
-                </div>
+                      <span className="hidden sm:inline-block">{displayName}</span>
+                      <ChevronDown className="w-4 h-4 text-zinc-400" />
+                    </button>
+
+                    {showProfileMenu && (
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-zinc-200 py-1.5 z-50 text-sm animate-in fade-in slide-in-from-top-2 duration-150">
+                        <div className="px-4 py-2 border-b border-zinc-100">
+                          <p className="font-semibold text-zinc-900">{displayName}</p>
+                          <p className="text-xs text-zinc-500">{user.email}</p>
+                        </div>
+                        <Link
+                          href="/profile"
+                          onClick={() => setShowProfileMenu(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          โปรไฟล์และข้อมูลส่วนตัว
+                        </Link>
+                        <Link
+                          href="/orders/SRP-691105-024"
+                          onClick={() => setShowProfileMenu(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                        >
+                          <ShieldCheck className="w-4 h-4" />
+                          ประวัติและติดตามงาน
+                        </Link>
+                        <Link
+                          href="/messages"
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            markMessagesAsRead();
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                          แชทข้อความของฉัน
+                        </Link>
+                        {authActionError && (
+                          <p role="alert" className="px-4 py-2 text-xs text-red-600">
+                            {authActionError}
+                          </p>
+                        )}
+                        <div className="border-t border-zinc-100 my-1"></div>
+                        <button
+                          type="button"
+                          onClick={handleSignOut}
+                          className="w-full text-left flex items-center gap-2 px-4 py-2 text-zinc-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          ออกจากระบบ
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href="/auth"
+                    className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-500 transition-colors"
+                  >
+                    เข้าสู่ระบบ
+                  </Link>
+                )}
               </>
             )}
           </div>

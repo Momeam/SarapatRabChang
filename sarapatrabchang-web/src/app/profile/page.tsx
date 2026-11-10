@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StarRating from "@/components/StarRating";
 import { mockProfileReviews } from "@/data/mockData";
+import { useAuth } from "@/components/AuthProvider";
 import {
   Camera,
   Edit3,
@@ -27,6 +28,22 @@ import {
 } from "lucide-react";
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+  const displayName =
+    typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name
+      : user?.email ?? "ผู้ใช้";
+  const email = user?.email ?? "ยังไม่ได้เข้าสู่ระบบ";
+  const phone =
+    typeof user?.user_metadata.phone === "string" && user.user_metadata.phone
+      ? user.user_metadata.phone
+      : "ยังไม่ได้ระบุ";
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString("th-TH", {
+        year: "numeric",
+        month: "long",
+      })
+    : "ยังไม่มีข้อมูล";
   const [reviews, setReviews] = useState(mockProfileReviews);
   const [commentText, setCommentText] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "jobs">("all");
@@ -109,7 +126,7 @@ export default function ProfilePage() {
               {/* Avatar */}
               <div className="relative group">
                 <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-zinc-900 text-white flex items-center justify-center text-3xl font-bold ring-4 ring-orange-100">
-                  พ
+                  {displayName.slice(0, 1)}
                 </div>
                 <button
                   type="button"
@@ -124,7 +141,7 @@ export default function ProfilePage() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h2 className="text-xl sm:text-2xl font-bold text-zinc-900">
-                    พิมพ์ชนก ใจดี
+                    {displayName}
                   </h2>
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     <Globe className="w-3 h-3" />
@@ -135,7 +152,7 @@ export default function ProfilePage() {
                   ผู้ใช้งานทั่วไป / ผู้ว่าจ้าง
                 </p>
                 <div className="flex items-center gap-2 text-xs text-zinc-500 flex-wrap">
-                  <span>สมาชิกตั้งแต่ มกราคม 2569 • กรุงเทพฯ</span>
+                  <span>สมาชิกตั้งแต่ {memberSince}</span>
                   <span>•</span>
                   <div className="flex items-center gap-1 font-semibold text-zinc-800">
                     <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
@@ -306,7 +323,7 @@ export default function ProfilePage() {
                     <Mail className="w-3.5 h-3.5 text-zinc-400" />
                     <div>
                       <span className="text-[10px] text-zinc-400 block">อีเมลที่เชื่อมโยง • ยืนยันแล้ว</span>
-                      <span className="font-medium text-zinc-900">pimchanok@example.com</span>
+                      <span className="font-medium text-zinc-900">{email}</span>
                     </div>
                   </div>
                   <button className="text-[11px] text-orange-600 hover:underline">แก้ไข</button>
@@ -317,7 +334,7 @@ export default function ProfilePage() {
                     <Phone className="w-3.5 h-3.5 text-zinc-400" />
                     <div>
                       <span className="text-[10px] text-zinc-400 block">เบอร์โทรศัพท์ • ยืนยันแล้ว</span>
-                      <span className="font-medium text-zinc-900">08X-XXX-1234</span>
+                      <span className="font-medium text-zinc-900">{phone}</span>
                     </div>
                   </div>
                   <button className="text-[11px] text-orange-600 hover:underline">แก้ไข</button>
@@ -328,38 +345,15 @@ export default function ProfilePage() {
               <div className="space-y-2 pt-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-zinc-700">
-                    ที่อยู่ที่บันทึกไว้ (2)
+                    ที่อยู่ที่บันทึกไว้
                   </span>
-                  <button className="text-xs text-orange-600 font-semibold hover:underline flex items-center gap-1">
+                  <button type="button" disabled className="text-xs text-zinc-400 font-semibold flex items-center gap-1">
                     <Plus className="w-3 h-3" /> เพิ่มที่อยู่
                   </button>
                 </div>
-
-                <div className="p-2.5 bg-zinc-50 rounded-xl border border-zinc-100 text-xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-zinc-900">บ้าน • ค่าเริ่มต้น</span>
-                    <button className="text-[11px] text-orange-600 hover:underline">แก้ไข</button>
-                  </div>
-                  <p className="text-[11px] text-zinc-500">
-                    พิมพ์ชนก ใจดี • 08X-XXX-1234
-                  </p>
-                  <p className="text-[11px] text-zinc-600 line-clamp-1">
-                    88/12 ซอยบ้านตัวอย่าง แขวงลาดพร้าว เขตลาดพร้าว กรุงเทพฯ 10230
-                  </p>
-                </div>
-
-                <div className="p-2.5 bg-zinc-50 rounded-xl border border-zinc-100 text-xs space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-zinc-900">คอนโด</span>
-                    <button className="text-[11px] text-orange-600 hover:underline">แก้ไข</button>
-                  </div>
-                  <p className="text-[11px] text-zinc-500">
-                    พิมพ์ชนก ใจดี • 08X-XXX-1234
-                  </p>
-                  <p className="text-[11px] text-zinc-600 line-clamp-1">
-                    25/8 อาคารตัวอย่าง ถนนพหลโยธิน แขวงสามเสนใน เขตพญาไท กรุงเทพฯ 10400
-                  </p>
-                </div>
+                <p className="rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-xs text-zinc-500">
+                  ยังไม่มีที่อยู่ที่บันทึกไว้
+                </p>
               </div>
             </div>
           </div>
@@ -379,29 +373,29 @@ export default function ProfilePage() {
               <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-100 space-y-2 text-xs">
                 <div>
                   <span className="text-[10px] text-zinc-400 block">ประเภทและชื่อ</span>
-                  <span className="font-bold text-zinc-900">บุคคลธรรมดา • พิมพ์ชนก ใจดี</span>
+                  <span className="font-bold text-zinc-900">บุคคลธรรมดา • {displayName}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-400 block">เลขประจำตัวผู้เสียภาษี</span>
-                  <span className="font-mono text-zinc-700">1-1002-00345-67-8</span>
+                  <span className="font-mono text-zinc-700">ยังไม่ได้ระบุ</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-400 block">ที่อยู่ใบกำกับภาษี</span>
                   <span className="text-zinc-600 leading-tight block">
-                    ใช้ที่อยู่บ้าน (ค่าเริ่มต้น)
+                    ยังไม่ได้ระบุ
                   </span>
                 </div>
                 <div>
                   <span className="text-[10px] text-zinc-400 block">อีเมลรับเอกสาร</span>
                   <span className="text-zinc-700 font-medium">
-                    pimchanok@example.com
+                    {email}
                   </span>
                 </div>
               </div>
             </div>
 
             <p className="text-[10px] text-zinc-400 leading-relaxed border-t border-zinc-100 pt-3">
-              ใบกำกับภาษีอิเล็กทรอนิกส์ (e-Tax) จะถูกจัดส่งผ่านอีเมลนี้โดยอัตโนมัติเมื่อรายการได้รับการชำระเสร็จสมบูรณ์
+              ข้อมูลใบกำกับภาษีจะใช้งานได้เมื่อเพิ่มและยืนยันข้อมูลจริง
             </p>
           </div>
         </div>
@@ -554,4 +548,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
