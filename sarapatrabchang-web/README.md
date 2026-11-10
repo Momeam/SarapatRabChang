@@ -18,6 +18,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## API configuration
+
+The home page loads service categories and providers from the API. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL` to the API server URL (default: `http://127.0.0.1:4000`). Start the API server before opening the web app.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

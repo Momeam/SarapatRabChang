@@ -12,27 +12,63 @@ import {
   Lock,
   Eye,
   EyeOff,
-  UploadCloud,
-  CheckCircle2,
 } from "lucide-react";
+import { getSupabaseClient } from "@/lib/supabase";
 
 export default function AuthPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"register" | "login">("register");
   const [showPassword, setShowPassword] = useState(false);
-  const [idCardFile, setIdCardFile] = useState<string | null>(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
-
-  // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Simulate successful registration / login then redirect to Home
-    router.push("/");
+    const client = getSupabaseClient();
+    if (!client) {
+      setFormMessage("กรุณาตั้งค่า Supabase ในไฟล์ .env.local ก่อนใช้งานระบบบัญชี");
+      return;
+    }
+
+    setFormMessage("");
+    setIsSubmitting(true);
+    try {
+      if (activeTab === "register") {
+        const { data, error } = await client.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+              phone: phone.trim(),
+            },
+          },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          setFormMessage("สมัครสำเร็จแล้ว กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ");
+          return;
+        }
+      } else {
+        const { error } = await client.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+      }
+      router.push("/");
+    } catch (error) {
+      setFormMessage(
+        error instanceof Error ? error.message : "ไม่สามารถเชื่อมต่อระบบบัญชีได้",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -107,7 +143,7 @@ export default function AuthPage() {
                 <span>ข้อมูลของคุณได้รับการดูแลอย่างปลอดภัย</span>
               </div>
               <p className="text-zinc-500 leading-relaxed">
-                เอกสารยืนยันตัวตนใช้เพื่อตรวจสอบความปลอดภัยเท่านั้น และจะไม่แสดงบนโปรไฟล์สาธารณะ
+                ข้อมูลบัญชีจะถูกตรวจสอบโดย Supabase และซิงก์โปรไฟล์ลง MySQL รูปบัตรประชาชนยังไม่เปิดรับในระบบนี้
               </p>
             </div>
           </div>
@@ -139,6 +175,15 @@ export default function AuthPage() {
                 เข้าสู่ระบบ
               </button>
             </div>
+
+            {formMessage && (
+              <p
+                role="alert"
+                className="mb-5 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-800"
+              >
+                {formMessage}
+              </p>
+            )}
 
             {activeTab === "register" ? (
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -231,44 +276,6 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                {/* ID Card Upload Dropzone */}
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-700 mb-1">
-                    อัปโหลดรูปภาพบัตรประชาชน (ด้านหน้า)
-                  </label>
-                  <p className="text-[11px] text-zinc-500 mb-2">
-                    ใช้ภาพด้านหน้าที่เห็นข้อมูลชัดเจน และปิดเลขหลังบัตรก่อนอัปโหลด
-                  </p>
-                  <label className="border-2 border-dashed border-zinc-200 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/30 transition-all group">
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setIdCardFile(e.target.files[0].name);
-                        }
-                      }}
-                    />
-                    {idCardFile ? (
-                      <div className="flex items-center gap-2 text-emerald-600 text-xs font-medium">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span>อัปโหลดแล้ว: {idCardFile}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <UploadCloud className="w-8 h-8 text-zinc-400 group-hover:text-orange-500 transition-colors mb-2" />
-                        <span className="text-xs text-zinc-600 font-medium">
-                          คลิกเพื่อเลือกไฟล์ หรือลากรูปภาพมาวางที่นี่
-                        </span>
-                        <span className="text-[11px] text-zinc-400 mt-0.5">
-                          รองรับ JPG, PNG ขนาดไม่เกิน 5 MB
-                        </span>
-                      </>
-                    )}
-                  </label>
-                </div>
-
                 {/* Agreement Checkbox */}
                 <div className="flex items-start gap-2.5 pt-1">
                   <input
@@ -288,16 +295,17 @@ export default function AuthPage() {
                     <Link href="#privacy" className="text-orange-600 underline">
                       นโยบายความเป็นส่วนตัว
                     </Link>{" "}
-                    และยินยอมให้ตรวจสอบข้อมูลเพื่อยืนยันตัวตน
+                    และยินยอมให้จัดเก็บข้อมูลบัญชีเพื่อให้บริการ
                   </label>
                 </div>
 
                 {/* Submit button */}
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-4 bg-zinc-900 hover:bg-black text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 px-4 bg-zinc-900 hover:bg-black disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  สมัครสมาชิกบุคคลทั่วไป
+                  {isSubmitting ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิกบุคคลทั่วไป"}
                 </button>
 
                 <div className="text-center pt-2">
@@ -326,13 +334,14 @@ export default function AuthPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-zinc-700 mb-1.5">
-                    อีเมล หรือ เบอร์โทรศัพท์
+                    อีเมล
                   </label>
                   <input
-                    type="text"
+                    type="email"
                     required
-                    placeholder="example@email.com หรือ 08X-XXX-XXXX"
-                    defaultValue="pimchanok@example.com"
+                    placeholder="example@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                   />
                 </div>
@@ -347,19 +356,21 @@ export default function AuthPage() {
                     </a>
                   </div>
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     placeholder="กรอกรหัสผ่านของคุณ"
-                    defaultValue="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-lg border border-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 px-4 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  เข้าสู่ระบบ
+                  {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                 </button>
 
                 <div className="text-center pt-2">
@@ -384,4 +395,3 @@ export default function AuthPage() {
     </div>
   );
 }
-
