@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -19,12 +19,146 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-import { mockProviders, mockCategories } from "@/data/mockData";
+import type { Provider } from "@/types";
+import { useAuth } from "@/components/AuthProvider";
+
+type ApiProvider = Omit<Provider, "portfolio">;
+
+interface ApiCategory {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
+}
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: { message?: string };
+}
+
+interface ProviderSearch {
+  category: string;
+  location: string;
+}
+
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:4000").replace(
+  /\/+$/,
+  "",
+);
+
+async function getApiData<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(url, init);
+  const result = (await response.json()) as ApiResponse<T>;
+  if (!response.ok) {
+    throw new Error(result.error?.message ?? `เรียก API ไม่สำเร็จ (HTTP ${response.status})`);
+  }
+  if (result.data === undefined) {
+    throw new Error("API ส่งข้อมูลกลับมาไม่ครบ");
+  }
+  return result.data;
+}
 
 export default function HomePage() {
+  const { user } = useAuth();
+  const displayName =
+    typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name
+      : user?.email?.split("@")[0] ?? "คุณ";
   const [selectedLocation, setSelectedLocation] = useState("ห้วยขวาง, กรุงเทพมหานคร");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [providers, setProviders] = useState<ApiProvider[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [providersLoading, setProvidersLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState("");
+  const [providersError, setProvidersError] = useState("");
+  const [providerSearch, setProviderSearch] = useState<ProviderSearch>({
+    category: "all",
+    location: "",
+  });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadCategories = async () => {
+      try {
+        const data = await getApiData<ApiCategory[]>(`${apiUrl}/api/categories`, {
+          signal: controller.signal,
+        });
+        if (!Array.isArray(data)) throw new Error("API ส่งรายการหมวดหมู่ไม่ถูกต้อง");
+        setCategories(data);
+        setCategoriesError("");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setCategoriesError(
+          error instanceof Error ? error.message : "โหลดหมวดหมู่บริการไม่สำเร็จ",
+        );
+      } finally {
+        if (!controller.signal.aborted) setCategoriesLoading(false);
+      }
+    };
+
+    void loadCategories();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const loadProviders = async () => {
+      setProvidersLoading(true);
+      setProvidersError("");
+      setProviders([]);
+      const params = new URLSearchParams();
+      if (providerSearch.category !== "all") {
+        params.set("category", providerSearch.category);
+      }
+      if (providerSearch.location) params.set("location", providerSearch.location);
+      const queryString = params.toString();
+
+      try {
+        const response = await fetch(
+          `${apiUrl}/api/providers${queryString ? `?${queryString}` : ""}`,
+          { signal: controller.signal },
+        );
+        const result = (await response.json()) as ApiResponse<ApiProvider[]>;
+        if (!response.ok) {
+          throw new Error(
+            result.error?.message ?? `โหลดผู้ให้บริการไม่สำเร็จ (HTTP ${response.status})`,
+          );
+        }
+        if (!Array.isArray(result.data)) {
+          throw new Error("API ส่งรายการผู้ให้บริการไม่ถูกต้อง");
+        }
+        setProviders(result.data);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setProvidersError(
+          error instanceof Error ? error.message : "โหลดผู้ให้บริการไม่สำเร็จ",
+        );
+      } finally {
+        if (!controller.signal.aborted) setProvidersLoading(false);
+      }
+    };
+
+    void loadProviders();
+    return () => controller.abort();
+  }, [providerSearch]);
+
+  const selectCategory = (category: string) => {
+    setSelectedCategory(category);
+    setProviderSearch((current) => ({ ...current, category }));
+  };
+
+  const submitSearch = () => {
+    setProviderSearch({
+      category: selectedCategory,
+      location: selectedLocation.trim(),
+    });
+  };
+
+  const categoriesWithAll = [
+    ...categories,
+    { id: "all", name: "บริการทั้งหมด", icon: "LayoutGrid", count: 0 },
+  ];
 
   const getCategoryIcon = (iconName: string) => {
     switch (iconName) {
@@ -47,21 +181,6 @@ export default function HomePage() {
     }
   };
 
-  const filteredProviders = mockProviders.filter((p) => {
-    if (selectedCategory !== "all" && p.categoryKey !== selectedCategory) {
-      return false;
-    }
-    if (
-      searchQuery &&
-      !p.name.includes(searchQuery) &&
-      !p.serviceTitle.includes(searchQuery) &&
-      !p.category.includes(searchQuery)
-    ) {
-      return false;
-    }
-    return true;
-  });
-
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50">
       <Navbar />
@@ -71,7 +190,7 @@ export default function HomePage() {
         <div className="space-y-6">
           <div>
             <p className="text-xs sm:text-sm font-medium text-orange-600 mb-1">
-              สวัสดี คุณพิมพ์ชนก วันนี้ให้เราช่วยอะไรดี?
+              สวัสดี {displayName} วันนี้ให้เราช่วยอะไรดี?
             </p>
             <h1 className="text-2xl sm:text-4xl font-extrabold text-zinc-950 tracking-tight">
               ค้นหาช่างและผู้ช่วยมืออาชีพใกล้บ้านคุณ
@@ -82,7 +201,13 @@ export default function HomePage() {
           </div>
 
           {/* Search Box Card */}
-          <div className="bg-white rounded-2xl border border-zinc-200 p-4 sm:p-6 shadow-sm">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              submitSearch();
+            }}
+            className="bg-white rounded-2xl border border-zinc-200 p-4 sm:p-6 shadow-sm"
+          >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
               {/* Location Input */}
               <div className="md:col-span-5 relative">
@@ -108,22 +233,23 @@ export default function HomePage() {
                 </label>
                 <select
                   value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  onChange={(e) => selectCategory(e.target.value)}
+                  disabled={categoriesLoading}
                   className="w-full px-3 py-2.5 bg-zinc-50 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                 >
                   <option value="all">เลือกหมวดหมู่บริการ (ทั้งหมด)</option>
-                  <option value="maid">แม่บ้าน</option>
-                  <option value="electrician">ช่างไฟ/ประปา</option>
-                  <option value="moving">ขนย้าย</option>
-                  <option value="gardening">จัดสวน</option>
-                  <option value="appliance">ซ่อมเครื่องใช้ไฟฟ้า</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* Search Button */}
               <div className="md:col-span-2 pt-0 md:pt-5">
                 <button
-                  type="button"
+                  type="submit"
                   className="w-full py-2.5 px-4 bg-zinc-950 hover:bg-orange-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                 >
                   <Search className="w-4 h-4" />
@@ -137,7 +263,7 @@ export default function HomePage() {
               <span className="font-medium text-zinc-700">ค้นหายอดนิยม:</span>
               <button
                 type="button"
-                onClick={() => setSelectedCategory("maid")}
+                onClick={() => selectCategory("maid")}
                 className="hover:text-orange-600 transition-colors cursor-pointer"
               >
                 ทำความสะอาดคอนโด
@@ -145,7 +271,7 @@ export default function HomePage() {
               <span>•</span>
               <button
                 type="button"
-                onClick={() => setSelectedCategory("electrician")}
+                onClick={() => selectCategory("electrician")}
                 className="hover:text-orange-600 transition-colors cursor-pointer"
               >
                 ซ่อมแอร์
@@ -153,14 +279,14 @@ export default function HomePage() {
               <span>•</span>
               <button
                 type="button"
-                onClick={() => setSelectedCategory("moving")}
+                onClick={() => selectCategory("moving")}
                 className="hover:text-orange-600 transition-colors cursor-pointer"
               >
                 ย้ายหอพัก
               </button>
             </div>
+          </form>
           </div>
-        </div>
 
         {/* Categories Section */}
         <div className="space-y-4">
@@ -168,12 +294,13 @@ export default function HomePage() {
             เลือกบริการที่คุณต้องการ
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {mockCategories.map((cat) => {
+            {categoriesWithAll.map((cat) => {
               const isSelected = selectedCategory === cat.id;
               return (
                 <button
                   key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
+                  onClick={() => selectCategory(cat.id)}
+                  disabled={categoriesLoading}
                   className={`p-4 rounded-xl border flex flex-col items-center justify-center text-center gap-2.5 transition-all cursor-pointer ${
                     isSelected
                       ? "bg-orange-500 text-white border-orange-500 shadow-sm scale-102"
@@ -194,6 +321,16 @@ export default function HomePage() {
               );
             })}
           </div>
+          {categoriesLoading && (
+            <p role="status" className="text-sm text-zinc-500">
+              กำลังโหลดหมวดหมู่บริการ...
+            </p>
+          )}
+          {categoriesError && (
+            <p role="alert" className="text-sm text-red-600">
+              โหลดหมวดหมู่บริการไม่สำเร็จ: {categoriesError}
+            </p>
+          )}
         </div>
 
         {/* Recommended Providers Section */}
@@ -218,7 +355,7 @@ export default function HomePage() {
 
           {/* Providers Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProviders.map((provider) => (
+            {providers.map((provider) => (
               <div
                 key={provider.id}
                 className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm hover:shadow-md hover:border-zinc-300 transition-all flex flex-col"
@@ -261,10 +398,12 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>ยืนยันตัวตนแล้ว</span>
-                    </div>
+                    {provider.verified && (
+                      <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>ยืนยันตัวตนแล้ว</span>
+                      </div>
+                    )}
 
                     {/* Location Zones */}
                     <p className="text-[11px] text-zinc-400 line-clamp-1 pt-1">
@@ -294,6 +433,19 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          {providersLoading && (
+            <p role="status" className="text-sm text-zinc-500">
+              กำลังโหลดผู้ให้บริการ...
+            </p>
+          )}
+          {providersError && (
+            <p role="alert" className="text-sm text-red-600">
+              โหลดผู้ให้บริการไม่สำเร็จ: {providersError}
+            </p>
+          )}
+          {!providersLoading && !providersError && providers.length === 0 && (
+            <p className="text-sm text-zinc-500">ไม่พบผู้ให้บริการที่ตรงกับการค้นหา</p>
+          )}
         </div>
       </main>
 
