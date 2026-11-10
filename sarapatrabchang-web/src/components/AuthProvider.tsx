@@ -8,11 +8,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { User } from "@supabase/supabase-js";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseClient, type MinimalSupabaseUser } from "@/lib/supabase";
 
 interface AuthContextValue {
-  user: User | null;
+  user: MinimalSupabaseUser | null;
   loading: boolean;
   isConfigured: boolean;
   syncError: string;
@@ -23,7 +22,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const client = getSupabaseClient();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<MinimalSupabaseUser | null>(null);
   const [loading, setLoading] = useState(Boolean(client));
   const [syncError, setSyncError] = useState("");
 
@@ -50,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const { data } = client.auth.onAuthStateChange((_event, session) => {
+    const { data } = client.auth.onAuthStateChange((_event: any, session: any) => {
       if (active) {
         setUser(session?.user ?? null);
         setLoading(false);
@@ -59,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    client.auth.getUser().then(({ data: result, error }) => {
+    client.auth.getUser().then(({ data: result, error }: any) => {
       if (!active) return;
       if (error) {
         setUser(null);
