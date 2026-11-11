@@ -125,13 +125,13 @@ async function syncUser(pool, user) {
     typeof metadata.full_name === "string" ? metadata.full_name.trim() : "";
   const phone = typeof metadata.phone === "string" ? metadata.phone.trim() : "";
 
-  await pool.execute(
+  await pool.query(
     `INSERT INTO users (supabase_id, email, full_name, phone)
-     VALUES (?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-       email = VALUES(email),
-       full_name = VALUES(full_name),
-       phone = VALUES(phone),
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (supabase_id) DO UPDATE SET
+       email = EXCLUDED.email,
+       full_name = EXCLUDED.full_name,
+       phone = EXCLUDED.phone,
        updated_at = CURRENT_TIMESTAMP`,
     [user.id, user.email, fullName, phone],
   );
@@ -222,7 +222,7 @@ export function createApp({
   supabaseAnonKey = process.env.SUPABASE_ANON_KEY,
   fetchImpl = fetch,
 } = {}) {
-  if (!pool) throw new Error("A MySQL connection pool is required");
+  if (!pool) throw new Error("A PostgreSQL connection pool is required");
   const authOptions = { supabaseUrl, supabaseAnonKey, fetchImpl };
   const allowedOrigins = new Set(
     webOrigin.split(",").map((origin) => origin.trim()).filter(Boolean),
@@ -283,11 +283,11 @@ export function createApp({
         const user = await authenticate(request, authOptions);
         const booking = validateBooking(await readJsonBody(request), user);
         await syncUser(pool, user);
-        await pool.execute(
+        await pool.query(
           `INSERT INTO bookings
             (id, user_id, provider_id, package_title, price, service_date,
              time_slot, contact_name, email, phone, address, note, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment')`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending_payment')`,
           [
             booking.id,
             booking.userId,
@@ -330,13 +330,13 @@ export function createApp({
         segments[1] === "bookings"
       ) {
         const user = await authenticate(request, authOptions);
-        const [rows] = await pool.execute(
-          `SELECT id, user_id AS userId, provider_id AS providerId,
-                  package_title AS packageTitle, price, service_date AS date,
-                  time_slot AS timeSlot, contact_name AS contactName,
-                  email, phone, address, note, status, created_at AS createdAt
+        const { rows } = await pool.query(
+          `SELECT id, user_id AS "userId", provider_id AS "providerId",
+                  package_title AS "packageTitle", price, service_date AS date,
+                  time_slot AS "timeSlot", contact_name AS "contactName",
+                  email, phone, address, note, status, created_at AS "createdAt"
            FROM bookings
-           WHERE id = ? AND user_id = ?
+           WHERE id = $1 AND user_id = $2
            LIMIT 1`,
           [segments[2], user.id],
         );
@@ -382,10 +382,7 @@ const isDirectExecution =
 
 if (isDirectExecution) {
   const requiredEnvironment = [
-    "MYSQL_HOST",
-    "MYSQL_USER",
-    "MYSQL_PASSWORD",
-    "MYSQL_DATABASE",
+    "DATABASE_URL",
     "SUPABASE_URL",
     "SUPABASE_ANON_KEY",
   ];
@@ -394,15 +391,11 @@ if (isDirectExecution) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
   }
 
-  const { createPool } = await import("mysql2/promise");
-  const pool = createPool({
-    host: process.env.MYSQL_HOST,
-    port: Number(process.env.MYSQL_PORT ?? 3306),
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    connectionLimit: 10,
-    waitForConnections: true,
+  const { Pool } = await import("pg");
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    enableChannelBinding: true,
+    max: 10,
   });
   const port = Number(process.env.PORT ?? 4000);
   const app = createApp({

@@ -14,16 +14,14 @@ let baseUrl;
 let statements;
 
 const pool = {
-  async query(sql) {
-    statements.push({ sql, params: [] });
-    return [[{ 1: 1 }]];
-  },
-  async execute(sql, params) {
+  async query(sql, params = []) {
     statements.push({ sql, params });
     if (sql.includes("SELECT id, user_id")) {
-      return [[{ id: params[0], userId: params[1], email: authenticatedUser.email }]];
+      return {
+        rows: [{ id: "booking-id", userId: params[1], email: authenticatedUser.email }],
+      };
     }
-    return [{ affectedRows: 1 }];
+    return { rows: [] };
   },
 };
 
@@ -53,7 +51,7 @@ after(async () => {
   );
 });
 
-test("health checks MySQL and reports readiness", async () => {
+test("health checks PostgreSQL and reports readiness", async () => {
   const response = await fetch(`${baseUrl}/api/health`);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { status: "ok", database: "connected" });
@@ -75,7 +73,7 @@ test("category and provider endpoints return data and filter comma-separated loc
   assert.equal(result.data[0].id, "cleaning");
 });
 
-test("auth profile is fetched from Supabase and synchronized to MySQL", async () => {
+test("auth profile is fetched from Supabase and synchronized to PostgreSQL", async () => {
   const response = await fetch(`${baseUrl}/api/auth/me`, {
     headers: { authorization: "Bearer valid" },
   });
@@ -96,7 +94,7 @@ test("auth routes reject missing and invalid credentials", async () => {
   assert.equal(invalid.status, 401);
 });
 
-test("booking data uses the signed-in user and parameterized MySQL queries", async () => {
+test("booking data uses the signed-in user and parameterized PostgreSQL queries", async () => {
   const response = await fetch(`${baseUrl}/api/bookings`, {
     method: "POST",
     headers: {
@@ -121,7 +119,7 @@ test("booking data uses the signed-in user and parameterized MySQL queries", asy
 
   const insert = statements.find(({ sql }) => sql.includes("INSERT INTO bookings"));
   assert.ok(insert);
-  assert.ok(insert.sql.includes("VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_payment')"));
+  assert.ok(insert.sql.includes("VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending_payment')"));
   assert.equal(insert.params[1], authenticatedUser.id);
   assert.equal(insert.params[7], authenticatedUser.user_metadata.full_name);
 });
@@ -132,7 +130,7 @@ test("booking reads are scoped to the authenticated user", async () => {
   });
   assert.equal(response.status, 200);
   const query = statements.find(({ sql }) => sql.includes("SELECT id, user_id"));
-  assert.ok(query.sql.includes("WHERE id = ? AND user_id = ?"));
+  assert.ok(query.sql.includes("WHERE id = $1 AND user_id = $2"));
   assert.deepEqual(query.params, ["booking-id", authenticatedUser.id]);
 });
 
