@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, UploadCloud, CheckCircle2 } from "lucide-react";
+import { useAuth } from "@/components/AuthProvider";
 
 interface RegisterFormProps {
   onSuccess: () => void;
@@ -13,6 +14,7 @@ export default function RegisterForm({
   onSuccess,
   onSwitchToLogin,
 }: RegisterFormProps) {
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [idCardFile, setIdCardFile] = useState<string | null>(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -21,10 +23,23 @@ export default function RegisterForm({
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSuccess();
+    setError("");
+    setSubmitting(true);
+    try {
+      await signUp({ email, password, fullName, phone });
+      onSuccess();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error ? requestError.message : "สมัครสมาชิกไม่สำเร็จ",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -47,6 +62,7 @@ export default function RegisterForm({
           <input
             type="email"
             required
+            autoComplete="email"
             placeholder="example@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -63,6 +79,9 @@ export default function RegisterForm({
             <input
               type={showPassword ? "text" : "password"}
               required
+              minLength={8}
+              pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}"
+              autoComplete="new-password"
               placeholder="สร้างรหัสผ่าน"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -91,6 +110,7 @@ export default function RegisterForm({
           <input
             type="text"
             required
+            autoComplete="name"
             placeholder="ชื่อและนามสกุลตามบัตรประชาชน"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
@@ -106,6 +126,7 @@ export default function RegisterForm({
           <input
             type="tel"
             required
+            autoComplete="tel"
             placeholder="08X-XXX-XXXX"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -175,12 +196,15 @@ export default function RegisterForm({
         </label>
       </div>
 
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+
       {/* Submit button */}
       <button
         type="submit"
-        className="w-full py-3.5 px-4 bg-zinc-900 hover:bg-black text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+        disabled={submitting}
+        className="w-full py-3.5 px-4 bg-zinc-900 hover:bg-black disabled:opacity-60 text-white rounded-xl text-sm font-semibold transition-all shadow-sm hover:shadow active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
       >
-        สมัครสมาชิกบุคคลทั่วไป
+        {submitting ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิกบุคคลทั่วไป"}
       </button>
 
       <div className="text-center pt-2">

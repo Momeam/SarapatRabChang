@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function AdminLayout({
   children,
@@ -9,6 +11,25 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (!user) {
+      router.replace("/admin-login");
+    } else if (user.role !== "Admin") {
+      router.replace("/");
+    }
+  }, [loading, router, user]);
+
+  if (loading || !user || user.role !== "Admin") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-white">
+        กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ...
+      </main>
+    );
+  }
 
   // ฟังก์ชันเช็ค URL เพื่อเปลี่ยนสีเมนู (แถบสีส้ม) ให้ตรงกับหน้าปัจจุบัน
   const isActive = (path: string) => pathname.startsWith(path);

@@ -7,13 +7,18 @@ import Footer from "@/components/Footer";
 import AuthHero from "@/components/auth/AuthHero";
 import RegisterForm from "@/components/auth/RegisterForm";
 import LoginForm from "@/components/auth/LoginForm";
+import type { AuthUser } from "@/lib/auth";
 
 export default function AuthPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"register" | "login">("register");
 
-  const handleAuthSuccess = () => {
+  const handleRegistrationSuccess = () => {
     router.push("/");
+  };
+
+  const handleLoginSuccess = (user: AuthUser) => {
+    router.push(user.role === "Admin" ? "/admin/dashboard" : "/");
   };
 
   return (
@@ -58,12 +63,12 @@ export default function AuthPage() {
             {/* Dynamic Form View */}
             {activeTab === "register" ? (
               <RegisterForm
-                onSuccess={handleAuthSuccess}
+                onSuccess={handleRegistrationSuccess}
                 onSwitchToLogin={() => setActiveTab("login")}
               />
             ) : (
               <LoginForm
-                onSuccess={handleAuthSuccess}
+                onSuccess={handleLoginSuccess}
                 onSwitchToRegister={() => setActiveTab("register")}
               />
             )}
