@@ -21,6 +21,11 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className="min-h-full flex flex-col font-sans bg-zinc-50 text-zinc-900 antialiased selection:bg-orange-500 selection:text-white">
         <AuthProvider>

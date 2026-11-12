@@ -6,7 +6,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/components/AuthProvider";
 import ProfileHeader from "@/components/profile/ProfileHeader";
+import SwitchRoleCard from "@/components/profile/SwitchRoleCard";
 import InterestsCard from "@/components/profile/InterestsCard";
+import PrivacyInfoCard from "@/components/profile/PrivacyInfoCard";
 import ContactAddressCard from "@/components/profile/ContactAddressCard";
 import TaxInfoCard from "@/components/profile/TaxInfoCard";
 import PublicReviewsFeed from "@/components/profile/PublicReviewsFeed";
@@ -71,11 +73,19 @@ export default function ProfilePage() {
           reviewCount={3}
         />
 
-        {/* 3-column info cards */}
+        {/* Switch Role Card */}
+        <SwitchRoleCard />
+
+        {/* Info cards matching wireframe */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <InterestsCard initial={["แม่บ้าน", "ช่างไฟ", "จัดสวน"]} />
-          <ContactAddressCard email={email} phone={phone} />
-          <TaxInfoCard displayName={displayName} email={email} />
+          <div className="lg:col-span-1 space-y-6">
+            <InterestsCard initial={["แม่บ้าน", "ช่างไฟ", "จัดสวน"]} />
+            <PrivacyInfoCard />
+          </div>
+          <div className="lg:col-span-2 space-y-6">
+            <ContactAddressCard email={email} phone={phone} />
+            <TaxInfoCard displayName={displayName} email={email} />
+          </div>
         </div>
 
         {/* Public reviews feed */}
