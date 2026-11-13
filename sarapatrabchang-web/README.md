@@ -20,7 +20,9 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 ## API configuration
 
-The API stores users, sessions, and bookings in Neon PostgreSQL. Copy `sarapatrabchang-api/.env.example` to `sarapatrabchang-api/.env` and set `DATABASE_URL` to your Neon connection string. Copy this project's `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL` to the API URL (default: `http://127.0.0.1:4000`). Set up the database schema with `npm run db:setup` from the API directory, then start the API before opening the web app.
+The API stores users, sessions, provider profiles, service listings, packages, and bookings in Neon PostgreSQL. Copy `sarapatrabchang-api/.env.example` to `sarapatrabchang-api/.env` and set `DATABASE_URL` to your Neon connection string. Copy this project's `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL` to the API URL (default: `http://127.0.0.1:4000`). Set up the database schema and initial service categories with `npm run db:setup` from the API directory, then start the API before opening the web app. The home page searches active listings from Neon; signed-in providers can publish a listing from `/provider/services/new`, and signed-in users can create and track bookings at `/tracking`. Booking status changes do not process or transfer money; a payment gateway is not configured.
+
+The profile page at `/profile` reads the signed-in user's account, contact details, interests, and work reviews from Neon. Profile edits are saved through the authenticated API; email changes are not supported from this page.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

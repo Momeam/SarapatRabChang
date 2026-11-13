@@ -10,6 +10,8 @@ interface ServiceFormPricingProps {
   setPrice: (val: string) => void;
   duration: string;
   setDuration: (val: string) => void;
+  features: string[];
+  setFeatures: (val: string[]) => void;
 }
 
 export default function ServiceFormPricing({
@@ -19,26 +21,22 @@ export default function ServiceFormPricing({
   setPrice,
   duration,
   setDuration,
+  features,
+  setFeatures,
 }: ServiceFormPricingProps) {
-  const [tasks, setTasks] = useState<string[]>([
-    "กวาด ดูดฝุ่น และถูพื้น",
-    "เช็ดฝุ่นเฟอร์นิเจอร์และพื้นผิวทั่วไป",
-    "ทำความสะอาดห้องน้ำ 1 ห้อง",
-    "ทำความสะอาดครัวและทิ้งขยะ",
-  ]);
   const [newTaskInput, setNewTaskInput] = useState("");
   const [showInput, setShowInput] = useState(false);
 
   const addTask = () => {
     if (newTaskInput.trim()) {
-      setTasks([...tasks, newTaskInput.trim()]);
+      setFeatures([...features, newTaskInput.trim()]);
       setNewTaskInput("");
       setShowInput(false);
     }
   };
 
   const removeTask = (index: number) => {
-    setTasks(tasks.filter((_, i) => i !== index));
+    setFeatures(features.filter((_, i) => i !== index));
   };
 
   return (
@@ -96,7 +94,7 @@ export default function ServiceFormPricing({
             รายการงานที่รวมในแพ็กเกจ
           </label>
           <div className="space-y-2">
-            {tasks.map((task, idx) => (
+            {features.map((task, idx) => (
               <div
                 key={idx}
                 className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-50 border border-zinc-200/80 text-xs"

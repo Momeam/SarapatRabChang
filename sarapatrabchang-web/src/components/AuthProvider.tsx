@@ -14,6 +14,7 @@ import {
   login,
   logout,
   register,
+  cacheUser,
   type AuthUser,
 } from "@/lib/auth";
 
@@ -21,6 +22,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   syncError: string;
+  updateProfile: (updates: Partial<AuthUser["user_metadata"]>) => void;
   signIn: (credentials: { email: string; password: string }) => Promise<AuthUser>;
   signUp: (credentials: {
     email: string;
@@ -66,6 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       syncError,
+      updateProfile: (updates) => {
+        if (!user) return;
+        const updatedUser = {
+          ...user,
+          user_metadata: { ...user.user_metadata, ...updates },
+        };
+        cacheUser(updatedUser);
+        setUser(updatedUser);
+      },
       signIn: async (credentials) => {
         const signedInUser = await login(credentials);
         setUser(signedInUser);

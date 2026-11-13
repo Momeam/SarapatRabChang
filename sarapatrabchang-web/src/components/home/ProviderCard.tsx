@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Star, CheckCircle2 } from "lucide-react";
+import { Star, CheckCircle2, UserRound } from "lucide-react";
 import { Provider } from "@/types";
 
 interface ProviderCardProps {
@@ -11,11 +11,17 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
     <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm hover:shadow-md hover:border-zinc-300 transition-all flex flex-col">
       {/* Image / Header area */}
       <div className="relative h-44 bg-zinc-100 overflow-hidden">
-        <img
-          src={provider.avatar}
-          alt={provider.name}
-          className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
-        />
+        {provider.avatar ? (
+          <img
+            src={provider.avatar}
+            alt={provider.name}
+            className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-500">
+            <UserRound className="w-16 h-16" />
+          </div>
+        )}
         <div className="absolute top-3 left-3">
           <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/95 text-zinc-800 shadow-sm backdrop-blur-xs">
             {provider.category}
@@ -47,9 +53,9 @@ export default function ProviderCard({ provider }: ProviderCardProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>ยืนยันตัวตนแล้ว</span>
+          <div className={`flex items-center gap-1 text-[11px] font-medium ${provider.verified ? "text-emerald-600" : "text-zinc-500"}`}>
+            {provider.verified && <CheckCircle2 className="w-3.5 h-3.5" />}
+            <span>{provider.verified ? "ยืนยันตัวตนแล้ว" : "รอยืนยันตัวตน"}</span>
           </div>
 
           {/* Location Zones */}

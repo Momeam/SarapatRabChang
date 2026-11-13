@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { Pool } from "pg";
+import { categories } from "./data.js";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("Missing required environment variable: DATABASE_URL");
@@ -66,6 +67,17 @@ try {
   }
 
   await client.query(schema);
+  for (const [index, category] of categories.entries()) {
+    await client.query(
+      `INSERT INTO service_category (category_key, category_name, icon_name, display_order)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (category_name) DO UPDATE
+       SET category_key = COALESCE(service_category.category_key, EXCLUDED.category_key),
+           icon_name = EXCLUDED.icon_name,
+           display_order = EXCLUDED.display_order`,
+      [category.id, category.name, category.icon, index],
+    );
+  }
   await client.query("COMMIT");
   await client.query("SELECT 1");
   console.log("Neon database schema is ready.");

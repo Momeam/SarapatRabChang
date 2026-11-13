@@ -1,7 +1,7 @@
 export interface Provider {
   id: string;
   name: string;
-  avatar: string;
+  avatar: string | null;
   category: string;
   categoryKey: string;
   serviceTitle: string;
@@ -17,11 +17,30 @@ export interface Provider {
   hasTools: boolean;
   workingHours: string;
   description: string;
+  packageTitle?: string;
+  duration?: string;
+  features?: string[];
+  reviews?: ProviderReview[];
   portfolio: {
     title: string;
     image: string;
     filename: string;
   }[];
+}
+
+export interface ProviderReview {
+  id: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
 }
 
 export interface BookingDetails {

@@ -8,7 +8,7 @@ export default function PrivacyInfoCard() {
       <div className="space-y-2 text-xs">
         <div>
           <span className="font-semibold text-zinc-800">สาธารณะ: </span>
-          <span className="text-zinc-600">รูป, ชื่อ, ประเภทผู้ใช้, คำแนะนำตัว, และความคิดเห็น/รีวิว</span>
+          <span className="text-zinc-600">รูป, ชื่อ, ประเภทผู้ใช้, คำแนะนำตัว และรีวิวจากงานจริง</span>
         </div>
         <div>
           <span className="font-semibold text-zinc-800">เฉพาะคุณ: </span>

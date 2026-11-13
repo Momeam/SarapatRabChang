@@ -1,10 +1,13 @@
 "use client";
 
+import { ServiceCategory } from "@/types";
+
 interface ServiceFormBasicInfoProps {
   title: string;
   setTitle: (val: string) => void;
   category: string;
   setCategory: (val: string) => void;
+  categories: ServiceCategory[];
   location: string;
   setLocation: (val: string) => void;
   description: string;
@@ -16,6 +19,7 @@ export default function ServiceFormBasicInfo({
   setTitle,
   category,
   setCategory,
+  categories,
   location,
   setLocation,
   description,
@@ -50,15 +54,19 @@ export default function ServiceFormBasicInfo({
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            required
             className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
           >
-            <option value="แม่บ้าน">แม่บ้าน</option>
-            <option value="ช่างไฟ/ประปา">ช่างไฟ/ประปา</option>
-            <option value="แอร์บ้าน">แอร์บ้าน</option>
-            <option value="จัดสวน">จัดสวน</option>
-            <option value="ซ่อมบำรุงทั่วไป">ซ่อมบำรุงทั่วไป</option>
+            <option value="">เลือกหมวดหมู่บริการ</option>
+            {categories
+              .filter((item) => item.id !== "all")
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
           </select>
-          <p className="text-[11px] text-zinc-400 mt-1">แม่บ้าน • ช่างไฟ/ประปา • แอร์บ้าน • จัดสวน</p>
+          <p className="text-[11px] text-zinc-400 mt-1">รายการหมวดหมู่โหลดจากฐานข้อมูล</p>
         </div>
 
         <div>

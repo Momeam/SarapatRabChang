@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -10,19 +10,78 @@ import ServiceOverview from "@/components/services/ServiceOverview";
 import ServicePortfolioGallery from "@/components/services/ServicePortfolioGallery";
 import ServiceReviews from "@/components/services/ServiceReviews";
 import ServiceBookingCard from "@/components/services/ServiceBookingCard";
-import { mockProviders } from "@/data/mockData";
 import { ChevronRight } from "lucide-react";
+import { requestApi } from "@/lib/api";
+import { Provider } from "@/types";
+
+function getDefaultServiceDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
 
 export default function ServiceDetailPage() {
   const params = useParams();
-  const providerId = (params?.id as string) || "cleaning";
+  const providerId = typeof params?.id === "string" ? params.id : "";
+  const hasValidProviderId = /^\d+$/.test(providerId);
 
-  const provider =
-    mockProviders.find((p) => p.id === providerId) || mockProviders[0];
-
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadedProviderId, setLoadedProviderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "portfolio">("details");
-  const [selectedDate, setSelectedDate] = useState("2026-11-10");
+  const [selectedDate, setSelectedDate] = useState(getDefaultServiceDate);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("09:00-12:00");
+  const isLoading = hasValidProviderId && loadedProviderId !== providerId;
+
+  useEffect(() => {
+    if (!hasValidProviderId) return;
+    let active = true;
+    requestApi<Provider>(`/api/providers/${encodeURIComponent(providerId)}`)
+      .then((result) => {
+        if (active) {
+          setProvider(result);
+          setLoadError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setLoadError(
+            error instanceof Error ? error.message : "โหลดข้อมูลบริการไม่สำเร็จ",
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoadedProviderId(providerId);
+      });
+    return () => {
+      active = false;
+    };
+  }, [hasValidProviderId, providerId]);
+
+  if (isLoading || !provider || loadError) {
+    return (
+      <div className="min-h-screen flex flex-col bg-zinc-50">
+        <Navbar />
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className={loadError && hasValidProviderId ? "text-red-700" : "text-zinc-500"}>
+            {!hasValidProviderId
+              ? "ไม่พบประกาศนี้ อาจเป็นลิงก์เก่าหรือรหัสประกาศไม่ถูกต้อง"
+              : loadError ?? "กำลังโหลดข้อมูลบริการ..."}
+          </div>
+          {(loadError || !hasValidProviderId) && (
+            <Link href="/" className="mt-4 inline-block text-sm font-semibold text-orange-600">
+              กลับไปหน้าค้นหาบริการ
+            </Link>
+          )}
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50">

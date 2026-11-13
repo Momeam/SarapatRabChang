@@ -29,7 +29,7 @@ export default function ChatHeader({
       </div>
 
       <Link
-        href="/services/cleaning"
+        href="/"
         className="px-3 py-1.5 rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors"
       >
         ดูโปรไฟล์

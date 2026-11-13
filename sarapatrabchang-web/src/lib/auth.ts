@@ -1,3 +1,5 @@
+import { getApiUrl } from "./api";
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -42,21 +44,8 @@ function setLocalUser(user: AuthUser | null) {
   } catch {}
 }
 
-function getApiUrl() {
-  const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (typeof window !== "undefined") {
-    const pageHost = window.location.hostname;
-    const loopbackHosts = ["localhost", "127.0.0.1", "::1", "[::1]"];
-    if (configuredUrl) {
-      const apiUrl = new URL(configuredUrl);
-      if (loopbackHosts.includes(apiUrl.hostname)) {
-        apiUrl.hostname = pageHost;
-      }
-      return apiUrl.origin;
-    }
-    return `${window.location.protocol}//${pageHost}:4000`;
-  }
-  return configuredUrl ?? "http://localhost:4000";
+export function cacheUser(user: AuthUser) {
+  setLocalUser(user);
 }
 
 async function requestAuth(
