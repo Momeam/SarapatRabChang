@@ -10,16 +10,18 @@ import {
   Shirt,
   LayoutGrid,
 } from "lucide-react";
-import { mockCategories } from "@/data/mockData";
+import { ServiceCategory } from "@/types";
 
 interface CategoryGridProps {
   selectedCategory: string;
   onSelectCategory: (id: string) => void;
+  categories: ServiceCategory[];
 }
 
 export default function CategoryGrid({
   selectedCategory,
   onSelectCategory,
+  categories,
 }: CategoryGridProps) {
   const getCategoryIcon = (iconName: string) => {
     switch (iconName) {
@@ -48,7 +50,7 @@ export default function CategoryGrid({
         เลือกบริการที่คุณต้องการ
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        {mockCategories.map((cat) => {
+        {categories.map((cat) => {
           const isSelected = selectedCategory === cat.id;
           return (
             <button
@@ -71,6 +73,9 @@ export default function CategoryGrid({
               </div>
               <span className="text-xs font-semibold leading-tight line-clamp-1">
                 {cat.name}
+              </span>
+              <span className={`text-[10px] ${isSelected ? "text-white/80" : "text-zinc-400"}`}>
+                {cat.count} บริการ
               </span>
             </button>
           );

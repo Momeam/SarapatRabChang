@@ -32,8 +32,8 @@ export default function DemoPageNavigator() {
     {
       pageNumber: "หน้า 3",
       title: "รายละเอียดบริการ & ผู้ให้บริการ",
-      path: "/services/cleaning",
-      description: "โปรไฟล์ช่าง, ภาพผลงาน, แพ็กเกจราคา, จองเบื้องต้น",
+      path: "/",
+      description: "เลือกประกาศจากรายการผู้ให้บริการบนหน้าแรก",
     },
     {
       pageNumber: "หน้า 4",
@@ -43,15 +43,15 @@ export default function DemoPageNavigator() {
     },
     {
       pageNumber: "หน้า 5",
-      title: "ขั้นตอนที่ 3: ตรวจสอบและชำระเงิน",
+      title: "ขั้นตอนที่ 3: ยืนยันรายการจอง",
       path: "/booking/checkout",
-      description: "เลือกชำระเงิน, ขอใบกำกับภาษี e-Tax, สรุปยอดและ Escrow",
+      description: "ตรวจสอบรายละเอียดและบันทึกรายการลงฐานข้อมูล",
     },
     {
       pageNumber: "หน้า 6",
-      title: "ชำระเงินส่วนบุคคล (บัตรเครดิต)",
+      title: "ยืนยันรายการจอง",
       path: "/booking/payment",
-      description: "กรอกข้อมูลบัตรเครดิต, ยืนยันชำระเงินผ่านประกันกลาง",
+      description: "เส้นทางเดิมจะนำไปยังหน้าตรวจสอบและบันทึกรายการจอง",
     },
     {
       pageNumber: "หน้า 7",
@@ -61,15 +61,15 @@ export default function DemoPageNavigator() {
     },
     {
       pageNumber: "หน้า 8",
-      title: "ติดตามงาน & ตรวจรับงาน (Escrow)",
-      path: "/orders/SRP-691105-024",
-      description: "แถบสถานะงาน 3 สเต็ป, ตรวจสอบภาพผลงาน 3 รูป, ปุ่มปล่อยเงิน",
+      title: "ติดตามงานและตรวจรับงาน",
+      path: "/tracking",
+      description: "ติดตามรายการจองจากฐานข้อมูลและเปลี่ยนสถานะงาน",
     },
     {
       pageNumber: "หน้า 9",
-      title: "ประเมินและให้คะแนน",
-      path: "/orders/SRP-691105-024/review",
-      description: "เลือกดาว 1-5 ดาว, เขียนรีวิวส่งเข้าโปรไฟล์",
+      title: "รายการงานที่ติดตาม",
+      path: "/tracking",
+      description: "เลือกรายการจองเพื่อดูสถานะและหลักฐานส่งมอบ",
     },
     {
       pageNumber: "หน้า 10",

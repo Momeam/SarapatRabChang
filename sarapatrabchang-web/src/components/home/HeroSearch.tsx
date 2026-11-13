@@ -1,12 +1,16 @@
 "use client";
 
 import { MapPin, Search } from "lucide-react";
+import { ServiceCategory } from "@/types";
 
 interface HeroSearchProps {
   location: string;
   setLocation: (loc: string) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
+  categories: ServiceCategory[];
+  onSearch: () => void;
+  isSearching: boolean;
   userName?: string;
 }
 
@@ -15,6 +19,9 @@ export default function HeroSearch({
   setLocation,
   selectedCategory,
   setSelectedCategory,
+  categories,
+  onSearch,
+  isSearching,
   userName = "คุณพิมพ์ชนก",
 }: HeroSearchProps) {
   return (
@@ -62,11 +69,13 @@ export default function HeroSearch({
               className="w-full px-3 py-2.5 bg-zinc-50 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
             >
               <option value="all">เลือกหมวดหมู่บริการ (ทั้งหมด)</option>
-              <option value="maid">แม่บ้าน</option>
-              <option value="electrician">ช่างไฟ/ประปา</option>
-              <option value="moving">ขนย้าย</option>
-              <option value="gardening">จัดสวน</option>
-              <option value="appliance">ซ่อมเครื่องใช้ไฟฟ้า</option>
+              {categories
+                .filter((category) => category.id !== "all")
+                .map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -74,10 +83,12 @@ export default function HeroSearch({
           <div className="md:col-span-2 pt-0 md:pt-5">
             <button
               type="button"
+              onClick={onSearch}
+              disabled={isSearching}
               className="w-full py-2.5 px-4 bg-zinc-950 hover:bg-orange-500 text-white rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
               <Search className="w-4 h-4" />
-              <span>ค้นหา</span>
+              <span>{isSearching ? "กำลังค้นหา..." : "ค้นหา"}</span>
             </button>
           </div>
         </div>

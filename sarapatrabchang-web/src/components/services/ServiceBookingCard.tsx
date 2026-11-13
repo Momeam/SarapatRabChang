@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, MessageSquare } from "lucide-react";
-import EscrowBadge from "@/components/EscrowBadge";
+import { saveBookingDraft } from "@/lib/booking";
 import { Provider } from "@/types";
 
 interface ServiceBookingCardProps {
@@ -22,6 +23,30 @@ export default function ServiceBookingCard({
   setSelectedTimeSlot,
 }: ServiceBookingCardProps) {
   const router = useRouter();
+  const [bookingError, setBookingError] = useState<string | null>(null);
+
+  const startBooking = () => {
+    try {
+      saveBookingDraft({
+        providerId: provider.id,
+        providerName: provider.name,
+        serviceTitle: provider.serviceTitle,
+        packageTitle: provider.packageTitle || provider.serviceTitle,
+        price: provider.startingPrice,
+        date: selectedDate,
+        timeSlot: selectedTimeSlot,
+        contactName: "",
+        phone: "",
+        address: "",
+        note: "",
+      });
+      router.push("/booking/details");
+    } catch (error) {
+      setBookingError(
+        error instanceof Error ? error.message : "เริ่มทำรายการจองไม่สำเร็จ",
+      );
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm space-y-6">
@@ -30,11 +55,8 @@ export default function ServiceBookingCard({
           กำหนดราคาและรายละเอียดแพ็กเกจ
         </span>
         <h3 className="text-lg font-bold text-zinc-900 mt-1">
-          คอนโดสะอาดสบาย
+          {provider.packageTitle || provider.serviceTitle}
         </h3>
-        <p className="text-xs text-zinc-500">
-          พื้นที่ไม่เกิน 40 ตร.ม. • แม่บ้าน 1 คน
-        </p>
       </div>
 
       {/* Price Banner */}
@@ -43,34 +65,25 @@ export default function ServiceBookingCard({
           ฿{provider.startingPrice.toLocaleString()}
         </span>
         <span className="text-xs text-zinc-500">
-          / ครั้ง • ระยะเวลา 3 ชั่วโมง
+          / {provider.priceUnit} {provider.duration ? `• ${provider.duration}` : ""}
         </span>
       </div>
 
-      {/* Package Features List */}
-      <div className="space-y-2.5">
-        <p className="text-xs font-semibold text-zinc-700">
-          บริการที่รวมในแพ็กเกจ
-        </p>
-        <ul className="space-y-2 text-xs text-zinc-600">
-          <li className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>กวาด ดูดฝุ่น และถูพื้นทุกห้อง</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>เช็ดฝุ่นเฟอร์นิเจอร์และพื้นผิวทั่วไป</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>ทำความสะอาดห้องน้ำ 1 ห้อง และครัว</span>
-          </li>
-          <li className="flex items-center gap-2">
-            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>อุปกรณ์และน้ำยาทำความสะอาดพื้นฐาน</span>
-          </li>
-        </ul>
-      </div>
+      {provider.features && provider.features.length > 0 && (
+        <div className="space-y-2.5">
+          <p className="text-xs font-semibold text-zinc-700">
+            บริการที่รวมในแพ็กเกจ
+          </p>
+          <ul className="space-y-2 text-xs text-zinc-600">
+            {provider.features.map((feature) => (
+              <li key={feature} className="flex items-center gap-2">
+                <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Date & Time Selectors */}
       <div className="space-y-4 pt-2 border-t border-zinc-100">
@@ -116,11 +129,16 @@ export default function ServiceBookingCard({
         <div className="space-y-2.5">
           <button
             type="button"
-            onClick={() => router.push("/booking/details")}
+            onClick={startBooking}
             className="w-full py-3 px-4 bg-zinc-950 hover:bg-orange-500 text-white rounded-xl text-sm font-semibold transition-all shadow-sm active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>จองบริการและชำระเงิน</span>
+            <span>จองบริการ</span>
           </button>
+          {bookingError && (
+            <p role="alert" className="text-xs text-red-600">
+              {bookingError}
+            </p>
+          )}
 
           <Link
             href="/messages"
@@ -131,9 +149,8 @@ export default function ServiceBookingCard({
           </Link>
         </div>
 
-        {/* Escrow compact badge */}
-        <div className="text-center pt-2">
-          <EscrowBadge variant="compact" className="justify-center" />
+        <div className="text-center pt-2 text-[11px] text-amber-700">
+          ระบบนี้บันทึกสถานะการจอง แต่ยังไม่รองรับการชำระเงินจริง
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { ShieldCheck, CheckCircle2 } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 interface ServiceFormSidebarProps {
   title: string;
@@ -23,14 +23,14 @@ export default function ServiceFormSidebar({
 }: ServiceFormSidebarProps) {
   return (
     <aside className="space-y-6">
-      {/* KYC Badge Card */}
+      {/* Verification Status Card */}
       <div className="bg-white rounded-2xl border border-zinc-200 p-5 shadow-sm space-y-2">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <h3 className="text-xs font-bold text-zinc-950">ยืนยันตัวตน KYC แล้ว</h3>
+          <h3 className="text-xs font-bold text-zinc-950">สถานะยืนยันตัวตนตามข้อมูลจริง</h3>
         </div>
         <p className="text-xs text-zinc-600">
-          บัญชีผู้รับจ้างพร้อมสร้างและเผยแพร่ประกาศบริการ
+          ประกาศแสดงสถานะยืนยันตัวตนหลังผ่านการตรวจสอบ KYC
         </p>
       </div>
 
@@ -66,7 +66,7 @@ export default function ServiceFormSidebar({
           </div>
 
           <p className="text-[10px] text-zinc-400 italic">
-            ภาพปกจะแสดงหลังเผยแพร่ประกาศ
+            ลิงก์ภาพปกและผลงานจะถูกบันทึกไปกับประกาศ
           </p>
         </div>
       </div>

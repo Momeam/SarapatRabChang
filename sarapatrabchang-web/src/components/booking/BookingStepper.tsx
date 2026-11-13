@@ -79,7 +79,7 @@ export default function BookingStepper({ currentStep }: BookingStepperProps) {
           >
             3
           </div>
-          <span className="hidden sm:inline">ชำระเงิน</span>
+          <span className="hidden sm:inline">ยืนยันรายการ</span>
         </div>
       </div>
     </div>

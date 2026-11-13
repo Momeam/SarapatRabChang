@@ -25,7 +25,7 @@ export default function ServiceOverview({ provider }: ServiceOverviewProps) {
           </div>
           <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/60 flex items-center gap-2.5 text-xs font-semibold text-zinc-800">
             <Wrench className="w-4 h-4 text-orange-500" />
-            <span>มีอุปกรณ์ให้พร้อม</span>
+            <span>{provider.hasTools ? "มีอุปกรณ์ให้พร้อม" : "สอบถามอุปกรณ์กับผู้ให้บริการ"}</span>
           </div>
           <div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/60 flex items-center gap-2.5 text-xs font-semibold text-zinc-800">
             <Clock className="w-4 h-4 text-orange-500" />

@@ -9,22 +9,38 @@ import BookingStepper from "@/components/booking/BookingStepper";
 import JobDetailsForm from "@/components/booking/JobDetailsForm";
 import InteractiveMapPicker from "@/components/booking/InteractiveMapPicker";
 import { ArrowRight, ArrowLeft } from "lucide-react";
+import { readBookingDraft, saveBookingDraft } from "@/lib/booking";
 
 export default function BookingDetailsPage() {
   const router = useRouter();
 
   const [jobNote, setJobNote] = useState("");
-  const [contactName, setContactName] = useState("พิมพ์ชนก ใจดี");
-  const [phone, setPhone] = useState("081 234 5678");
-  const [addressDetail, setAddressDetail] = useState(
-    "88/12 ซอยสุขุมวิท 39 ถนนสุขุมวิท แขวงคลองตันเหนือ เขตวัฒนา กรุงเทพมหานคร 10110"
-  );
+  const [contactName, setContactName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [bookingError, setBookingError] = useState<string | null>(null);
   const pinAddress = "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ";
   const pinCoords = "13.7326, 100.5703";
 
   const handleNext = () => {
-    router.push("/booking/checkout");
+    try {
+      const draft = readBookingDraft();
+      if (!draft) throw new Error("ไม่พบรายการบริการ กรุณาเลือกบริการก่อน");
+      saveBookingDraft({
+        ...draft,
+        contactName,
+        phone,
+        address: addressDetail,
+        note: jobNote,
+      });
+      setBookingError(null);
+      router.push("/booking/checkout");
+    } catch (error) {
+      setBookingError(
+        error instanceof Error ? error.message : "บันทึกรายละเอียดการจองไม่สำเร็จ",
+      );
+    }
   };
 
   return (
@@ -38,7 +54,7 @@ export default function BookingDetailsPage() {
             หน้าหลัก
           </Link>
           <span>/</span>
-          <Link href="/services/cleaning" className="hover:text-orange-600">
+          <Link href="/" className="hover:text-orange-600">
             บริการช่างและแม่บ้าน
           </Link>
           <span>/</span>
@@ -88,7 +104,7 @@ export default function BookingDetailsPage() {
         {/* Bottom Actions Bar */}
         <div className="bg-white rounded-2xl border border-zinc-200 p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
-            href="/services/cleaning"
+            href="/"
             className="flex items-center gap-1.5 text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -98,10 +114,10 @@ export default function BookingDetailsPage() {
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             <div className="text-center sm:text-right text-xs">
               <span className="font-semibold text-zinc-900 block">
-                ขั้นตอนถัดไป: ตรวจสอบและชำระเงิน
+                ขั้นตอนถัดไป: ตรวจสอบรายการจอง
               </span>
               <span className="text-[11px] text-zinc-400">
-                ยังไม่มีการเรียกเก็บเงินในขั้นตอนนี้
+                ขั้นตอนนี้ยังไม่มีการชำระเงินจริง
               </span>
             </div>
             <button
@@ -109,10 +125,15 @@ export default function BookingDetailsPage() {
               onClick={handleNext}
               className="w-full sm:w-auto py-2.5 px-6 bg-zinc-950 hover:bg-orange-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
-              <span>ดำเนินการต่อเพื่อชำระเงิน</span>
+              <span>ดำเนินการต่อเพื่อตรวจสอบรายการ</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
+          {bookingError && (
+            <p role="alert" className="mt-3 text-xs text-red-600">
+              {bookingError}
+            </p>
+          )}
         </div>
       </main>
 

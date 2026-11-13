@@ -16,7 +16,8 @@ export default function ServicePortfolioGallery({
           <h3 className="text-base font-bold text-zinc-900">ผลงานที่ผ่านมา</h3>
           <span className="text-xs text-zinc-400">ภาพตัวอย่างจากงานจริง</span>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        {portfolio.length > 0 ? (
+          <div className="grid grid-cols-3 gap-3">
           {portfolio.map((item, idx) => (
             <div
               key={idx}
@@ -36,14 +37,18 @@ export default function ServicePortfolioGallery({
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        ) : (
+          <p className="text-xs text-zinc-500">ยังไม่มีรูปผลงาน</p>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {portfolio.map((item, idx) => (
+    portfolio.length > 0 ? (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {portfolio.map((item, idx) => (
         <div
           key={idx}
           className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm"
@@ -62,8 +67,11 @@ export default function ServicePortfolioGallery({
             </p>
           </div>
         </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    ) : (
+      <p className="text-sm text-zinc-500">ยังไม่มีรูปผลงาน</p>
+    )
   );
 }
 

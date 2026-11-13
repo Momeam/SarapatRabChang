@@ -161,7 +161,7 @@ export default function Navbar() {
                   ค้นหาบริการ
                 </Link>
                 <Link
-                  href="/services/cleaning"
+                  href="/services"
                   className={`transition-colors hover:text-orange-600 ${
                     pathname.startsWith("/services") ? "text-orange-600 font-semibold" : "text-zinc-600"
                   }`}
@@ -169,7 +169,7 @@ export default function Navbar() {
                   บริการยอดนิยม
                 </Link>
                 <Link
-                  href="/orders/SRP-691105-024"
+                  href="/tracking"
                   className={`transition-colors hover:text-orange-600 ${
                     pathname.startsWith("/orders") || pathname.startsWith("/tracking")
                       ? "text-orange-600 font-semibold"
@@ -368,7 +368,7 @@ export default function Navbar() {
                           โปรไฟล์และข้อมูลส่วนตัว
                         </Link>
                         <Link
-                          href="/orders/SRP-691105-024"
+                          href="/tracking"
                           onClick={() => setShowProfileMenu(false)}
                           className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
                         >
