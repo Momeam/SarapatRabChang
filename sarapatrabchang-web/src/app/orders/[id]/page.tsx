@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import OrderStatusStepper from "@/components/orders/OrderStatusStepper";
 import DeliveryProofGallery from "@/components/orders/DeliveryProofGallery";
 import WorkApprovalCard from "@/components/orders/WorkApprovalCard";
+import BookingChat from "@/components/orders/BookingChat";
 import OrderSidebarSummary from "@/components/orders/OrderSidebarSummary";
 import { requestApi } from "@/lib/api";
 import { Booking, BookingAction } from "@/lib/booking";
@@ -167,6 +168,7 @@ export default function OrderTrackingPage() {
                   notice={notice}
                   onAction={handleAction}
                 />
+                <BookingChat bookingId={booking.id} viewerRole={booking.viewerRole} />
                 {booking.statusNote && (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     รายละเอียดสถานะ: {booking.statusNote}

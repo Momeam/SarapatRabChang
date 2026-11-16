@@ -20,7 +20,7 @@ export async function requestApi<T>(
   options: RequestInit = {},
 ): Promise<T> {
   const headers = new Headers(options.headers);
-  if (options.body && !headers.has("content-type")) {
+  if (typeof options.body === "string" && !headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
   const response = await fetch(`${getApiUrl()}${path}`, {

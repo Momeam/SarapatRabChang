@@ -12,7 +12,7 @@ import ServiceFormImages from "@/components/provider/ServiceFormImages";
 import ServiceFormSidebar from "@/components/provider/ServiceFormSidebar";
 import { useAuth } from "@/components/AuthProvider";
 import { requestApi } from "@/lib/api";
-import { Provider, ServiceCategory } from "@/types";
+import { Provider, ProviderDashboard, ServiceCategory } from "@/types";
 
 export default function NewServicePage() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function NewServicePage() {
   const displayName =
     typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
       ? user.user_metadata.full_name
-      : "พิมพ์ชนก ใจดี";
+      : "ผู้รับจ้าง";
 
   const [title, setTitle] = useState("ทำความสะอาดคอนโดและบ้าน");
   const [category, setCategory] = useState("");
@@ -48,15 +48,42 @@ export default function NewServicePage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
   const [createdProviderId, setCreatedProviderId] = useState<string | null>(null);
+  const [editServiceId, setEditServiceId] = useState<string | null>(null);
+  const [isLoadingEdit, setIsLoadingEdit] = useState(true);
 
   useEffect(() => {
     let active = true;
-    requestApi<ServiceCategory[]>("/api/categories")
-      .then((result) => {
+    const serviceId = new URLSearchParams(window.location.search).get("edit");
+
+    Promise.all([
+      requestApi<ServiceCategory[]>("/api/categories"),
+      serviceId
+        ? requestApi<ProviderDashboard>("/api/provider/dashboard")
+        : Promise.resolve(null),
+    ])
+      .then(([result, dashboard]) => {
         if (!active) return;
+        setEditServiceId(serviceId);
         const availableCategories = result.filter((item) => item.id !== "all");
         setCategories(availableCategories);
-        setCategory(availableCategories[0]?.id ?? "");
+        const service = dashboard?.services.find((item) => item.id === serviceId);
+        if (serviceId && !service) {
+          throw new Error("ไม่พบประกาศนี้หรือคุณไม่มีสิทธิ์แก้ไข");
+        }
+        if (service) {
+          setTitle(service.title);
+          setCategory(service.categoryKey);
+          setLocation(service.location);
+          setDescription(service.description);
+          setPackageName(service.packageDesc);
+          setPrice(String(service.price));
+          setDuration(service.duration);
+          setFeatures(service.features);
+          setCoverImageUrl(service.coverImageUrl ?? "");
+          setPortfolioUrls([...service.portfolioUrls, "", "", ""].slice(0, 3));
+        } else {
+          setCategory(availableCategories[0]?.id ?? "");
+        }
       })
       .catch((error: unknown) => {
         if (active) {
@@ -64,6 +91,9 @@ export default function NewServicePage() {
             error instanceof Error ? error.message : "โหลดหมวดหมู่ไม่สำเร็จ",
           );
         }
+      })
+      .finally(() => {
+        if (active) setIsLoadingEdit(false);
       });
     return () => {
       active = false;
@@ -79,21 +109,26 @@ export default function NewServicePage() {
     }
     setIsPublishing(true);
     try {
-      const provider = await requestApi<Provider>("/api/providers", {
-        method: "POST",
-        body: JSON.stringify({
-          title,
-          categoryKey: category,
-          location,
-          description,
-          packageName,
-          price,
-          duration,
-          features,
-          coverImageUrl,
-          portfolioUrls,
-        }),
-      });
+      const provider = await requestApi<Provider>(
+        editServiceId
+          ? `/api/providers/${encodeURIComponent(editServiceId)}`
+          : "/api/providers",
+        {
+          method: editServiceId ? "PATCH" : "POST",
+          body: JSON.stringify({
+            title,
+            categoryKey: category,
+            location,
+            description,
+            packageName,
+            price,
+            duration,
+            features,
+            coverImageUrl,
+            portfolioUrls,
+          }),
+        },
+      );
       setCreatedProviderId(provider.id);
       setShowSuccessModal(true);
     } catch (error) {
@@ -119,16 +154,20 @@ export default function NewServicePage() {
           <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
           <span className="text-zinc-500">จัดการประกาศบริการ</span>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="text-zinc-900 font-medium">สร้างประกาศใหม่</span>
+          <span className="text-zinc-900 font-medium">
+            {editServiceId ? "แก้ไขประกาศ" : "สร้างประกาศใหม่"}
+          </span>
         </div>
 
         {/* Page header */}
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950">
-            สร้างประกาศขายบริการใหม่ (โพสต์ขึ้นหน้าหลัก)
+            {editServiceId ? "แก้ไขประกาศบริการ" : "สร้างประกาศขายบริการใหม่ (โพสต์ขึ้นหน้าหลัก)"}
           </h1>
           <p className="text-sm text-zinc-500">
-            บอกสิ่งที่คุณทำได้ กำหนดแพ็กเกจ และเพิ่มผลงาน เพื่อให้ลูกค้าค้นพบบนหน้าหลัก
+            {editServiceId
+              ? "แก้ไขข้อมูลบริการและแพ็กเกจที่บันทึกไว้"
+              : "บอกสิ่งที่คุณทำได้ กำหนดแพ็กเกจ และเพิ่มผลงาน เพื่อให้ลูกค้าค้นพบบนหน้าหลัก"}
           </p>
         </div>
 
@@ -195,10 +234,16 @@ export default function NewServicePage() {
 
                   <button
                     type="submit"
-                    disabled={isPublishing || categories.length === 0 || Boolean(categoryError)}
+                    disabled={isPublishing || isLoadingEdit || categories.length === 0 || Boolean(categoryError)}
                     className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-zinc-950 hover:bg-orange-600 text-white text-xs font-semibold transition-all shadow-md inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <span>{isPublishing ? "กำลังเผยแพร่..." : "เผยแพร่ประกาศบริการ"}</span>
+                    <span>
+                      {isPublishing
+                        ? "กำลังบันทึก..."
+                        : editServiceId
+                          ? "บันทึกการแก้ไข"
+                          : "เผยแพร่ประกาศบริการ"}
+                    </span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -231,13 +276,13 @@ export default function NewServicePage() {
             <div className="space-y-1.5">
               <h3 className="text-lg font-bold text-white">เผยแพร่ประกาศบริการสำเร็จ!</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                ประกาศของคุณ &quot;{title}&quot; บันทึกลง Neon แล้ว และแสดงบนหน้าหลักตามข้อมูลจริง
+              ประกาศของคุณ &quot;{title}&quot; บันทึกลง Neon แล้ว
               </p>
             </div>
             <div className="pt-2 flex items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={() => router.push(`/services/${createdProviderId}`)}
+                onClick={() => router.push(`/services/${createdProviderId ?? editServiceId}`)}
                 className="w-full py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-xl transition-colors"
               >
                 ดูประกาศของฉัน

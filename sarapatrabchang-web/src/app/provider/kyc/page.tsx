@@ -10,14 +10,14 @@ import KycSidebar from "@/components/provider/KycSidebar";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function KycPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
   const displayName =
     typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
       ? user.user_metadata.full_name
-      : "พิมพ์ชนก ใจดี";
+      : "";
 
-  const email = user?.email ?? "pimchanok@example.com";
+  const email = user?.email ?? "";
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50">
@@ -49,7 +49,7 @@ export default function KycPage() {
         {/* Main Content Form + Sidebar */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2">
-            <KycForm initialName={displayName} />
+            <KycForm initialName={displayName} isAuthLoading={loading} />
           </div>
           <div className="lg:col-span-1">
             <KycSidebar displayName={displayName} email={email} />

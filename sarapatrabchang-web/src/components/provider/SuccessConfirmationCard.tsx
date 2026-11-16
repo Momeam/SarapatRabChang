@@ -3,7 +3,7 @@
 import { CheckCircle2, X } from "lucide-react";
 
 interface SuccessConfirmationCardProps {
-  type: "quotation" | "delivery" | "withdrawal";
+  type: "quotation" | "delivery";
   onClose: () => void;
 }
 
@@ -23,12 +23,6 @@ export default function SuccessConfirmationCard({
       description:
         "ระบบได้แจ้งเตือนให้ผู้ว่าจ้างตรวจสอบผลงานงวดที่ 2 แล้ว เมื่อผู้ว่าจ้างอนุมัติยอดเงินจะเข้ากระเป๋าของคุณทันที",
       buttonText: "ตกลง",
-    },
-    withdrawal: {
-      title: "รับคำขอถอนเงินแล้ว",
-      description:
-        "ระบบกำลังดำเนินการโอนเงินเข้าบัญชีธนาคารกสิกรไทยของคุณ ยอดเงินจะเข้าภายใน 1-2 วันทำการ",
-      buttonText: "ปิดหน้าต่าง",
     },
   }[type];
 

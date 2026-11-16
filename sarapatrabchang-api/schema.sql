@@ -257,3 +257,70 @@ CREATE TABLE IF NOT EXISTS booking_disputes (
 
 CREATE INDEX IF NOT EXISTS booking_disputes_booking_id
   ON booking_disputes (booking_id);
+
+CREATE TABLE IF NOT EXISTS booking_messages (
+  id UUID PRIMARY KEY,
+  booking_id UUID NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+  sender_user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  body VARCHAR(2000) NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS booking_messages_booking_created
+  ON booking_messages (booking_id, created_at);
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  booking_id UUID NOT NULL REFERENCES bookings (id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('order', 'message', 'payment', 'review')),
+  title VARCHAR(160) NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  link TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  read_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS notifications_user_created
+  ON notifications (user_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS provider_kyc_submissions (
+  submission_id UUID PRIMARY KEY,
+  user_id UUID NOT NULL UNIQUE REFERENCES users (id) ON DELETE CASCADE,
+  full_name VARCHAR(120) NOT NULL,
+  national_id VARCHAR(13) NOT NULL CHECK (national_id ~ '^[0-9]{13}$'),
+  category_key VARCHAR(60) NOT NULL,
+  bank_name VARCHAR(100) NOT NULL,
+  bank_account_number VARCHAR(50) NOT NULL,
+  id_document_name VARCHAR(255) NOT NULL,
+  id_document_type VARCHAR(100) NOT NULL,
+  id_document_data BYTEA NOT NULL,
+  bank_document_name VARCHAR(255) NOT NULL,
+  bank_document_type VARCHAR(100) NOT NULL,
+  bank_document_data BYTEA NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'rejected')),
+  submitted_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS provider_payout_requests (
+  id UUID PRIMARY KEY,
+  freelance_id INTEGER NOT NULL
+    REFERENCES profile_freelance (freelance_id) ON DELETE CASCADE,
+  kyc_submission_id UUID NOT NULL
+    REFERENCES provider_kyc_submissions (submission_id),
+  amount NUMERIC(12, 2) NOT NULL CHECK (amount >= 500),
+  status VARCHAR(32) NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'paid', 'rejected')),
+  status_note TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  processed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS provider_payout_requests_freelance_created
+  ON provider_payout_requests (freelance_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS provider_payout_requests_status_created
+  ON provider_payout_requests (status, created_at DESC);

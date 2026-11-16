@@ -20,7 +20,10 @@ export default function TrackingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBookings = useCallback(() => requestApi<Booking[]>("/api/bookings"), []);
+  const fetchBookings = useCallback(async () => {
+    const result = await requestApi<Booking[]>("/api/bookings");
+    return result.filter((booking) => booking.viewerRole === "customer");
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -67,7 +70,7 @@ export default function TrackingPage() {
           รายการติดตามงาน
         </h1>
         <p className="mt-2 mb-8 text-sm text-zinc-500">
-          รายการจองที่คุณสร้างหรือรับเป็นผู้ให้บริการ
+          รายการบริการที่คุณว่าจ้างและกำลังติดตาม
         </p>
 
         {isLoading ? (
@@ -88,7 +91,7 @@ export default function TrackingPage() {
           </div>
         ) : bookings.length === 0 ? (
           <div className="rounded-xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
-            <p>ยังไม่มีรายการจอง</p>
+            <p>ยังไม่มีรายการที่คุณว่าจ้าง</p>
             <Link href="/services" className="mt-3 inline-block font-semibold text-orange-600">
               เลือกบริการ
             </Link>
@@ -104,7 +107,7 @@ export default function TrackingPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p className="text-xs text-zinc-500">
-                      {booking.viewerRole === "customer" ? "ผู้ให้บริการ" : "ลูกค้า"}: {booking.viewerRole === "customer" ? booking.providerName : booking.contactName}
+                    ผู้ให้บริการ: {booking.providerName}
                     </p>
                     <h2 className="mt-1 font-bold text-zinc-900">{booking.serviceTitle}</h2>
                     <p className="mt-1 text-xs text-zinc-500">

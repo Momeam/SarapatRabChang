@@ -2,14 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wrench, ArrowLeftRight, User, Bell, ChevronDown } from "lucide-react";
+import { Wrench, ArrowLeftRight } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
-import { useState } from "react";
 
 export default function ProviderNavbar() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const displayName =
     typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
@@ -18,9 +16,9 @@ export default function ProviderNavbar() {
 
   const navLinks = [
     { label: "แดชบอร์ด", href: "/provider/dashboard" },
-    { label: "จัดการประกาศบริการ", href: "/provider/services/new" },
-    { label: "รายการงาน", href: "/provider/dashboard#orders" },
-    { label: "การเงิน/ถอนเงิน", href: "/provider/jobs/ORD-0269-041?tab=finance" },
+    { label: "จัดการประกาศบริการ", href: "/provider/services" },
+    { label: "รายการงาน", href: "/provider/jobs" },
+    { label: "การเงิน/ถอนเงิน", href: "/provider/finance" },
   ];
 
   return (
