@@ -43,6 +43,37 @@ export interface ServiceCategory {
   count: number;
 }
 
+export interface ProviderDashboardStats {
+  totalEarnings: number;
+  activeJobs: number;
+  pendingJobs: number;
+  averageRating: number;
+  reviewCount: number;
+  kycStatus: string;
+}
+
+export interface ProviderDashboardService {
+  id: string;
+  code: string;
+  category: string;
+  categoryKey: string;
+  title: string;
+  packageDesc: string;
+  duration: string;
+  location: string;
+  price: number;
+  status: string;
+  description: string;
+  features: string[];
+  coverImageUrl: string | null;
+  portfolioUrls: string[];
+}
+
+export interface ProviderDashboard {
+  stats: ProviderDashboardStats;
+  services: ProviderDashboardService[];
+}
+
 export interface BookingDetails {
   jobId: string;
   provider: Provider;

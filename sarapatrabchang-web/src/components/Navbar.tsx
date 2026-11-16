@@ -11,15 +11,14 @@ import {
   ChevronDown,
   ShieldCheck,
   CheckCircle2,
-  Clock,
-  Sparkles,
-  ExternalLink,
-  PlusCircle,
-  X,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { useNotificationStore } from "@/store/useNotificationStore";
 import { useAuth } from "@/components/AuthProvider";
+import { requestApi } from "@/lib/api";
+import {
+  NotificationItem,
+  useNotificationStore,
+} from "@/store/useNotificationStore";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -29,19 +28,28 @@ export default function Navbar() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
   const [authActionError, setAuthActionError] = useState("");
+  const [notificationError, setNotificationError] = useState("");
+  const [notificationsOwnerId, setNotificationsOwnerId] = useState("");
 
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
   const {
-    notifications,
-    hasUnreadNotifications,
-    hasUnreadMessages,
+    notifications: storedNotifications,
+    setNotifications,
     markAllNotificationsAsRead,
     markNotificationAsRead,
-    markMessagesAsRead,
-    simulateIncomingNotification,
+    markNotificationsByTypeAsRead,
   } = useNotificationStore();
+  const userId = user?.id;
+  const notifications = userId === notificationsOwnerId ? storedNotifications : [];
+  const isLoadingNotifications = Boolean(
+    userId && notificationsOwnerId !== userId && !notificationError,
+  );
+  const hasUnreadNotifications = notifications.some((item) => !item.read);
+  const hasUnreadMessages = notifications.some(
+    (item) => !item.read && item.type === "message",
+  );
 
   const isAuthPage = pathname === "/auth";
   const displayName =
@@ -61,12 +69,56 @@ export default function Navbar() {
     }
   };
 
-  // Automatically mark messages as read if on /messages page
   useEffect(() => {
-    if (pathname === "/messages") {
-      markMessagesAsRead();
-    }
-  }, [pathname, markMessagesAsRead]);
+    if (loading || !userId) return;
+
+    let active = true;
+    const loadNotifications = async () => {
+      try {
+        const result = await requestApi<NotificationItem[]>("/api/notifications");
+        if (active) {
+          setNotifications(result);
+          setNotificationsOwnerId(userId);
+          setNotificationError("");
+        }
+      } catch (cause: unknown) {
+        if (active) {
+          setNotificationError(
+            cause instanceof Error ? cause.message : "โหลดการแจ้งเตือนไม่สำเร็จ",
+          );
+        }
+      }
+    };
+
+    void loadNotifications();
+    const intervalId = window.setInterval(() => void loadNotifications(), 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [loading, userId, setNotifications]);
+
+  useEffect(() => {
+    if (!userId || pathname !== "/messages") return;
+    let active = true;
+    requestApi<{ updated: number }>("/api/notifications/read-all", {
+      method: "PATCH",
+      body: JSON.stringify({ type: "message" }),
+    })
+      .then(() => {
+        if (active) markNotificationsByTypeAsRead("message");
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setNotificationError(
+            cause instanceof Error ? cause.message : "อัปเดตสถานะการอ่านข้อความไม่สำเร็จ",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [pathname, userId, markNotificationsByTypeAsRead]);
 
   // Click outside listener to close menus
   useEffect(() => {
@@ -90,28 +142,62 @@ export default function Navbar() {
     };
   }, []);
 
+  const markAllRead = async (type?: NotificationItem["type"]) => {
+    if (!user) return;
+    try {
+      await requestApi<{ updated: number }>("/api/notifications/read-all", {
+        method: "PATCH",
+        body: JSON.stringify(type ? { type } : {}),
+      });
+      if (type) markNotificationsByTypeAsRead(type);
+      else markAllNotificationsAsRead();
+      setNotificationError("");
+    } catch (cause: unknown) {
+      setNotificationError(
+        cause instanceof Error ? cause.message : "อัปเดตการแจ้งเตือนไม่สำเร็จ",
+      );
+    }
+  };
+
+  const markOneRead = async (id: string) => {
+    if (!user) return false;
+    try {
+      await requestApi<{ updated: number }>(`/api/notifications/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+      });
+      markNotificationAsRead(id);
+      setNotificationError("");
+      return true;
+    } catch (cause: unknown) {
+      setNotificationError(
+        cause instanceof Error ? cause.message : "อัปเดตการแจ้งเตือนไม่สำเร็จ",
+      );
+      return false;
+    }
+  };
+
   const handleToggleNotifications = () => {
     const nextState = !showNotificationMenu;
     setShowNotificationMenu(nextState);
     if (nextState) {
-      // When opened, close profile menu if open
       setShowProfileMenu(false);
-      // As requested: "อยากให้กดดูแล้วแจ้งเตือนสีส้มออกไปด้วยครับ"
-      // Mark all as read when opening notification panel
-      markAllNotificationsAsRead();
+      void markAllRead();
     }
   };
 
-  const handleNotificationClick = (id: string, link: string) => {
-    markNotificationAsRead(id);
+  const handleNotificationClick = async (id: string, link: string) => {
+    if (!await markOneRead(id)) return;
     setShowNotificationMenu(false);
     router.push(link);
   };
 
-  const handleMessageIconClick = () => {
-    markMessagesAsRead();
-    setShowNotificationMenu(false);
-    setShowProfileMenu(false);
+  const formatNotificationTime = (value: string) => {
+    return new Date(value).toLocaleString("th-TH", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const getNotifIcon = (type: string) => {
@@ -247,16 +333,31 @@ export default function Navbar() {
                         </div>
                         <button
                           type="button"
-                          onClick={markAllNotificationsAsRead}
+                          onClick={() => void markAllRead()}
                           className="text-xs font-semibold text-orange-600 hover:text-orange-700 hover:underline cursor-pointer"
                         >
                           อ่านทั้งหมดแล้ว
                         </button>
                       </div>
 
-                      {/* Notification List */}
+                      {notificationError && (
+                        <p role="alert" className="px-4 py-2 text-xs text-red-700">
+                          {notificationError}
+                        </p>
+                      )}
+
                       <div className="max-h-80 overflow-y-auto divide-y divide-zinc-50">
-                        {notifications.length === 0 ? (
+                        {isLoadingNotifications ? (
+                          <p role="status" className="p-6 text-center text-xs text-zinc-400">
+                            กำลังโหลดการแจ้งเตือน...
+                          </p>
+                        ) : !user ? (
+                          <div className="p-6 text-center text-xs text-zinc-400">
+                            <Link href="/auth" className="font-semibold text-orange-600">
+                              เข้าสู่ระบบเพื่อดูการแจ้งเตือน
+                            </Link>
+                          </div>
+                        ) : notifications.length === 0 ? (
                           <div className="p-6 text-center text-xs text-zinc-400">
                             ไม่มีการแจ้งเตือนในขณะนี้
                           </div>
@@ -282,7 +383,7 @@ export default function Navbar() {
                                     {item.title}
                                   </p>
                                   <span className="text-[10px] text-zinc-400 shrink-0">
-                                    {item.time}
+                                    {formatNotificationTime(item.createdAt)}
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-zinc-500 line-clamp-2 mt-0.5 leading-snug">
@@ -297,20 +398,6 @@ export default function Navbar() {
                         )}
                       </div>
 
-                      {/* Footer: Simulation trigger for user testing */}
-                      <div className="p-2.5 border-t border-zinc-100 bg-zinc-50/60 rounded-b-2xl">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            simulateIncomingNotification();
-                          }}
-                          className="w-full py-1.5 px-3 bg-white hover:bg-orange-50 text-orange-600 rounded-lg border border-orange-200 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" />
-                          <span>จำลองข้อความ/แจ้งเตือนใหม่เข้า (ทดสอบจุดส้ม)</span>
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -318,7 +405,7 @@ export default function Navbar() {
                 {/* Messages Chat Icon */}
                 <Link
                   href="/messages"
-                  onClick={handleMessageIconClick}
+                  onClick={() => setShowNotificationMenu(false)}
                   className={`p-2 rounded-full transition-all relative cursor-pointer ${
                     pathname === "/messages"
                       ? "bg-orange-50 text-orange-600"
@@ -379,7 +466,7 @@ export default function Navbar() {
                           href="/messages"
                           onClick={() => {
                             setShowProfileMenu(false);
-                            markMessagesAsRead();
+                            setShowNotificationMenu(false);
                           }}
                           className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
                         >

@@ -14,6 +14,8 @@ import {
 } from "./auth.js";
 
 const maxBodyBytes = 16 * 1024;
+const maxKycDocumentBytes = 10 * 1024 * 1024;
+const maxKycRequestBytes = 30 * 1024 * 1024;
 const providerSelect = `
   SELECT l.listing_id::text AS id,
          COALESCE(NULLIF(u.full_name, ''), pf.first_name, u.email) AS name,
@@ -141,7 +143,7 @@ function isLoopbackDevelopmentOrigin(origin) {
   }
 }
 
-async function readJsonBody(request) {
+async function readJsonBody(request, { maxBytes = maxBodyBytes } = {}) {
   if (!(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
     throw new HttpError(415, "UNSUPPORTED_MEDIA_TYPE", "กรุณาส่งข้อมูลแบบ JSON");
   }
@@ -150,7 +152,7 @@ async function readJsonBody(request) {
   let size = 0;
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > maxBodyBytes) {
+    if (size > maxBytes) {
       throw new HttpError(413, "PAYLOAD_TOO_LARGE", "ข้อมูลที่ส่งมีขนาดใหญ่เกินไป");
     }
     chunks.push(chunk);
@@ -176,6 +178,68 @@ function requiredText(value, field, maxLength) {
     throw new HttpError(400, "VALIDATION_ERROR", `${field} ยาวเกินกำหนด`);
   }
   return result;
+}
+
+function validateKycDocument(value, field) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new HttpError(400, "VALIDATION_ERROR", `กรุณาแนบ${field}`);
+  }
+  const name = requiredText(value.name, `ชื่อไฟล์${field}`, 255);
+  if (/[\\/\r\n\0]/.test(name)) {
+    throw new HttpError(400, "VALIDATION_ERROR", `ชื่อไฟล์${field}ไม่ถูกต้อง`);
+  }
+  const type = requiredText(value.type, `ชนิดไฟล์${field}`, 100);
+  if (!["image/jpeg", "image/png", "application/pdf"].includes(type)) {
+    throw new HttpError(400, "VALIDATION_ERROR", `รองรับเฉพาะไฟล์ JPG, PNG หรือ PDF สำหรับ${field}`);
+  }
+  if (
+    typeof value.content !== "string" ||
+    value.content.length === 0 ||
+    value.content.length > Math.ceil(maxKycDocumentBytes / 3) * 4 ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.content)
+  ) {
+    throw new HttpError(400, "VALIDATION_ERROR", `ไฟล์${field}ไม่ถูกต้องหรือมีขนาดใหญ่เกิน 10 MB`);
+  }
+  const data = Buffer.from(value.content, "base64");
+  if (data.length === 0 || data.length > maxKycDocumentBytes || data.toString("base64") !== value.content) {
+    throw new HttpError(400, "VALIDATION_ERROR", `ไฟล์${field}ไม่ถูกต้องหรือมีขนาดใหญ่เกิน 10 MB`);
+  }
+  const hasValidSignature =
+    (type === "image/jpeg" && data.length >= 3 && data.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) ||
+    (type === "image/png" && data.length >= 8 && data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) ||
+    (type === "application/pdf" && data.subarray(0, 5).toString("ascii") === "%PDF-");
+  if (!hasValidSignature) {
+    throw new HttpError(400, "VALIDATION_ERROR", `เนื้อหาไฟล์${field}ไม่ตรงกับชนิดไฟล์`);
+  }
+  return { name, type, data };
+}
+
+function validateKycSubmission(body) {
+  const allowedFields = new Set([
+    "fullName",
+    "nationalId",
+    "categoryKey",
+    "bankName",
+    "bankAccountNumber",
+    "idDocument",
+    "bankDocument",
+  ]);
+  if (Object.keys(body).some((field) => !allowedFields.has(field))) {
+    throw new HttpError(400, "VALIDATION_ERROR", "มีข้อมูล KYC ที่ไม่รองรับ");
+  }
+  const nationalId = requiredText(body.nationalId, "เลขบัตรประชาชน", 13);
+  if (!/^\d{13}$/.test(nationalId)) {
+    throw new HttpError(400, "VALIDATION_ERROR", "เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก");
+  }
+  return {
+    fullName: requiredText(body.fullName, "ชื่อ-นามสกุลตามบัตรประชาชน", 120),
+    nationalId,
+    categoryKey: requiredText(body.categoryKey, "หมวดหมู่บริการ", 60),
+    bankName: requiredText(body.bankName, "ธนาคาร", 100),
+    bankAccountNumber: requiredText(body.bankAccountNumber, "เลขบัญชีธนาคาร", 50),
+    idDocument: validateKycDocument(body.idDocument, "บัตรประชาชน"),
+    bankDocument: validateKycDocument(body.bankDocument, "สมุดบัญชี"),
+  };
 }
 
 function validateDate(value) {
@@ -327,6 +391,12 @@ async function authenticate(request, pool) {
   return rows[0];
 }
 
+function requireAdmin(user) {
+  if (String(user.role).toLowerCase() !== "admin") {
+    throw new HttpError(403, "FORBIDDEN", "ไม่มีสิทธิ์จัดการรายการถอนเงิน");
+  }
+}
+
 async function validateBooking(body, user, pool) {
   const providerId = requiredText(body.providerId, "providerId", 80);
   if (!/^\d+$/.test(providerId)) {
@@ -410,6 +480,21 @@ function bookingAccessQuery() {
           JOIN users provider ON provider.id = pf.id_card_number
           JOIN service_category c ON c.category_id = l.category_id
           WHERE (b.user_id = $1 OR pf.id_card_number = $1)`;
+}
+
+async function getBookingParticipants(bookingId, userId, pool) {
+  const { rows } = await pool.query(
+    `SELECT b.id, b.user_id AS "customerUserId",
+            pf.id_card_number AS "providerUserId"
+     FROM bookings b
+     JOIN service_listing l ON l.listing_id::text = b.provider_id
+     JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+     WHERE b.id = $1
+       AND (b.user_id = $2 OR pf.id_card_number = $2)
+     LIMIT 1`,
+    [bookingId, userId],
+  );
+  return rows[0] ?? null;
 }
 
 function validateBookingAction(body) {
@@ -531,6 +616,34 @@ function mapProvider(row) {
     portfolio: row.portfolio ?? [],
     features: row.features ?? [],
     reviews: row.reviews ?? [],
+  };
+}
+
+function mapSubmittedProvider(listingId, user, categoryName, listing) {
+  return {
+    id: String(listingId),
+    name: user.fullName || user.email,
+    avatar: listing.coverImageUrl,
+    category: categoryName,
+    categoryKey: listing.categoryKey,
+    serviceTitle: listing.title,
+    rating: 0,
+    reviewCount: 0,
+    completedJobs: 0,
+    verified: false,
+    serviceAreas: listing.serviceAreas,
+    startingPrice: listing.price,
+    packageTitle: listing.packageName,
+    duration: listing.durationLabel,
+    priceUnit: "งาน",
+    responseTime: "ตอบกลับเมื่อได้รับข้อความ",
+    experienceYears: 0,
+    hasTools: false,
+    workingHours: "ตามนัดหมาย",
+    description: listing.description,
+    portfolio: listing.portfolio,
+    features: listing.features,
+    reviews: [],
   };
 }
 
@@ -714,6 +827,465 @@ export function createApp({
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/api/provider/dashboard") {
+        const user = await authenticate(request, pool);
+        const [{ rows: statsRows }, { rows: serviceRows }] = await Promise.all([
+          pool.query(
+            `SELECT COALESCE(job_stats.total_earnings, 0)::float AS "totalEarnings",
+                    COALESCE(job_stats.active_jobs, 0)::int AS "activeJobs",
+                    COALESCE(job_stats.pending_jobs, 0)::int AS "pendingJobs",
+                    COALESCE(review_stats.average_rating, 0)::float AS "averageRating",
+                    COALESCE(review_stats.review_count, 0)::int AS "reviewCount",
+                    COALESCE(pf.kyc_status, 'unverified') AS "kycStatus"
+             FROM users u
+             LEFT JOIN profile_freelance pf ON pf.id_card_number = u.id
+             LEFT JOIN LATERAL (
+               SELECT COALESCE(
+                        SUM(b.price) FILTER (WHERE LOWER(b.status) = 'completed'),
+                        0
+                      ) AS total_earnings,
+                      COUNT(*) FILTER (
+                        WHERE LOWER(b.status) = 'in_progress'
+                      ) AS active_jobs,
+                      COUNT(*) FILTER (
+                        WHERE LOWER(b.status) = 'paid'
+                      ) AS pending_jobs
+               FROM service_listing l
+               JOIN bookings b ON b.provider_id = l.listing_id::text
+               WHERE l.freelance_id = pf.freelance_id
+             ) job_stats ON TRUE
+             LEFT JOIN LATERAL (
+               SELECT AVG(r.rating) AS average_rating,
+                      COUNT(r.review_id) AS review_count
+               FROM service_listing l
+               JOIN orders o ON o.listing_id = l.listing_id
+               JOIN reviews r ON r.order_id = o.order_id
+               WHERE l.freelance_id = pf.freelance_id
+             ) review_stats ON TRUE
+             WHERE u.id = $1`,
+            [user.id],
+          ),
+          pool.query(
+            `SELECT l.listing_id::text AS id,
+                    'SV-' || LPAD(l.listing_id::text, 3, '0') AS code,
+                    c.category_name AS category,
+                    c.category_key AS "categoryKey",
+                    l.title,
+                    COALESCE(package.tier_name, '') AS "packageDesc",
+                    COALESCE(package.duration_label, '') AS duration,
+                    ARRAY_TO_STRING(l.service_areas, ', ') AS location,
+                    COALESCE(package.price, 0)::float AS price,
+                    l.status,
+                    l.description,
+                    COALESCE(package.features, '[]'::jsonb) AS features,
+                    l.cover_image_url AS "coverImageUrl",
+                    l.portfolio
+             FROM profile_freelance pf
+             JOIN service_listing l ON l.freelance_id = pf.freelance_id
+             JOIN service_category c ON c.category_id = l.category_id
+             LEFT JOIN LATERAL (
+               SELECT tier_name, duration_label, price, features
+               FROM service_package
+               WHERE listing_id = l.listing_id
+               ORDER BY price ASC
+               LIMIT 1
+             ) package ON TRUE
+             WHERE pf.id_card_number = $1
+             ORDER BY l.listing_id DESC`,
+            [user.id],
+          ),
+        ]);
+        const stats = statsRows[0];
+        if (!stats) throw new HttpError(404, "PROFILE_NOT_FOUND", "ไม่พบข้อมูลผู้ใช้");
+        const services = serviceRows.map((service) => ({
+          ...service,
+          price: Number(service.price),
+          features: service.features ?? [],
+          portfolioUrls: (service.portfolio ?? []).map((item) => item.image),
+        }));
+        sendJson(
+          response,
+          200,
+          {
+            data: {
+              stats: {
+                ...stats,
+                totalEarnings: Number(stats.totalEarnings),
+                activeJobs: Number(stats.activeJobs),
+                pendingJobs: Number(stats.pendingJobs),
+                averageRating: Number(stats.averageRating),
+                reviewCount: Number(stats.reviewCount),
+              },
+              services,
+            },
+          },
+          corsHeaders,
+        );
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "providers" &&
+        segments[3] === "status"
+      ) {
+        const user = await authenticate(request, pool);
+        if (!/^\d+$/.test(segments[2])) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการ");
+        }
+        const body = await readJsonBody(request);
+        if (
+          Object.keys(body).length !== 1 ||
+          !["active", "paused"].includes(body.status)
+        ) {
+          throw new HttpError(400, "VALIDATION_ERROR", "สถานะประกาศไม่ถูกต้อง");
+        }
+        const { rows } = await pool.query(
+          `UPDATE service_listing l
+           SET status = $3
+           FROM profile_freelance pf
+           WHERE l.listing_id = $1
+             AND pf.freelance_id = l.freelance_id
+             AND pf.id_card_number = $2
+           RETURNING l.listing_id::text AS id, l.status`,
+          [segments[2], user.id, body.status],
+        );
+        if (rows.length === 0) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการ");
+        }
+        sendJson(response, 200, { data: rows[0] }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/provider/finance") {
+        const user = await authenticate(request, pool);
+        const [{ rows: financeRows }, { rows: transactionRows }] = await Promise.all([
+          pool.query(
+            `SELECT COALESCE(earnings.total, 0)::float AS "totalEarnings",
+                    COALESCE(work.total, 0)::float AS "pendingWork",
+                    GREATEST(
+                      COALESCE(earnings.total, 0) - COALESCE(payouts.reserved, 0),
+                      0
+                    )::float AS "availableBalance",
+                    COALESCE(payouts.pending, 0)::float AS "pendingPayouts",
+                    COALESCE(kyc.status, 'unverified') AS "kycStatus",
+                    CASE WHEN kyc.status = 'approved' THEN kyc.bank_name END AS "bankName",
+                    CASE WHEN kyc.status = 'approved'
+                      THEN kyc.bank_account_number END AS "bankAccountNumber"
+             FROM users u
+             LEFT JOIN profile_freelance pf ON pf.id_card_number = u.id
+             LEFT JOIN LATERAL (
+               SELECT COALESCE(SUM(b.price) FILTER (
+                        WHERE b.status = 'completed'
+                      ), 0) AS total
+               FROM service_listing l
+               JOIN bookings b ON b.provider_id = l.listing_id::text
+               WHERE l.freelance_id = pf.freelance_id
+             ) earnings ON TRUE
+             LEFT JOIN LATERAL (
+               SELECT COALESCE(SUM(b.price) FILTER (
+                        WHERE b.status IN ('paid', 'in_progress', 'delivered')
+                      ), 0) AS total
+               FROM service_listing l
+               JOIN bookings b ON b.provider_id = l.listing_id::text
+               WHERE l.freelance_id = pf.freelance_id
+             ) work ON TRUE
+             LEFT JOIN LATERAL (
+               SELECT COALESCE(SUM(amount) FILTER (
+                        WHERE status IN ('pending', 'paid')
+                      ), 0) AS reserved,
+                      COALESCE(SUM(amount) FILTER (
+                        WHERE status = 'pending'
+                      ), 0) AS pending
+               FROM provider_payout_requests
+               WHERE freelance_id = pf.freelance_id
+             ) payouts ON TRUE
+             LEFT JOIN LATERAL (
+               SELECT status, bank_name, bank_account_number
+               FROM provider_kyc_submissions
+               WHERE user_id = u.id
+               ORDER BY updated_at DESC
+               LIMIT 1
+             ) kyc ON TRUE
+             WHERE u.id = $1`,
+            [user.id],
+          ),
+          pool.query(
+            `SELECT *
+             FROM (
+               SELECT b.id::text AS id, 'earning' AS type,
+                      b.updated_at AS "createdAt", l.title AS description,
+                      b.price::float AS amount, b.status
+               FROM bookings b
+               JOIN service_listing l ON l.listing_id::text = b.provider_id
+               JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+               WHERE pf.id_card_number = $1 AND b.status = 'completed'
+               UNION ALL
+               SELECT p.id::text AS id, 'withdrawal' AS type,
+                      p.created_at AS "createdAt",
+                      'คำขอถอนเงิน' AS description,
+                      p.amount::float AS amount, p.status
+               FROM provider_payout_requests p
+               JOIN profile_freelance pf ON pf.freelance_id = p.freelance_id
+               WHERE pf.id_card_number = $1
+             ) transactions
+             ORDER BY "createdAt" DESC
+             LIMIT 100`,
+            [user.id],
+          ),
+        ]);
+        if (!financeRows[0]) {
+          throw new HttpError(404, "PROFILE_NOT_FOUND", "ไม่พบข้อมูลผู้ใช้");
+        }
+        const finance = financeRows[0];
+        const accountNumber = finance.bankAccountNumber;
+        const maskedAccountNumber = accountNumber
+          ? `${"•".repeat(Math.max(accountNumber.length - 4, 0))}${accountNumber.slice(-4)}`
+          : null;
+        sendJson(
+          response,
+          200,
+          {
+            data: {
+              balance: {
+                totalEarnings: Number(finance.totalEarnings),
+                pendingWork: Number(finance.pendingWork),
+                availableBalance: Number(finance.availableBalance),
+                pendingPayouts: Number(finance.pendingPayouts),
+                kycStatus: finance.kycStatus,
+                bankName: finance.bankName,
+                maskedAccountNumber,
+              },
+              transactions: transactionRows,
+            },
+          },
+          corsHeaders,
+        );
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/provider/payouts") {
+        const user = await authenticate(request, pool);
+        const body = await readJsonBody(request);
+        if (
+          Object.keys(body).length !== 1 ||
+          typeof body.amount !== "number" ||
+          !Number.isFinite(body.amount) ||
+          body.amount < 500 ||
+          body.amount > 9_999_999_999.99 ||
+          !Number.isInteger(body.amount * 100)
+        ) {
+          throw new HttpError(400, "VALIDATION_ERROR", "จำนวนเงินต้องไม่น้อยกว่า 500 บาทและมีทศนิยมไม่เกิน 2 ตำแหน่ง");
+        }
+        const payout = await withTransaction(pool, async (client) => {
+          const { rows: providerRows } = await client.query(
+            `SELECT pf.freelance_id AS "freelanceId",
+                    k.submission_id AS "kycSubmissionId"
+             FROM profile_freelance pf
+             JOIN provider_kyc_submissions k ON k.user_id = pf.id_card_number
+             WHERE pf.id_card_number = $1 AND k.status = 'approved'
+             FOR UPDATE OF pf`,
+            [user.id],
+          );
+          const provider = providerRows[0];
+          if (!provider) {
+            throw new HttpError(403, "PAYOUT_KYC_REQUIRED", "ต้องยืนยัน KYC และบัญชีธนาคารให้ผ่านก่อนส่งคำขอถอนเงิน");
+          }
+          const { rows: balanceRows } = await client.query(
+            `SELECT (
+               COALESCE((
+                 SELECT SUM(b.price)
+                 FROM service_listing l
+                 JOIN bookings b ON b.provider_id = l.listing_id::text
+                 WHERE l.freelance_id = $1 AND b.status = 'completed'
+               ), 0) -
+               COALESCE((
+                 SELECT SUM(amount)
+                 FROM provider_payout_requests
+                 WHERE freelance_id = $1 AND status IN ('pending', 'paid')
+               ), 0)
+             )::float AS "availableBalance"`,
+            [provider.freelanceId],
+          );
+          const availableCents = Math.max(
+            0,
+            Math.round(Number(balanceRows[0]?.availableBalance ?? 0) * 100),
+          );
+          if (Math.round(body.amount * 100) > availableCents) {
+            throw new HttpError(409, "INSUFFICIENT_BALANCE", "ยอดเงินที่ถอนได้ไม่เพียงพอ กรุณาโหลดข้อมูลใหม่");
+          }
+          const { rows } = await client.query(
+            `INSERT INTO provider_payout_requests
+               (id, freelance_id, kyc_submission_id, amount)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id::text AS id, amount::float AS amount,
+                       status, created_at AS "createdAt"`,
+            [randomUUID(), provider.freelanceId, provider.kycSubmissionId, body.amount],
+          );
+          return rows[0];
+        });
+        sendJson(response, 201, { data: payout }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/admin/payouts") {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const { rows } = await pool.query(
+          `SELECT p.id::text AS id, p.created_at AS "createdAt",
+                  p.amount::float AS amount, p.status,
+                  COALESCE(NULLIF(u.full_name, ''), pf.first_name, u.email) AS "providerName",
+                  u.email AS "providerEmail",
+                  k.bank_name AS "bankName",
+                  k.bank_account_number AS "bankAccountNumber"
+           FROM provider_payout_requests p
+           JOIN profile_freelance pf ON pf.freelance_id = p.freelance_id
+           JOIN users u ON u.id = pf.id_card_number
+           JOIN provider_kyc_submissions k ON k.submission_id = p.kyc_submission_id
+           WHERE p.status = 'pending'
+           ORDER BY p.created_at ASC`,
+        );
+        sendJson(response, 200, { data: rows }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "admin" &&
+        segments[2] === "payouts"
+      ) {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        if (!/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(segments[3])) {
+          throw new HttpError(404, "PAYOUT_NOT_FOUND", "ไม่พบคำขอถอนเงิน");
+        }
+        const body = await readJsonBody(request);
+        if (
+          Object.keys(body).some((field) => !["status", "note"].includes(field)) ||
+          !["paid", "rejected"].includes(body.status) ||
+          (body.note !== undefined && typeof body.note !== "string") ||
+          (body.note ?? "").length > 500 ||
+          (body.status === "rejected" && !String(body.note ?? "").trim())
+        ) {
+          throw new HttpError(400, "VALIDATION_ERROR", "สถานะหรือหมายเหตุการถอนเงินไม่ถูกต้อง");
+        }
+        const { rows } = await pool.query(
+          `UPDATE provider_payout_requests
+           SET status = $2, status_note = $3, updated_at = CURRENT_TIMESTAMP,
+               processed_at = CURRENT_TIMESTAMP
+           WHERE id = $1 AND status = 'pending'
+           RETURNING id::text AS id, status, status_note AS "statusNote",
+                     updated_at AS "updatedAt"`,
+          [segments[3], body.status, (body.note ?? "").trim()],
+        );
+        if (rows.length === 0) {
+          const { rows: existingRows } = await pool.query(
+            "SELECT 1 FROM provider_payout_requests WHERE id = $1",
+            [segments[3]],
+          );
+          if (existingRows.length === 0) {
+            throw new HttpError(404, "PAYOUT_NOT_FOUND", "ไม่พบคำขอถอนเงิน");
+          }
+          throw new HttpError(409, "PAYOUT_ALREADY_PROCESSED", "คำขอนี้ได้รับการดำเนินการแล้ว");
+        }
+        sendJson(response, 200, { data: rows[0] }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 3 &&
+        segments[0] === "api" &&
+        segments[1] === "providers"
+      ) {
+        const user = await authenticate(request, pool);
+        if (!/^\d+$/.test(segments[2])) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการ");
+        }
+        const listing = validateProviderSubmission(await readJsonBody(request));
+        const { rows: categoryRows } = await pool.query(
+          `SELECT category_id, category_name
+           FROM service_category
+           WHERE category_key = $1
+           LIMIT 1`,
+          [listing.categoryKey],
+        );
+        const category = categoryRows[0];
+        if (!category) {
+          throw new HttpError(400, "INVALID_CATEGORY", "ไม่พบหมวดหมู่บริการที่เลือก");
+        }
+        const updated = await withTransaction(pool, async (client) => {
+          const { rows } = await client.query(
+            `UPDATE service_listing l
+             SET category_id = $3,
+                 title = $4,
+                 description = $5,
+                 service_areas = $6,
+                 cover_image_url = $7,
+                 portfolio = $8
+             FROM profile_freelance pf
+             WHERE l.listing_id = $1
+               AND pf.freelance_id = l.freelance_id
+               AND pf.id_card_number = $2
+             RETURNING l.listing_id`,
+            [
+              segments[2],
+              user.id,
+              category.category_id,
+              listing.title,
+              listing.description,
+              listing.serviceAreas,
+              listing.coverImageUrl,
+              JSON.stringify(listing.portfolio),
+            ],
+          );
+          if (rows.length === 0) {
+            throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการ");
+          }
+          const listingId = rows[0].listing_id;
+          const { rows: packageRows } = await client.query(
+            `UPDATE service_package
+             SET tier_name = $2, price = $3, duration_days = 0,
+                 duration_label = $4, features = $5
+             WHERE listing_id = $1
+             RETURNING package_id`,
+            [
+              listingId,
+              listing.packageName,
+              listing.price,
+              listing.durationLabel,
+              JSON.stringify(listing.features),
+            ],
+          );
+          if (packageRows.length === 0) {
+            await client.query(
+              `INSERT INTO service_package
+                 (listing_id, tier_name, price, duration_days, duration_label, features)
+               VALUES ($1, $2, $3, 0, $4, $5)`,
+              [
+                listingId,
+                listing.packageName,
+                listing.price,
+                listing.durationLabel,
+                JSON.stringify(listing.features),
+              ],
+            );
+          }
+          return listingId;
+        });
+        sendJson(
+          response,
+          200,
+          { data: mapSubmittedProvider(updated, user, category.category_name, listing) },
+          corsHeaders,
+        );
+        return;
+      }
+
       if (request.method === "POST" && url.pathname === "/api/providers") {
         const user = await authenticate(request, pool);
         const listing = validateProviderSubmission(await readJsonBody(request));
@@ -771,33 +1343,7 @@ export function createApp({
         sendJson(
           response,
           201,
-          {
-            data: {
-              id: String(created),
-              name: user.fullName || user.email,
-              avatar: listing.coverImageUrl,
-              category: category.category_name,
-              categoryKey: listing.categoryKey,
-              serviceTitle: listing.title,
-              rating: 0,
-              reviewCount: 0,
-              completedJobs: 0,
-              verified: false,
-              serviceAreas: listing.serviceAreas,
-              startingPrice: listing.price,
-              packageTitle: listing.packageName,
-              duration: listing.durationLabel,
-              priceUnit: "งาน",
-              responseTime: "ตอบกลับเมื่อได้รับข้อความ",
-              experienceYears: 0,
-              hasTools: false,
-              workingHours: "ตามนัดหมาย",
-              description: listing.description,
-              portfolio: listing.portfolio,
-              features: listing.features,
-              reviews: [],
-            },
-          },
+          { data: mapSubmittedProvider(created, user, category.category_name, listing) },
           corsHeaders,
         );
         return;
@@ -821,6 +1367,97 @@ export function createApp({
       if (request.method === "GET" && url.pathname === "/api/profile") {
         const user = await authenticate(request, pool);
         sendJson(response, 200, { data: await getProfile(user.id, pool) }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/kyc") {
+        const user = await authenticate(request, pool);
+        const { rows } = await pool.query(
+          `SELECT status, full_name AS "fullName",
+                  category_key AS "categoryKey", submitted_at AS "submittedAt"
+           FROM provider_kyc_submissions
+           WHERE user_id = $1
+           LIMIT 1`,
+          [user.id],
+        );
+        sendJson(response, 200, { data: rows[0] ?? null }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/kyc") {
+        const user = await authenticate(request, pool);
+        const submission = validateKycSubmission(
+          await readJsonBody(request, { maxBytes: maxKycRequestBytes }),
+        );
+        const { rows: categoryRows } = await pool.query(
+          `SELECT category_key
+           FROM service_category
+           WHERE category_key = $1
+           LIMIT 1`,
+          [submission.categoryKey],
+        );
+        if (categoryRows.length === 0) {
+          throw new HttpError(400, "INVALID_CATEGORY", "ไม่พบหมวดหมู่บริการที่เลือก");
+        }
+
+        const saved = await withTransaction(pool, async (client) => {
+          const { rows } = await client.query(
+            `INSERT INTO provider_kyc_submissions
+               (submission_id, user_id, full_name, national_id, category_key,
+                bank_name, bank_account_number, id_document_name,
+                id_document_type, id_document_data, bank_document_name,
+                bank_document_type, bank_document_data, status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'pending')
+             ON CONFLICT (user_id) DO UPDATE
+             SET full_name = EXCLUDED.full_name,
+                 national_id = EXCLUDED.national_id,
+                 category_key = EXCLUDED.category_key,
+                 bank_name = EXCLUDED.bank_name,
+                 bank_account_number = EXCLUDED.bank_account_number,
+                 id_document_name = EXCLUDED.id_document_name,
+                 id_document_type = EXCLUDED.id_document_type,
+                 id_document_data = EXCLUDED.id_document_data,
+                 bank_document_name = EXCLUDED.bank_document_name,
+                 bank_document_type = EXCLUDED.bank_document_type,
+                 bank_document_data = EXCLUDED.bank_document_data,
+                 status = 'pending',
+                 submitted_at = CURRENT_TIMESTAMP,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE provider_kyc_submissions.status = 'rejected'
+             RETURNING status, full_name AS "fullName",
+                       category_key AS "categoryKey", submitted_at AS "submittedAt"`,
+            [
+              randomUUID(),
+              user.id,
+              submission.fullName,
+              submission.nationalId,
+              submission.categoryKey,
+              submission.bankName,
+              submission.bankAccountNumber,
+              submission.idDocument.name,
+              submission.idDocument.type,
+              submission.idDocument.data,
+              submission.bankDocument.name,
+              submission.bankDocument.type,
+              submission.bankDocument.data,
+            ],
+          );
+          if (rows.length === 0) {
+            throw new HttpError(409, "KYC_ALREADY_SUBMITTED", "มีคำขอ KYC ที่กำลังตรวจสอบหรือผ่านการยืนยันแล้ว");
+          }
+          await client.query(
+            `INSERT INTO profile_freelance
+               (id_card_number, first_name, bank_account_info, kyc_status)
+             VALUES ($1, $2, $3, 'pending')
+             ON CONFLICT (id_card_number) DO UPDATE
+             SET first_name = EXCLUDED.first_name,
+                 bank_account_info = EXCLUDED.bank_account_info,
+                 kyc_status = 'pending'`,
+            [user.id, submission.fullName, submission.bankAccountNumber],
+          );
+          return rows[0];
+        });
+        sendJson(response, 201, { data: saved }, corsHeaders);
         return;
       }
 
@@ -1012,6 +1649,160 @@ export function createApp({
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/api/notifications") {
+        const user = await authenticate(request, pool);
+        const { rows } = await pool.query(
+          `SELECT n.id::text AS id, n.type, n.title, n.description,
+                  n.created_at AS "createdAt", n.read_at IS NOT NULL AS read, n.link
+           FROM notifications n
+           JOIN bookings b ON b.id = n.booking_id
+           WHERE n.user_id = $1 AND b.user_id = $1
+           ORDER BY n.created_at DESC
+           LIMIT 50`,
+          [user.id],
+        );
+        sendJson(response, 200, { data: rows }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 3 &&
+        segments[0] === "api" &&
+        segments[1] === "notifications" &&
+        segments[2] === "read-all"
+      ) {
+        const user = await authenticate(request, pool);
+        const body = await readJsonBody(request);
+        const type = body.type === undefined
+          ? null
+          : requiredText(body.type, "type", 20);
+        if (type !== null && !["order", "message", "payment", "review"].includes(type)) {
+          throw new HttpError(400, "INVALID_NOTIFICATION_TYPE", "ประเภทการแจ้งเตือนไม่ถูกต้อง");
+        }
+        const { rows } = await pool.query(
+          `UPDATE notifications n
+           SET read_at = COALESCE(n.read_at, CURRENT_TIMESTAMP)
+           FROM bookings b
+           WHERE n.booking_id = b.id
+             AND n.user_id = $1
+             AND b.user_id = $1
+             AND ($2::text IS NULL OR n.type = $2)
+           RETURNING n.id::text AS id`,
+          [user.id, type],
+        );
+        sendJson(response, 200, { data: { updated: rows.length } }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 3 &&
+        segments[0] === "api" &&
+        segments[1] === "notifications"
+      ) {
+        const user = await authenticate(request, pool);
+        if (!/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(segments[2])) {
+          throw new HttpError(404, "NOTIFICATION_NOT_FOUND", "ไม่พบการแจ้งเตือน");
+        }
+        const { rows } = await pool.query(
+          `UPDATE notifications n
+           SET read_at = COALESCE(n.read_at, CURRENT_TIMESTAMP)
+           FROM bookings b
+           WHERE n.id = $2
+             AND n.booking_id = b.id
+             AND n.user_id = $1
+             AND b.user_id = $1
+           RETURNING n.id::text AS id`,
+          [user.id, segments[2]],
+        );
+        if (rows.length === 0) {
+          throw new HttpError(404, "NOTIFICATION_NOT_FOUND", "ไม่พบการแจ้งเตือน");
+        }
+        sendJson(response, 200, { data: { updated: 1 } }, corsHeaders);
+        return;
+      }
+
+      if (
+        (request.method === "GET" || request.method === "POST") &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "bookings" &&
+        segments[3] === "messages"
+      ) {
+        const user = await authenticate(request, pool);
+        const bookingId = segments[2];
+        if (!/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(bookingId)) {
+          throw new HttpError(404, "BOOKING_NOT_FOUND", "ไม่พบรายการจอง");
+        }
+        const booking = await getBookingParticipants(bookingId, user.id, pool);
+        if (!booking) throw new HttpError(404, "BOOKING_NOT_FOUND", "ไม่พบรายการจอง");
+
+        if (request.method === "GET") {
+          const { rows } = await pool.query(
+            `SELECT m.id::text AS id, m.body,
+                    CASE WHEN m.sender_user_id = $2 THEN 'customer' ELSE 'provider' END
+                      AS "senderRole",
+                    COALESCE(NULLIF(sender.full_name, ''), sender.email) AS "senderName",
+                    m.created_at AS "createdAt"
+             FROM (
+               SELECT id, sender_user_id, body, created_at
+               FROM booking_messages
+               WHERE booking_id = $1
+               ORDER BY created_at DESC
+               LIMIT 100
+             ) m
+             JOIN users sender ON sender.id = m.sender_user_id
+             ORDER BY m.created_at ASC`,
+            [bookingId, booking.customerUserId],
+          );
+          sendJson(response, 200, { data: rows }, corsHeaders);
+          return;
+        }
+
+        const message = requiredText(
+          (await readJsonBody(request)).message,
+          "ข้อความ",
+          2000,
+        );
+        const saved = await withTransaction(pool, async (client) => {
+          const { rows } = await client.query(
+            `INSERT INTO booking_messages (id, booking_id, sender_user_id, body)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id::text AS id, body, created_at AS "createdAt"`,
+            [randomUUID(), bookingId, user.id, message],
+          );
+          const result = {
+            ...rows[0],
+            senderRole: user.id === booking.customerUserId ? "customer" : "provider",
+            senderName: user.fullName || user.email,
+          };
+          if (user.id === booking.providerUserId) {
+            await client.query(
+              `INSERT INTO notifications
+                 (id, user_id, booking_id, type, title, description, link)
+               VALUES ($1, $2, $3, 'message', $4, $5, $6)`,
+              [
+                randomUUID(),
+                booking.customerUserId,
+                bookingId,
+                `ข้อความใหม่จาก ${result.senderName}`,
+                message,
+                `/orders/${bookingId}#chat`,
+              ],
+            );
+          }
+          return result;
+        });
+        sendJson(
+          response,
+          201,
+          { data: saved },
+          corsHeaders,
+        );
+        return;
+      }
+
       if (
         request.method === "GET" &&
         segments.length === 3 &&
@@ -1133,6 +1924,27 @@ export function createApp({
               `INSERT INTO booking_disputes (id, booking_id, raised_by_user_id, reason)
                VALUES ($1, $2, $3, $4)`,
               [randomUUID(), booking.id, user.id, action.note],
+            );
+          }
+          if (viewerRole === "provider") {
+            const title = action.action === "deliver"
+              ? "ผู้ให้บริการส่งมอบงานแล้ว"
+              : "ผู้ให้บริการเริ่มดำเนินงานแล้ว";
+            const description = action.action === "deliver"
+              ? action.note || "กรุณาตรวจสอบงานที่ส่งมอบ"
+              : "ผู้ให้บริการเริ่มดำเนินงานตามนัดหมายแล้ว";
+            await client.query(
+              `INSERT INTO notifications
+                 (id, user_id, booking_id, type, title, description, link)
+               VALUES ($1, $2, $3, 'order', $4, $5, $6)`,
+              [
+                randomUUID(),
+                booking.userId,
+                booking.id,
+                title,
+                description,
+                `/orders/${booking.id}`,
+              ],
             );
           }
           const updated = await client.query(

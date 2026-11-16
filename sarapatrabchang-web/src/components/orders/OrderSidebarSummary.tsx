@@ -18,6 +18,7 @@ function formatDate(value: string) {
 }
 
 export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProps) {
+  const isProvider = booking.viewerRole === "provider";
   const isComplete = booking.status === "completed";
   const statusClasses = isComplete
     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -28,7 +29,9 @@ export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProp
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm space-y-5">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-bold text-zinc-900">สรุปรายการจอง</h3>
+        <h3 className="text-base font-bold text-zinc-900">
+          {isProvider ? "ข้อมูลผู้ว่าจ้าง" : "สรุปรายการจอง"}
+        </h3>
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${statusClasses}`}>
           {bookingStatusLabels[booking.status]}
         </span>
@@ -41,13 +44,15 @@ export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProp
 
       <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
         <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm">
-          {booking.providerName.slice(0, 1)}
+          {(isProvider ? booking.contactName : booking.providerName).slice(0, 1)}
         </div>
         <div>
-          <h4 className="text-sm font-bold text-zinc-900">{booking.providerName}</h4>
+          <h4 className="text-sm font-bold text-zinc-900">
+            {isProvider ? booking.contactName : booking.providerName}
+          </h4>
           <p className="text-xs text-zinc-500 flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            {booking.category}
+            {isProvider ? "ผู้ว่าจ้าง" : booking.category}
           </p>
         </div>
       </div>
@@ -69,6 +74,7 @@ export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProp
         </div>
         <p className="text-zinc-500 pt-1">{booking.address}</p>
         <p className="text-zinc-500">
+          {isProvider ? "ผู้ติดต่อ: " : ""}
           {booking.contactName}{booking.phone ? ` • ${booking.phone}` : ""}
         </p>
       </div>
@@ -85,11 +91,11 @@ export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProp
       </div>
 
       <Link
-        href="/messages"
+        href={isProvider ? `/provider/jobs/${encodeURIComponent(booking.id)}/chat` : "#chat"}
         className="w-full py-2.5 px-4 bg-white hover:bg-zinc-50 text-zinc-800 rounded-xl border border-zinc-300 text-xs font-semibold transition-all flex items-center justify-center gap-2"
       >
         <MessageSquare className="w-4 h-4 text-zinc-500" />
-        <span>ไปที่ข้อความ</span>
+        <span>ไปที่แชทของงาน</span>
       </Link>
     </div>
   );
