@@ -18,7 +18,7 @@ export default function AuthPage() {
   };
 
   const handleLoginSuccess = (user: AuthUser) => {
-    router.push(user.role === "Admin" ? "/admin/dashboard" : "/");
+    router.push(user.role?.toLowerCase() === "admin" ? "/admin/dashboard" : "/");
   };
 
   return (

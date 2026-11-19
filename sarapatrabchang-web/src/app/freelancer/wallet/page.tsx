@@ -10,7 +10,7 @@ export default function FreelancerWalletPage() {
           <h1 className="text-2xl font-bold text-white">การเงินและรายได้</h1>
           <p className="text-sm text-gray-400 mt-1">ยอดและคำขอถอนเงินจากฐานข้อมูล</p>
         </div>
-        <ProviderFinancePanel kycHref="/freelancer/profile" />
+        <ProviderFinancePanel kycHref="/provider/kyc" />
       </div>
     </div>
   );

@@ -18,12 +18,12 @@ export default function AdminLayout({
     if (loading) return;
     if (!user) {
       router.replace("/admin-login");
-    } else if (user.role !== "Admin") {
+    } else if (user.role?.toLowerCase() !== "admin") {
       router.replace("/");
     }
   }, [loading, router, user]);
 
-  if (loading || !user || user.role !== "Admin") {
+  if (loading || !user || user.role?.toLowerCase() !== "admin") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-white">
         กำลังตรวจสอบสิทธิ์ผู้ดูแลระบบ...

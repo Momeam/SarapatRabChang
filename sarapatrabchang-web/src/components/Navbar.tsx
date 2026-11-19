@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ShieldCheck,
   CheckCircle2,
+  Briefcase,
+  ShieldAlert,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
@@ -473,6 +475,25 @@ export default function Navbar() {
                           <MessageSquare className="w-4 h-4" />
                           แชทข้อความของฉัน
                         </Link>
+                        <div className="border-t border-zinc-100 my-1"></div>
+                        <Link
+                          href="/provider/dashboard"
+                          onClick={() => setShowProfileMenu(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-zinc-700 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+                        >
+                          <Briefcase className="w-4 h-4 text-orange-500" />
+                          แดชบอร์ดผู้ให้บริการ
+                        </Link>
+                        {user.role?.toLowerCase() === "admin" && (
+                          <Link
+                            href="/admin/dashboard"
+                            onClick={() => setShowProfileMenu(false)}
+                            className="flex items-center gap-2 px-4 py-2 text-amber-700 hover:bg-amber-50 hover:text-amber-800 transition-colors font-medium"
+                          >
+                            <ShieldAlert className="w-4 h-4" />
+                            จัดการระบบ (Admin)
+                          </Link>
+                        )}
                         {authActionError && (
                           <p role="alert" className="px-4 py-2 text-xs text-red-600">
                             {authActionError}

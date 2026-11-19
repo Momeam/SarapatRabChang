@@ -85,7 +85,7 @@ export default function AdminJobsPage() {
               <span className="text-gray-400 mr-2">สถานะ:</span>
               <select 
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
+                onChange={(e) => setFilterStatus(e.target.value as "PENDING" | "APPROVED" | "REJECTED")}
                 className="bg-black border border-gray-700 text-white text-sm rounded-lg px-3 py-1 focus:outline-none focus:border-[#f97316]"
               >
                 <option value="PENDING">รอตรวจสอบ</option>
@@ -165,7 +165,7 @@ export default function AdminJobsPage() {
         <i className="fa-solid fa-circle-info text-gray-400 mt-0.5 mr-3 text-lg"></i>
         <div>
           <h4 className="text-white font-medium mb-1">การปฏิเสธประกาศบริการ</h4>
-          <p className="text-gray-400">ระบบจะให้ระบุเหตุผลในกล่องข้อความ เช่น "รูปภาพไม่เหมาะสม" หรือ "เนื้อหาผิดกฎแพลตฟอร์ม" เพื่อแจ้งเตือนไปยังฟรีแลนซ์</p>
+          <p className="text-gray-400">ระบบจะให้ระบุเหตุผลในกล่องข้อความ เช่น &quot;รูปภาพไม่เหมาะสม&quot; หรือ &quot;เนื้อหาผิดกฎแพลตฟอร์ม&quot; เพื่อแจ้งเตือนไปยังฟรีแลนซ์</p>
         </div>
       </div>
 

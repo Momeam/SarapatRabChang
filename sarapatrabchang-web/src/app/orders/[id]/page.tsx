@@ -10,6 +10,7 @@ import OrderStatusStepper from "@/components/orders/OrderStatusStepper";
 import DeliveryProofGallery from "@/components/orders/DeliveryProofGallery";
 import WorkApprovalCard from "@/components/orders/WorkApprovalCard";
 import BookingChat from "@/components/orders/BookingChat";
+import ReviewForm from "@/components/orders/ReviewForm";
 import OrderSidebarSummary from "@/components/orders/OrderSidebarSummary";
 import { requestApi } from "@/lib/api";
 import { Booking, BookingAction } from "@/lib/booking";
@@ -24,6 +25,21 @@ export default function OrderTrackingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  const handleReviewSubmit = async (rating: number, comment: string) => {
+    if (!booking) return;
+    try {
+      await requestApi(`/api/bookings/${encodeURIComponent(booking.id)}/reviews`, {
+        method: "POST",
+        body: JSON.stringify({ rating, comment }),
+      });
+      setReviewSubmitted(true);
+      setNotice("ส่งรีวิวเรียบร้อยแล้ว ขอบคุณสำหรับความคิดเห็นของคุณ!");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ส่งรีวิวไม่สำเร็จ");
+    }
+  };
 
   const fetchBooking = useCallback(() => {
     if (!bookingIdPattern.test(jobId)) {
@@ -168,6 +184,14 @@ export default function OrderTrackingPage() {
                   notice={notice}
                   onAction={handleAction}
                 />
+                {booking.status === "completed" && booking.viewerRole === "customer" && (
+                  <ReviewForm
+                    providerName={booking.providerName}
+                    providerRole={booking.category || "ผู้ให้บริการ"}
+                    onSubmit={handleReviewSubmit}
+                    submitted={reviewSubmitted}
+                  />
+                )}
                 <BookingChat bookingId={booking.id} viewerRole={booking.viewerRole} />
                 {booking.statusNote && (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

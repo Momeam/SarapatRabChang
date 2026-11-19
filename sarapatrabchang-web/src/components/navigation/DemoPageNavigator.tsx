@@ -6,10 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   Compass,
   X,
-  ExternalLink,
   ChevronRight,
-  Layers,
-  Sparkles,
 } from "lucide-react";
 
 export default function DemoPageNavigator() {

@@ -20,8 +20,16 @@ export default function BookingDetailsPage() {
   const [addressDetail, setAddressDetail] = useState("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const pinAddress = "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ";
-  const pinCoords = "13.7326, 100.5703";
+  const [pinAddress, setPinAddress] = useState("บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ");
+  const [pinCoords, setPinCoords] = useState("13.7326, 100.5703");
+
+  const handleLocationSelect = (selectedAddr: string, lat: number, lng: number) => {
+    setPinAddress(selectedAddr);
+    setPinCoords(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    if (!addressDetail || addressDetail === pinAddress) {
+      setAddressDetail(selectedAddr);
+    }
+  };
 
   const handleNext = () => {
     try {
@@ -31,7 +39,7 @@ export default function BookingDetailsPage() {
         ...draft,
         contactName,
         phone,
-        address: addressDetail,
+        address: addressDetail || pinAddress,
         note: jobNote,
       });
       setBookingError(null);
@@ -97,6 +105,7 @@ export default function BookingDetailsPage() {
             <InteractiveMapPicker
               pinAddress={pinAddress}
               pinCoords={pinCoords}
+              onLocationSelect={handleLocationSelect}
             />
           </div>
         </div>

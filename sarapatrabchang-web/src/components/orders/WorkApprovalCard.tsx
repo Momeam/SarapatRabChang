@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { useState, useRef } from "react";
+import { AlertTriangle, CheckCircle2, RotateCcw, Upload, X } from "lucide-react";
 import { BookingAction, BookingStatus } from "@/lib/booking";
 
 interface WorkApprovalCardProps {
@@ -26,9 +26,36 @@ export default function WorkApprovalCard({
   onAction,
 }: WorkApprovalCardProps) {
   const [note, setNote] = useState("");
-  const [photoUrlsText, setPhotoUrlsText] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const disabled = isSubmitting;
-  const photos = photoUrlsText.split(/\s+/).map((url) => url.trim()).filter(Boolean);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const remainingSlots = 5 - photos.length;
+    if (remainingSlots <= 0) return;
+    const filesToRead = files.slice(0, remainingSlots);
+
+    filesToRead.forEach((file) => {
+      if (!file.type.startsWith("image/")) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (typeof event.target?.result === "string") {
+          const result = event.target.result;
+          setPhotos((prev) => (prev.length < 5 ? [...prev, result] : prev));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="rounded-2xl border-2 border-emerald-500/50 bg-emerald-50/40 p-5 space-y-4">
@@ -74,16 +101,53 @@ export default function WorkApprovalCard({
               placeholder="สรุปงานที่ทำเสร็จแล้ว"
             />
           </label>
-          <label className="block text-xs font-semibold text-zinc-700">
-            ลิงก์รูปหลักฐาน (HTTPS, ไม่เกิน 5 ลิงก์)
-            <textarea
-              value={photoUrlsText}
-              onChange={(event) => setPhotoUrlsText(event.target.value)}
-              rows={2}
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white p-3 font-normal"
-              placeholder="วาง URL แยกบรรทัด"
-            />
-          </label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-zinc-700">
+                รูปภาพหลักฐานส่งมอบงาน (ไม่เกิน 5 รูป)
+              </label>
+              <span className="text-[11px] text-zinc-500">{photos.length}/5 รูป</span>
+            </div>
+
+            {photos.length > 0 && (
+              <div className="grid grid-cols-5 gap-2">
+                {photos.map((photo, idx) => (
+                  <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-zinc-200 group bg-zinc-100">
+                    <img src={photo} alt={`หลักฐานที่ ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(idx)}
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors shadow"
+                      title="ลบรูป"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {photos.length < 5 && (
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="deliver-proof-upload"
+                />
+                <label
+                  htmlFor="deliver-proof-upload"
+                  className="w-full py-2.5 px-3 border-2 border-dashed border-zinc-300 hover:border-orange-500 rounded-xl flex items-center justify-center gap-2 cursor-pointer bg-white/70 hover:bg-orange-50/50 transition-colors text-xs text-zinc-600 hover:text-orange-600 font-medium"
+                >
+                  <Upload className="w-4 h-4 text-orange-600" />
+                  <span>อัปโหลดไฟล์รูปภาพหลักฐาน</span>
+                </label>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             disabled={disabled || !note.trim() || photos.length > 5}

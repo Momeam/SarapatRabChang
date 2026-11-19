@@ -136,17 +136,43 @@ export default function ProfileHeader({
                 className="w-full p-3 rounded-xl border border-zinc-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
               />
             </label>
-            <label className="block space-y-1">
-              <span className="text-xs font-medium text-zinc-700">ลิงก์รูปโปรไฟล์ (HTTPS)</span>
-              <input
-                type="url"
-                maxLength={2048}
-                value={avatarText}
-                onChange={(event) => setAvatarText(event.target.value)}
-                placeholder="https://example.com/avatar.jpg"
-                className="w-full p-3 rounded-xl border border-zinc-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-              />
-            </label>
+            <div className="space-y-1.5">
+              <span className="text-xs font-medium text-zinc-700 block">รูปโปรไฟล์ (อัปโหลดไฟล์รูปภาพ)</span>
+              <div className="flex items-center gap-3">
+                {avatarText && (
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-zinc-200 bg-zinc-100 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={avatarText} alt="พรีวิวรูปโปรไฟล์" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl border border-zinc-200 transition">
+                  <span>{avatarText ? "เปลี่ยนไฟล์รูปภาพ" : "เลือกไฟล์รูปภาพจากอุปกรณ์"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = () => {
+                        if (typeof reader.result === "string") setAvatarText(reader.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                  />
+                </label>
+                {avatarText && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatarText("")}
+                    className="text-xs text-red-600 hover:underline"
+                  >
+                    ลบรูป
+                  </button>
+                )}
+              </div>
+            </div>
             <label className="block space-y-1">
               <span className="text-xs font-medium text-zinc-700">แนะนำตัว / เกี่ยวกับฉัน</span>
               <textarea

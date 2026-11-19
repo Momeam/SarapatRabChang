@@ -101,13 +101,16 @@ async function requestAuth(
 }
 
 export const getCurrentUser = async (): Promise<AuthUser | null> => {
-  const local = getLocalUser();
-  if (local) return local;
-
   try {
-    return await requestAuth("/api/auth/me", undefined, true);
+    const remote = await requestAuth("/api/auth/me", undefined, true);
+    if (remote) {
+      setLocalUser(remote);
+      return remote;
+    }
+    setLocalUser(null);
+    return null;
   } catch {
-    return local;
+    return getLocalUser();
   }
 };
 
@@ -132,7 +135,7 @@ export const register = async (body: {
       const mockUser: AuthUser = {
         id: "usr-" + Date.now(),
         email: body.email,
-        role: "user",
+        role: body.email.includes("admin") ? "Admin" : "User",
         user_metadata: {
           full_name: body.fullName || "ผู้ใช้งาน",
           phone: body.phone || "08X-XXX-XXXX",
@@ -148,7 +151,7 @@ export const register = async (body: {
   const mockUser: AuthUser = {
     id: "usr-" + Date.now(),
     email: body.email,
-    role: "user",
+    role: body.email.includes("admin") ? "Admin" : "User",
     user_metadata: {
       full_name: body.fullName || "ผู้ใช้งาน",
       phone: body.phone || "08X-XXX-XXXX",
@@ -179,7 +182,7 @@ export const login = async (body: {
         local = {
           id: "usr-" + Date.now(),
           email: body.email,
-          role: body.email.includes("admin") ? "admin" : "user",
+          role: body.email.includes("admin") ? "Admin" : "User",
           user_metadata: {
             full_name: body.email.split("@")[0] || "ผู้ใช้งาน",
             phone: "08X-XXX-XXXX",
@@ -198,7 +201,7 @@ export const login = async (body: {
     local = {
       id: "usr-" + Date.now(),
       email: body.email,
-      role: body.email.includes("admin") ? "admin" : "user",
+      role: body.email.includes("admin") ? "Admin" : "User",
       user_metadata: {
         full_name: body.email.split("@")[0] || "ผู้ใช้งาน",
         phone: "08X-XXX-XXXX",

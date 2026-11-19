@@ -13,7 +13,7 @@ import {
   verifyPassword,
 } from "./auth.js";
 
-const maxBodyBytes = 16 * 1024;
+const maxBodyBytes = 15 * 1024 * 1024;
 const maxKycDocumentBytes = 10 * 1024 * 1024;
 const maxKycRequestBytes = 30 * 1024 * 1024;
 const providerSelect = `
@@ -338,15 +338,16 @@ function validateProfileUpdate(body) {
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "avatarUrl")) {
-    if (typeof body.avatarUrl !== "string" || body.avatarUrl.length > 2048) {
-      throw new HttpError(400, "VALIDATION_ERROR", "ลิงก์รูปโปรไฟล์ไม่ถูกต้อง");
+    if (typeof body.avatarUrl !== "string" || body.avatarUrl.length > 5 * 1024 * 1024) {
+      throw new HttpError(400, "VALIDATION_ERROR", "รูปโปรไฟล์ไม่ถูกต้องหรือมีขนาดใหญ่เกินไป");
     }
     const avatarUrl = body.avatarUrl.trim();
     if (avatarUrl) {
       try {
-        if (new URL(avatarUrl).protocol !== "https:") throw new Error("Invalid protocol");
+        const parsed = new URL(avatarUrl);
+        if (parsed.protocol !== "https:" && parsed.protocol !== "data:") throw new Error("Invalid protocol");
       } catch {
-        throw new HttpError(400, "VALIDATION_ERROR", "ลิงก์รูปโปรไฟล์ต้องเป็น HTTPS URL");
+        throw new HttpError(400, "VALIDATION_ERROR", "รูปโปรไฟล์ต้องเป็น HTTPS URL หรือข้อมูลรูปภาพ");
       }
     }
     updates.avatarUrl = avatarUrl;
@@ -513,15 +514,16 @@ function validateBookingAction(body) {
   if (
     !Array.isArray(photoUrls) ||
     photoUrls.length > 5 ||
-    photoUrls.some((value) => typeof value !== "string" || value.length > 2048)
+    photoUrls.some((value) => typeof value !== "string" || value.length > 5 * 1024 * 1024)
   ) {
-    throw new HttpError(400, "VALIDATION_ERROR", "ลิงก์รูปภาพไม่ถูกต้อง");
+    throw new HttpError(400, "VALIDATION_ERROR", "รูปภาพไม่ถูกต้องหรือมีขนาดใหญ่เกินไป");
   }
   for (const value of photoUrls) {
     try {
-      if (new URL(value).protocol !== "https:") throw new Error("Invalid protocol");
+      const parsed = new URL(value);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "data:") throw new Error("Invalid protocol");
     } catch {
-      throw new HttpError(400, "VALIDATION_ERROR", "ลิงก์รูปภาพต้องเป็น HTTPS URL");
+      throw new HttpError(400, "VALIDATION_ERROR", "รูปภาพต้องเป็น HTTPS URL หรือข้อมูลรูปภาพ");
     }
   }
   return { action, note, photoUrls };
@@ -578,9 +580,10 @@ function validateProviderSubmission(body) {
   }
   for (const imageUrl of imageUrls) {
     try {
-      if (new URL(imageUrl).protocol !== "https:") throw new Error("Invalid protocol");
+      const parsed = new URL(imageUrl);
+      if (parsed.protocol !== "https:" && parsed.protocol !== "data:") throw new Error("Invalid protocol");
     } catch {
-      throw new HttpError(400, "VALIDATION_ERROR", "ลิงก์รูปภาพต้องเป็น HTTPS URL");
+      throw new HttpError(400, "VALIDATION_ERROR", "รูปภาพต้องเป็น HTTPS URL หรือข้อมูลรูปภาพ");
     }
   }
   const coverImageUrl = imageUrls[0] ?? null;
@@ -1193,6 +1196,184 @@ export function createApp({
           throw new HttpError(409, "PAYOUT_ALREADY_PROCESSED", "คำขอนี้ได้รับการดำเนินการแล้ว");
         }
         sendJson(response, 200, { data: rows[0] }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/admin/dashboard") {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const [
+          { rows: userStats },
+          { rows: kycStats },
+          { rows: bookingStats },
+          { rows: payoutStats },
+          { rows: recentKyc },
+        ] = await Promise.all([
+          pool.query(`SELECT COUNT(*)::int AS "totalUsers" FROM users`),
+          pool.query(`SELECT 
+            COUNT(*) FILTER (WHERE status = 'pending')::int AS "pendingKyc",
+            COUNT(*) FILTER (WHERE status = 'approved')::int AS "approvedKyc",
+            COUNT(*)::int AS "totalKyc"
+            FROM provider_kyc_submissions`),
+          pool.query(`SELECT 
+            COUNT(*)::int AS "totalBookings",
+            COALESCE(SUM(price), 0)::float AS "totalVolume",
+            COUNT(*) FILTER (WHERE status = 'completed')::int AS "completedBookings"
+            FROM bookings`),
+          pool.query(`SELECT 
+            COUNT(*) FILTER (WHERE status = 'pending')::int AS "pendingPayouts",
+            COALESCE(SUM(amount) FILTER (WHERE status = 'paid'), 0)::float AS "paidAmount"
+            FROM provider_payout_requests`),
+          pool.query(`SELECT s.submission_id::text AS id, s.user_id::text AS "userId", s.full_name AS "fullName",
+                             s.national_id AS "nationalId", s.category_key AS "categoryKey",
+                             sc.category_name AS "categoryName", s.bank_name AS "bankName",
+                             s.bank_account_number AS "bankAccountNumber", s.status,
+                             s.submitted_at AS "submittedAt", u.email, u.phone
+                      FROM provider_kyc_submissions s
+                      JOIN users u ON u.id = s.user_id
+                      LEFT JOIN service_category sc ON sc.category_key = s.category_key
+                      ORDER BY s.submitted_at DESC
+                      LIMIT 8`),
+        ]);
+        sendJson(
+          response,
+          200,
+          {
+            data: {
+              totalUsers: userStats[0]?.totalUsers ?? 0,
+              pendingKyc: kycStats[0]?.pendingKyc ?? 0,
+              approvedKyc: kycStats[0]?.approvedKyc ?? 0,
+              totalBookings: bookingStats[0]?.totalBookings ?? 0,
+              totalVolume: bookingStats[0]?.totalVolume ?? 0,
+              completedBookings: bookingStats[0]?.completedBookings ?? 0,
+              pendingPayouts: payoutStats[0]?.pendingPayouts ?? 0,
+              paidAmount: payoutStats[0]?.paidAmount ?? 0,
+              recentKyc,
+            },
+          },
+          corsHeaders,
+        );
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/admin/kyc") {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const { rows } = await pool.query(
+          `SELECT s.submission_id::text AS id, s.user_id::text AS "userId", s.full_name AS "fullName",
+                  s.national_id AS "nationalId", s.category_key AS "categoryKey",
+                  sc.category_name AS "categoryName", s.bank_name AS "bankName",
+                  s.bank_account_number AS "bankAccountNumber",
+                  s.id_document_name AS "idDocumentName", s.id_document_type AS "idDocumentType",
+                  s.bank_document_name AS "bankDocumentName", s.bank_document_type AS "bankDocumentType",
+                  s.status, s.submitted_at AS "submittedAt", s.updated_at AS "updatedAt",
+                  u.email, u.phone
+           FROM provider_kyc_submissions s
+           JOIN users u ON u.id = s.user_id
+           LEFT JOIN service_category sc ON sc.category_key = s.category_key
+           ORDER BY s.submitted_at DESC`,
+        );
+        sendJson(response, 200, { data: rows }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        segments.length === 6 &&
+        segments[0] === "api" &&
+        segments[1] === "admin" &&
+        segments[2] === "kyc" &&
+        segments[4] === "document" &&
+        ["id", "bank"].includes(segments[5])
+      ) {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const submissionId = segments[3];
+        const docType = segments[5];
+        const colData = docType === "id" ? "id_document_data" : "bank_document_data";
+        const colMime = docType === "id" ? "id_document_type" : "bank_document_type";
+        const colName = docType === "id" ? "id_document_name" : "bank_document_name";
+        const { rows } = await pool.query(
+          `SELECT ${colData} AS data, ${colMime} AS mime, ${colName} AS name
+           FROM provider_kyc_submissions
+           WHERE submission_id = $1`,
+          [submissionId],
+        );
+        if (rows.length === 0 || !rows[0].data) {
+          throw new HttpError(404, "DOCUMENT_NOT_FOUND", "ไม่พบเอกสาร");
+        }
+        const fileBuffer = rows[0].data;
+        response.writeHead(200, {
+          ...corsHeaders,
+          "content-type": rows[0].mime,
+          "content-length": fileBuffer.length,
+          "content-disposition": `inline; filename="${encodeURIComponent(rows[0].name)}"`,
+        });
+        response.end(fileBuffer);
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "admin" &&
+        segments[2] === "kyc"
+      ) {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const submissionId = segments[3];
+        if (!/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(submissionId)) {
+          throw new HttpError(404, "KYC_NOT_FOUND", "ไม่พบคำขอยืนยันตัวตน");
+        }
+        const body = await readJsonBody(request);
+        const status = requiredText(body.status, "status", 20);
+        if (!["approved", "rejected"].includes(status)) {
+          throw new HttpError(400, "INVALID_STATUS", "สถานะต้องเป็น approved หรือ rejected");
+        }
+        const updated = await withTransaction(pool, async (client) => {
+          const { rows } = await client.query(
+            `SELECT submission_id, user_id, full_name
+             FROM provider_kyc_submissions
+             WHERE submission_id = $1
+             FOR UPDATE`,
+            [submissionId],
+          );
+          const submission = rows[0];
+          if (!submission) throw new HttpError(404, "KYC_NOT_FOUND", "ไม่พบคำขอยืนยันตัวตน");
+
+          await client.query(
+            `UPDATE provider_kyc_submissions
+             SET status = $1, updated_at = CURRENT_TIMESTAMP
+             WHERE submission_id = $2`,
+            [status, submissionId],
+          );
+
+          await client.query(
+            `UPDATE profile_freelance
+             SET kyc_status = $1
+             WHERE id_card_number = $2`,
+            [status, submission.user_id],
+          );
+
+          const notifTitle =
+            status === "approved"
+              ? "คำขอยืนยันตัวตน (KYC) ได้รับการอนุมัติแล้ว!"
+              : "คำขอยืนยันตัวตน (KYC) ไม่ผ่านการอนุมัติ";
+          const notifDesc =
+            status === "approved"
+              ? "ยินดีด้วย! คุณสามารถเริ่มลงประกาศบริการและรับงานในฐานะผู้ให้บริการได้แล้ว"
+              : body.note || "เอกสารหรือข้อมูลไม่ตรงตามเงื่อนไข กรุณาตรวจสอบและยื่นเอกสารใหม่อีกครั้ง";
+          await client.query(
+            `INSERT INTO notifications (id, user_id, type, title, description, link)
+             VALUES ($1, $2, 'order', $3, $4, '/provider/dashboard')`,
+            [randomUUID(), submission.user_id, notifTitle, notifDesc],
+          );
+
+          return { id: submissionId, status };
+        });
+
+        sendJson(response, 200, { data: updated }, corsHeaders);
         return;
       }
 
@@ -1959,6 +2140,68 @@ export function createApp({
           return updated.rows[0];
         });
         sendJson(response, 200, { data: result }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "bookings" &&
+        segments[3] === "reviews"
+      ) {
+        const user = await authenticate(request, pool);
+        const bookingId = segments[2];
+        if (!/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(bookingId)) {
+          throw new HttpError(404, "BOOKING_NOT_FOUND", "ไม่พบรายการจอง");
+        }
+        const body = await readJsonBody(request);
+        const rating = Number(body.rating);
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+          throw new HttpError(400, "INVALID_RATING", "คะแนนรีวิวต้องอยู่ระหว่าง 1 ถึง 5");
+        }
+        const comment = typeof body.comment === "string" ? body.comment.trim() : "";
+
+        const { rows: bookingRows } = await pool.query(
+          `SELECT b.id, b.user_id AS "userId", b.provider_id AS "providerId", b.status,
+                  l.listing_id AS "listingId", pf.id_card_number AS "providerUserId"
+           FROM bookings b
+           LEFT JOIN service_listing l ON l.listing_id::text = b.provider_id
+           LEFT JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+           WHERE b.id = $1`,
+          [bookingId],
+        );
+        const booking = bookingRows[0];
+        if (!booking) throw new HttpError(404, "BOOKING_NOT_FOUND", "ไม่พบรายการจอง");
+        if (booking.userId !== user.id) {
+          throw new HttpError(403, "FORBIDDEN", "เฉพาะผู้ว่าจ้างเท่านั้นที่สามารถรีวิวได้");
+        }
+        if (booking.status !== "completed") {
+          throw new HttpError(400, "BOOKING_NOT_COMPLETED", "สามารถรีวิวได้เฉพาะงานที่เสร็จสมบูรณ์แล้วเท่านั้น");
+        }
+
+        const { rows: reviewRows } = await pool.query(
+          `INSERT INTO reviews (booking_id, listing_id, reviewer_id, rating, comment)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING review_id AS "id", rating, comment, created_at AS "createdAt"`,
+          [booking.id, booking.listingId ?? null, user.id, rating, comment],
+        );
+
+        if (booking.providerUserId) {
+          await pool.query(
+            `INSERT INTO notifications (id, user_id, booking_id, type, title, description, link)
+             VALUES ($1, $2, $3, 'review', 'ได้รับรีวิวใหม่สำหรับงาน', $4, $5)`,
+            [
+              randomUUID(),
+              booking.providerUserId,
+              booking.id,
+              comment ? `คะแนน ${rating} ดาว: "${comment.slice(0, 50)}"` : `ได้รับคะแนน ${rating} ดาว`,
+              `/provider/jobs/${booking.id}`,
+            ],
+          );
+        }
+
+        sendJson(response, 201, { data: reviewRows[0] }, corsHeaders);
         return;
       }
 

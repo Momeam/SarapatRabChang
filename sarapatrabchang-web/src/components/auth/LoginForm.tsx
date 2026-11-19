@@ -27,7 +27,7 @@ export default function LoginForm({
     setSubmitting(true);
     try {
       const signedInUser = await signIn({ email, password });
-      if (requiredRole && signedInUser.role !== requiredRole) {
+      if (requiredRole && signedInUser.role?.toLowerCase() !== requiredRole.toLowerCase()) {
         throw new Error("บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ");
       }
       onSuccess(signedInUser);

@@ -54,11 +54,10 @@ export default function FreelancerOrdersPage() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // เมื่อเลือกออเดอร์ใหม่ ให้ดึงแชทของออเดอร์นั้นมาแสดง
-  useEffect(() => {
-    if (selectedOrderId) {
-      setChatMessages(mockChatHistory[selectedOrderId] || []);
-    }
-  }, [selectedOrderId]);
+  const handleSelectOrder = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setChatMessages(mockChatHistory[orderId] || []);
+  };
 
   // เลื่อนหน้าจอแชทลงด้านล่างเมื่อมีข้อความใหม่
   useEffect(() => {
@@ -109,7 +108,7 @@ export default function FreelancerOrdersPage() {
           {orders.map(order => (
             <div 
               key={order.id}
-              onClick={() => setSelectedOrderId(order.id)}
+              onClick={() => handleSelectOrder(order.id)}
               className={`p-4 border-b border-gray-800 transition cursor-pointer ${selectedOrderId === order.id ? 'bg-gray-800 border-l-4 border-[#f97316]' : 'bg-transparent border-l-4 border-transparent hover:bg-gray-800/50'}`}
             >
               <div className="flex justify-between items-start mb-1">
