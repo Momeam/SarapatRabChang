@@ -19,9 +19,20 @@ export default function AdminLoginPage() {
           onSuccess={() => router.replace("/admin/dashboard")}
           onSwitchToRegister={() => router.push("/auth")}
         />
+
+        <div className="mt-6 rounded-xl border border-orange-200 bg-orange-50/70 p-3.5 text-xs text-zinc-700 space-y-1">
+          <p className="font-bold text-orange-800 flex items-center gap-1.5">
+            🔑 บัญชีทดสอบสำหรับผู้ดูแล (Super Admin)
+          </p>
+          <div className="font-mono text-[11px] pt-1 space-y-0.5 text-zinc-800">
+            <p><strong>Email:</strong> admin@sarapatrabchang.com</p>
+            <p><strong>Password:</strong> Admin1234!</p>
+          </div>
+        </div>
+
         <Link
           href="/"
-          className="mt-6 block text-center text-sm text-zinc-500 hover:text-orange-600"
+          className="mt-4 block text-center text-sm text-zinc-500 hover:text-orange-600"
         >
           กลับหน้าหลัก
         </Link>
