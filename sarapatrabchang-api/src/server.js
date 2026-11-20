@@ -772,7 +772,7 @@ export function createApp({
         const category = url.searchParams.get("category")?.trim();
         if (category && category !== "all") {
           values.push(category);
-          filters.push(`c.category_key = $${values.length}`);
+          filters.push(`sc.category_key = $${values.length}`);
         }
         const locations = (url.searchParams.get("location") ?? "")
           .split(",")
@@ -794,7 +794,7 @@ export function createApp({
             `(u.full_name ILIKE $${values.length}
               OR l.title ILIKE $${values.length}
               OR l.description ILIKE $${values.length}
-              OR c.category_name ILIKE $${values.length})`,
+              OR sc.category_name ILIKE $${values.length})`,
           );
         }
         const { rows } = await pool.query(
