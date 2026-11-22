@@ -94,6 +94,7 @@ export default function ServiceBookingCard({
           <input
             type="date"
             value={selectedDate}
+            min={new Date().toISOString().split("T")[0]}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 text-xs font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
           />
@@ -141,7 +142,7 @@ export default function ServiceBookingCard({
           )}
 
           <Link
-            href="/messages"
+            href={`/messages?providerId=${encodeURIComponent(provider.id)}&providerName=${encodeURIComponent(provider.name)}&serviceTitle=${encodeURIComponent(provider.serviceTitle)}`}
             className="w-full py-2.5 px-4 bg-white hover:bg-zinc-50 text-zinc-800 rounded-xl border border-zinc-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <MessageSquare className="w-4 h-4 text-zinc-500" />

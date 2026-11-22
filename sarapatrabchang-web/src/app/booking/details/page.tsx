@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -14,27 +14,30 @@ import { readBookingDraft, saveBookingDraft } from "@/lib/booking";
 export default function BookingDetailsPage() {
   const router = useRouter();
 
-  const [jobNote, setJobNote] = useState("");
-  const [contactName, setContactName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [addressDetail, setAddressDetail] = useState("");
+  const [jobNote, setJobNote] = useState(() => readBookingDraft()?.note ?? "");
+  const [contactName, setContactName] = useState(() => readBookingDraft()?.contactName ?? "");
+  const [phone, setPhone] = useState(() => readBookingDraft()?.phone ?? "");
+  const [addressDetail, setAddressDetail] = useState(() => readBookingDraft()?.address ?? "");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [pinAddress, setPinAddress] = useState("บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ");
+  const [pinAddress, setPinAddress] = useState(
+    () => readBookingDraft()?.address || "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ",
+  );
   const [pinCoords, setPinCoords] = useState("13.7326, 100.5703");
 
-  const handleLocationSelect = (selectedAddr: string, lat: number, lng: number) => {
+  const handleLocationSelect = useCallback((selectedAddr: string, lat: number, lng: number) => {
     setPinAddress(selectedAddr);
     setPinCoords(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-    if (!addressDetail || addressDetail === pinAddress) {
-      setAddressDetail(selectedAddr);
-    }
-  };
+    setAddressDetail((prev) => (!prev || prev === pinAddress ? selectedAddr : prev));
+  }, [pinAddress]);
 
   const handleNext = () => {
     try {
       const draft = readBookingDraft();
       if (!draft) throw new Error("ไม่พบรายการบริการ กรุณาเลือกบริการก่อน");
+      if (phone && !/^0\d{9}$/.test(phone)) {
+        throw new Error("เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักและขึ้นต้นด้วย 0 (เช่น 0812345678)");
+      }
       saveBookingDraft({
         ...draft,
         contactName,

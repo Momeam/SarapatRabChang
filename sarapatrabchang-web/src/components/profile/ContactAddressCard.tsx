@@ -30,6 +30,11 @@ export default function ContactAddressCard({
     event.preventDefault();
     setSavingPhone(true);
     setPhoneError("");
+    if (phoneText.trim() && !/^0\d{9}$/.test(phoneText.trim())) {
+      setPhoneError("เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักและขึ้นต้นด้วย 0");
+      setSavingPhone(false);
+      return;
+    }
     try {
       await onSave({ phone: phoneText });
       setEditingPhone(false);
@@ -89,9 +94,10 @@ export default function ContactAddressCard({
                   {editingPhone ? (
                     <input
                       type="tel"
-                      maxLength={30}
+                      maxLength={10}
+                      placeholder="08XXXXXXXX"
                       value={phoneText}
-                      onChange={(event) => setPhoneText(event.target.value)}
+                      onChange={(event) => setPhoneText(event.target.value.replace(/\D/g, "").slice(0, 10))}
                       className="w-full bg-white border border-zinc-200 rounded px-2 py-1 text-xs"
                       aria-label="เบอร์โทรศัพท์"
                     />

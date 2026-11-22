@@ -29,6 +29,10 @@ export default function RegisterForm({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    if (!/^0\d{9}$/.test(phone)) {
+      setError("เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักและขึ้นต้นด้วย 0 (เช่น 0812345678)");
+      return;
+    }
     setSubmitting(true);
     try {
       await signUp({ email, password, fullName, phone });
@@ -127,9 +131,10 @@ export default function RegisterForm({
             type="tel"
             required
             autoComplete="tel"
-            placeholder="08X-XXX-XXXX"
+            maxLength={10}
+            placeholder="08XXXXXXXX (10 หลัก)"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
             className="w-full px-3.5 py-2.5 rounded-lg border border-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors"
           />
         </div>

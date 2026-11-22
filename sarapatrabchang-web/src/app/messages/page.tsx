@@ -375,29 +375,35 @@ export default function MessagesPage() {
                     {sendError}
                   </p>
                 )}
-                <form onSubmit={sendMessage} className="flex items-end gap-2 border-t border-zinc-200 bg-white p-3 sm:p-4">
-                  <label className="sr-only" htmlFor="customer-message-input">
-                    พิมพ์ข้อความถึงผู้ให้บริการ
-                  </label>
-                  <textarea
-                    id="customer-message-input"
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    maxLength={2000}
-                    rows={1}
-                    placeholder="พิมพ์ข้อความถึงผู้ให้บริการ..."
-                    className="min-h-11 max-h-32 min-w-0 flex-1 resize-y rounded-xl border border-zinc-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    disabled={isLoadingMessages || isSending}
-                  />
-                  <button
-                    type="submit"
-                    disabled={isLoadingMessages || isSending || !draft.trim()}
-                    className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
-                  >
-                    <Send className="h-4 w-4" />
-                    <span className="hidden sm:inline">{isSending ? "กำลังส่ง..." : "ส่ง"}</span>
-                  </button>
-                </form>
+                {activeBooking.status === "completed" ? (
+                  <div className="border-t border-zinc-200 bg-zinc-50 p-4 text-center text-xs text-zinc-500">
+                    งานนี้เสร็จสมบูรณ์แล้ว การสนทนาถูกปิดเรียบร้อยแล้ว ไม่สามารถส่งข้อความเพิ่มเติมได้
+                  </div>
+                ) : (
+                  <form onSubmit={sendMessage} className="flex items-end gap-2 border-t border-zinc-200 bg-white p-3 sm:p-4">
+                    <label className="sr-only" htmlFor="customer-message-input">
+                      พิมพ์ข้อความถึงผู้ให้บริการ
+                    </label>
+                    <textarea
+                      id="customer-message-input"
+                      value={draft}
+                      onChange={(event) => setDraft(event.target.value)}
+                      maxLength={2000}
+                      rows={1}
+                      placeholder="พิมพ์ข้อความถึงผู้ให้บริการ..."
+                      className="min-h-11 max-h-32 min-w-0 flex-1 resize-y rounded-xl border border-zinc-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      disabled={isLoadingMessages || isSending}
+                    />
+                    <button
+                      type="submit"
+                      disabled={isLoadingMessages || isSending || !draft.trim()}
+                      className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-zinc-950 px-4 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+                    >
+                      <Send className="h-4 w-4" />
+                      <span className="hidden sm:inline">{isSending ? "กำลังส่ง..." : "ส่ง"}</span>
+                    </button>
+                  </form>
+                )}
               </>
             ) : (
               <div className="m-auto p-6 text-center">

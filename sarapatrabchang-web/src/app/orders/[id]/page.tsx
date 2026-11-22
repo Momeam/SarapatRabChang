@@ -193,7 +193,11 @@ export default function OrderTrackingPage() {
                     submitted={Boolean(booking.hasReview || reviewSubmitted)}
                   />
                 )}
-                <BookingChat bookingId={booking.id} viewerRole={booking.viewerRole} />
+                <BookingChat
+                  bookingId={booking.id}
+                  viewerRole={booking.viewerRole}
+                  isCompleted={booking.status === "completed"}
+                />
                 {booking.statusNote && (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     รายละเอียดสถานะ: {booking.statusNote}

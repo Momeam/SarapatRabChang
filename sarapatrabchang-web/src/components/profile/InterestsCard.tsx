@@ -16,20 +16,36 @@ export default function InterestsCard({ initial, onSave }: InterestsCardProps) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const remove = (item: string) =>
-    setInterests((current) => current.filter((interest) => interest !== item));
+  const remove = async (item: string) => {
+    const next = interests.filter((interest) => interest !== item);
+    setInterests(next);
+    try {
+      await onSave({ interests: next });
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "ลบประเภทงานไม่สำเร็จ");
+    }
+  };
 
-  const add = () => {
+  const add = async () => {
     const value = newInterest.trim();
     if (
       value &&
       value.length <= 50 &&
       !interests.some((interest) => interest.toLocaleLowerCase() === value.toLocaleLowerCase())
     ) {
-      setInterests((current) => [...current, value]);
+      const next = [...interests, value];
+      setInterests(next);
       setNewInterest("");
-      setShowAdd(false);
       setError("");
+      setSaving(true);
+      try {
+        const saved = await onSave({ interests: next });
+        setInterests(saved.interests);
+      } catch (saveError) {
+        setError(saveError instanceof Error ? saveError.message : "บันทึกประเภทงานไม่สำเร็จ");
+      } finally {
+        setSaving(false);
+      }
     } else if (value.length > 50) {
       setError("ประเภทงานต้องไม่เกิน 50 ตัวอักษร");
     }
@@ -89,16 +105,23 @@ export default function InterestsCard({ initial, onSave }: InterestsCardProps) {
               type="text"
               value={newInterest}
               onChange={(e) => setNewInterest(e.target.value)}
-              placeholder="พิมพ์ชื่อประเภทงาน"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  void add();
+                }
+              }}
+              placeholder="พิมพ์ชื่อประเภทงาน แล้วกด Enter หรือคลิกเพิ่ม"
               maxLength={50}
               className="flex-1 px-3 py-1.5 rounded-lg border border-zinc-200 text-xs focus:outline-none focus:ring-1 focus:ring-orange-500"
             />
             <button
               type="button"
-              onClick={add}
-              className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600"
+              onClick={() => void add()}
+              disabled={saving || !newInterest.trim()}
+              className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600 disabled:opacity-50"
             >
-              เพิ่ม
+              {saving ? "กำลังเพิ่ม..." : "เพิ่ม"}
             </button>
           </div>
         )}

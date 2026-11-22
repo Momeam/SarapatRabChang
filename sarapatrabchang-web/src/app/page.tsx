@@ -30,17 +30,13 @@ export default function HomePage() {
       const query = queryString ? `?${queryString}` : "";
 
       try {
-        const [categoryData, providerData] = await Promise.all([
-          requestApi<ServiceCategory[]>("/api/categories"),
-          requestApi<Provider[]>(`/api/providers${query}`),
-        ]);
-        setCategories(categoryData);
+        const providerData = await requestApi<Provider[]>(`/api/providers${query}`);
         setProviders(providerData);
       } catch (loadError) {
         setError(
           loadError instanceof Error
             ? loadError.message
-            : "ไม่สามารถโหลดข้อมูลจากเซิร์ฟเวอร์ได้",
+            : "ไม่สามารถโหลดข้อมูลผู้ให้บริการได้",
         );
       } finally {
         setIsLoading(false);

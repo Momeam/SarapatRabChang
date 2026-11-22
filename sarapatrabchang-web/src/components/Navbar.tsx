@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Briefcase,
   ShieldAlert,
+  X,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
@@ -29,6 +30,8 @@ export default function Navbar() {
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotificationMenu, setShowNotificationMenu] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState("");
   const [authActionError, setAuthActionError] = useState("");
   const [notificationError, setNotificationError] = useState("");
   const [notificationsOwnerId, setNotificationsOwnerId] = useState("");
@@ -293,13 +296,14 @@ export default function Navbar() {
             ) : (
               <>
                 {/* Search Quick Button */}
-                <Link
-                  href="/"
-                  className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full transition-colors hidden sm:flex items-center justify-center"
-                  title="ค้นหา"
+                <button
+                  type="button"
+                  onClick={() => setShowSearchModal(true)}
+                  className="p-2 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-full transition-colors hidden sm:flex items-center justify-center cursor-pointer"
+                  title="ค้นหาบริการ"
                 >
                   <Search className="w-5 h-5" />
-                </Link>
+                </button>
 
                 {/* Notifications Dropdown Container */}
                 <div className="relative" ref={notifRef}>
@@ -523,6 +527,59 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Search Quick Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-black/50 backdrop-blur-xs">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-zinc-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!searchKeyword.trim()) return;
+                setShowSearchModal(false);
+                router.push(`/?q=${encodeURIComponent(searchKeyword.trim())}`);
+              }}
+              className="p-4 border-b border-zinc-100 flex items-center gap-3"
+            >
+              <Search className="w-5 h-5 text-orange-500 shrink-0" />
+              <input
+                type="text"
+                autoFocus
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="พิมพ์ค้นหาบริการ เช่น ล้างแอร์, ทำความสะอาด, ช่างไฟ, ซ่อมประปา..."
+                className="w-full text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSearchModal(false)}
+                className="p-1 text-zinc-400 hover:text-zinc-600 rounded-lg hover:bg-zinc-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </form>
+            <div className="p-4 bg-zinc-50/50 space-y-3">
+              <p className="text-xs font-semibold text-zinc-500">ค้นหายอดนิยม</p>
+              <div className="flex flex-wrap gap-2">
+                {["ทำความสะอาดคอนโด", "ซ่อมแอร์", "ช่างไฟ/ประปา", "ย้ายหอพัก", "จัดสวน"].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      setSearchKeyword(tag);
+                      setShowSearchModal(false);
+                      router.push(`/?q=${encodeURIComponent(tag)}`);
+                    }}
+                    className="px-3 py-1.5 bg-white border border-zinc-200 hover:border-orange-400 hover:text-orange-600 rounded-xl text-xs font-medium text-zinc-700 transition-colors cursor-pointer"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

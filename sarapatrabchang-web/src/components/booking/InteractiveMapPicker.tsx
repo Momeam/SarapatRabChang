@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, memo } from "react";
 import { MapPin, Search, Navigation, Info, Loader2, Check } from "lucide-react";
 
 interface InteractiveMapPickerProps {
@@ -52,7 +52,7 @@ declare global {
   }
 }
 
-export default function InteractiveMapPicker({
+function InteractiveMapPicker({
   pinAddress,
   pinCoords,
   onLocationSelect,
@@ -60,6 +60,10 @@ export default function InteractiveMapPicker({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const markerRef = useRef<LeafletMarker | null>(null);
+  const onLocationSelectRef = useRef(onLocationSelect);
+  useEffect(() => {
+    onLocationSelectRef.current = onLocationSelect;
+  }, [onLocationSelect]);
 
   // Parse initial coordinates or default to Bangkok (13.7326, 100.5703)
   const parseCoords = useCallback((coordStr: string): [number, number] => {
@@ -97,16 +101,16 @@ export default function InteractiveMapPicker({
           const province = addr.city || addr.province || addr.state || "";
           const compact = [road, district, province].filter(Boolean).join(", ") || data.display_name;
           setAddress(compact);
-          onLocationSelect?.(compact, lat, lng);
+          onLocationSelectRef.current?.(compact, lat, lng);
         }
       } catch {
         // Fallback silently if offline or geocode fails
       }
     },
-    [onLocationSelect]
+    []
   );
 
-  // Initialize Leaflet Map
+  // Initialize Leaflet Map once
   useEffect(() => {
     let active = true;
 
@@ -146,8 +150,9 @@ export default function InteractiveMapPicker({
       if (!mapContainerRef.current || mapInstanceRef.current || !window.L) return;
 
       const L = window.L;
-      const initialLat = coords[0];
-      const initialLng = coords[1];
+      const initialCoords = parseCoords(pinCoords);
+      const initialLat = initialCoords[0];
+      const initialLng = initialCoords[1];
 
       // Create map
       const map = L.map(mapContainerRef.current, {
@@ -220,7 +225,7 @@ export default function InteractiveMapPicker({
         markerRef.current = null;
       }
     };
-  }, [coords, parseCoords, reverseGeocode]);
+  }, []); // Run only once on mount!
 
   // Update pin position helper
   const updateMapPosition = (lat: number, lng: number, zoom = 16) => {
@@ -398,3 +403,5 @@ export default function InteractiveMapPicker({
     </div>
   );
 }
+
+export default memo(InteractiveMapPicker);

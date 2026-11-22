@@ -15,9 +15,14 @@ interface BookingChatMessage {
 interface BookingChatProps {
   bookingId: string;
   viewerRole: "customer" | "provider";
+  isCompleted?: boolean;
 }
 
-export default function BookingChat({ bookingId, viewerRole }: BookingChatProps) {
+export default function BookingChat({
+  bookingId,
+  viewerRole,
+  isCompleted = false,
+}: BookingChatProps) {
   const [messages, setMessages] = useState<BookingChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -119,27 +124,33 @@ export default function BookingChat({ bookingId, viewerRole }: BookingChatProps)
         <p role="alert" className="text-xs text-red-700">{error}</p>
       )}
 
-      <form onSubmit={sendMessage} className="flex items-end gap-2">
-        <label className="sr-only" htmlFor={`message-${bookingId}`}>ข้อความ</label>
-        <textarea
-          id={`message-${bookingId}`}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          maxLength={2000}
-          rows={2}
-          placeholder="พิมพ์ข้อความถึงอีกฝ่าย..."
-          className="min-w-0 flex-1 resize-y rounded-xl border border-zinc-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-          disabled={isLoading || isSending}
-        />
-        <button
-          type="submit"
-          disabled={isLoading || isSending || !draft.trim()}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
-        >
-          <Send className="h-3.5 w-3.5" />
-          {isSending ? "กำลังส่ง..." : "ส่ง"}
-        </button>
-      </form>
+      {isCompleted ? (
+        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center text-xs text-zinc-500">
+          งานนี้เสร็จสมบูรณ์แล้ว การสนทนาถูกปิดเรียบร้อยแล้ว ไม่สามารถส่งข้อความเพิ่มเติมได้
+        </div>
+      ) : (
+        <form onSubmit={sendMessage} className="flex items-end gap-2">
+          <label className="sr-only" htmlFor={`message-${bookingId}`}>ข้อความ</label>
+          <textarea
+            id={`message-${bookingId}`}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            maxLength={2000}
+            rows={2}
+            placeholder="พิมพ์ข้อความถึงอีกฝ่าย..."
+            className="min-w-0 flex-1 resize-y rounded-xl border border-zinc-200 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            disabled={isLoading || isSending}
+          />
+          <button
+            type="submit"
+            disabled={isLoading || isSending || !draft.trim()}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 px-4 py-2.5 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
+          >
+            <Send className="h-3.5 w-3.5" />
+            {isSending ? "กำลังส่ง..." : "ส่ง"}
+          </button>
+        </form>
+      )}
     </section>
   );
 }

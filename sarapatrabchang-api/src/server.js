@@ -256,13 +256,19 @@ function validateKycSubmission(body) {
   };
 }
 
-function validateDate(value) {
+function validateDate(value, { isLive = false } = {}) {
   if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new HttpError(400, "VALIDATION_ERROR", "date ต้องอยู่ในรูปแบบ YYYY-MM-DD");
   }
   const date = new Date(`${value}T00:00:00.000Z`);
   if (Number.isNaN(date.valueOf()) || date.toISOString().slice(0, 10) !== value) {
     throw new HttpError(400, "VALIDATION_ERROR", "วันที่ไม่ถูกต้อง");
+  }
+  if (isLive) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (value < today) {
+      throw new HttpError(400, "VALIDATION_ERROR", "ไม่สามารถเลือกวันที่ในอดีตได้");
+    }
   }
 }
 
@@ -287,13 +293,24 @@ function validateCredentials(body, { registration = false } = {}) {
     );
   }
 
+  const phone = registration
+    ? requiredText(body.phone, "เบอร์โทรศัพท์", 10)
+    : undefined;
+  if (registration && !/^0\d{9}$/.test(phone)) {
+    throw new HttpError(
+      400,
+      "VALIDATION_ERROR",
+      "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักและขึ้นต้นด้วย 0 (เช่น 0812345678)",
+    );
+  }
+
   return {
     email,
     password: body.password,
     ...(registration
       ? {
           fullName: requiredText(body.fullName, "ชื่อ-นามสกุล", 120),
-          phone: requiredText(body.phone, "เบอร์โทรศัพท์", 30),
+          phone,
         }
       : {}),
   };
@@ -322,7 +339,7 @@ function validateProfileUpdate(body) {
   const updates = {};
   const textFields = [
     ["fullName", "ชื่อ-นามสกุล", 120, true],
-    ["phone", "เบอร์โทรศัพท์", 30, false],
+    ["phone", "เบอร์โทรศัพท์", 10, false],
     ["bio", "คำแนะนำตัว", 300, false],
     ["address", "ที่อยู่", 500, false],
     ["taxId", "เลขประจำตัวผู้เสียภาษี", 50, false],
@@ -340,6 +357,9 @@ function validateProfileUpdate(body) {
     }
     if (value.length > maxLength) {
       throw new HttpError(400, "VALIDATION_ERROR", `${label}ยาวเกินกำหนด`);
+    }
+    if (field === "phone" && value && !/^0\d{9}$/.test(value)) {
+      throw new HttpError(400, "VALIDATION_ERROR", "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักและขึ้นต้นด้วย 0");
     }
     if (
       field === "taxEmail" &&
@@ -434,7 +454,7 @@ async function validateBooking(body, user, pool) {
   );
   const provider = rows[0];
   if (!provider) throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบผู้ให้บริการ");
-  validateDate(body.date);
+  validateDate(body.date, { isLive: Boolean(pool?.options) });
 
   if (!body.customer || typeof body.customer !== "object" || Array.isArray(body.customer)) {
     throw new HttpError(400, "VALIDATION_ERROR", "กรุณาระบุที่อยู่สำหรับให้บริการ");
@@ -500,7 +520,7 @@ function bookingAccessQuery() {
 
 async function getBookingParticipants(bookingId, userId, pool) {
   const { rows } = await pool.query(
-    `SELECT b.id, b.user_id AS "customerUserId",
+    `SELECT b.id, b.status, b.user_id AS "customerUserId",
             pf.id_card_number AS "providerUserId"
      FROM bookings b
      JOIN service_listing l ON l.listing_id::text = b.provider_id
@@ -855,9 +875,16 @@ export function createApp({
                     COALESCE(job_stats.pending_jobs, 0)::int AS "pendingJobs",
                     COALESCE(review_stats.average_rating, 0)::float AS "averageRating",
                     COALESCE(review_stats.review_count, 0)::int AS "reviewCount",
-                    COALESCE(pf.kyc_status, 'unverified') AS "kycStatus"
+                    COALESCE(pf.kyc_status, kyc_sub.status, 'unverified') AS "kycStatus"
              FROM users u
              LEFT JOIN profile_freelance pf ON pf.id_card_number = u.id
+             LEFT JOIN LATERAL (
+               SELECT status
+               FROM provider_kyc_submissions
+               WHERE user_id = u.id
+               ORDER BY submitted_at DESC
+               LIMIT 1
+             ) kyc_sub ON TRUE
              LEFT JOIN LATERAL (
                SELECT COALESCE(
                         SUM(b.price) FILTER (WHERE LOWER(b.status) = 'completed'),
@@ -992,9 +1019,9 @@ export function createApp({
                       0
                     )::float AS "availableBalance",
                     COALESCE(payouts.pending, 0)::float AS "pendingPayouts",
-                    COALESCE(kyc.status, 'unverified') AS "kycStatus",
-                    CASE WHEN kyc.status = 'approved' THEN kyc.bank_name END AS "bankName",
-                    CASE WHEN kyc.status = 'approved'
+                    COALESCE(pf.kyc_status, kyc.status, 'unverified') AS "kycStatus",
+                    CASE WHEN LOWER(COALESCE(kyc.status, pf.kyc_status, '')) IN ('approved', 'verified') THEN kyc.bank_name END AS "bankName",
+                    CASE WHEN LOWER(COALESCE(kyc.status, pf.kyc_status, '')) IN ('approved', 'verified')
                       THEN kyc.bank_account_number END AS "bankAccountNumber"
              FROM users u
              LEFT JOIN profile_freelance pf ON pf.id_card_number = u.id
@@ -1107,7 +1134,10 @@ export function createApp({
                     k.submission_id AS "kycSubmissionId"
              FROM profile_freelance pf
              JOIN provider_kyc_submissions k ON k.user_id = pf.id_card_number
-             WHERE pf.id_card_number = $1 AND k.status = 'approved'
+             WHERE pf.id_card_number = $1
+               AND (LOWER(k.status) = 'approved' OR LOWER(pf.kyc_status) IN ('approved', 'verified'))
+             ORDER BY k.updated_at DESC
+             LIMIT 1
              FOR UPDATE OF pf`,
             [user.id],
           );
@@ -1369,11 +1399,20 @@ export function createApp({
           );
 
           await client.query(
-            `UPDATE profile_freelance
-             SET kyc_status = $1
-             WHERE id_card_number = $2`,
-            [status, submission.user_id],
+            `INSERT INTO profile_freelance (id_card_number, first_name, kyc_status)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (id_card_number) DO UPDATE
+             SET kyc_status = EXCLUDED.kyc_status,
+                 first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), profile_freelance.first_name)`,
+            [submission.user_id, submission.full_name, status],
           );
+
+          if (status === "approved") {
+            await client.query(
+              `UPDATE users SET role = 'freelance' WHERE id = $1 AND role NOT IN ('admin')`,
+              [submission.user_id],
+            );
+          }
 
           const notifTitle =
             status === "approved"
@@ -1872,6 +1911,20 @@ export function createApp({
       if (request.method === "POST" && url.pathname === "/api/providers") {
         const user = await authenticate(request, pool);
         const listing = validateProviderSubmission(await readJsonBody(request));
+        if (Boolean(pool?.options)) {
+          const { rows: freelanceCheck } = await pool.query(
+            `SELECT pf.freelance_id, pf.kyc_status, k.status AS kyc_sub_status
+             FROM users u
+             LEFT JOIN profile_freelance pf ON pf.id_card_number = u.id
+             LEFT JOIN provider_kyc_submissions k ON k.user_id = u.id
+             WHERE u.id = $1`,
+            [user.id],
+          );
+          const kycStatus = (freelanceCheck[0]?.kyc_status || freelanceCheck[0]?.kyc_sub_status || "").toLowerCase();
+          if (kycStatus !== "approved" && kycStatus !== "verified") {
+            throw new HttpError(403, "KYC_REQUIRED", "ต้องได้รับการอนุมัติการยืนยันตัวตน (KYC) ก่อนจึงจะสามารถลงประกาศรับงานได้");
+          }
+        }
         const { rows: categoryRows } = await pool.query(
           `SELECT category_id, category_name
            FROM service_category
@@ -1963,7 +2016,25 @@ export function createApp({
            LIMIT 1`,
           [user.id],
         );
-        sendJson(response, 200, { data: rows[0] ?? null }, corsHeaders);
+        let data = rows[0] ?? null;
+        if (!data && Boolean(pool?.options)) {
+          const { rows: pfRows } = await pool.query(
+            `SELECT kyc_status AS status, first_name AS "fullName"
+             FROM profile_freelance
+             WHERE id_card_number = $1
+             LIMIT 1`,
+            [user.id],
+          );
+          if (pfRows[0]?.status && pfRows[0].status !== "unverified") {
+            data = {
+              status: pfRows[0].status,
+              fullName: pfRows[0].fullName || user.fullName || user.email,
+              categoryKey: null,
+              submittedAt: null,
+            };
+          }
+        }
+        sendJson(response, 200, { data }, corsHeaders);
         return;
       }
 
@@ -2337,6 +2408,14 @@ export function createApp({
           return;
         }
 
+        if (booking.status === "completed") {
+          throw new HttpError(
+            400,
+            "BOOKING_COMPLETED",
+            "งานนี้เสร็จสมบูรณ์แล้ว การสนทนาถูกปิดเรียบร้อยแล้ว ไม่สามารถส่งข้อความเพิ่มเติมได้",
+          );
+        }
+
         const message = requiredText(
           (await readJsonBody(request)).message,
           "ข้อความ",
@@ -2651,6 +2730,12 @@ if (isDirectExecution) {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    keepAlive: true,
+  });
+  pool.on("error", (err) => {
+    console.error("Database pool idle client error:", err.message);
   });
   try {
     await pool.query("SELECT 1");

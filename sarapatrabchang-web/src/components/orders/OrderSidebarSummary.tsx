@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { CheckCircle2, MessageSquare } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { Booking, bookingStatusLabels } from "@/lib/booking";
 
 interface OrderSidebarSummaryProps {
@@ -89,14 +88,6 @@ export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProp
       <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 text-xs text-amber-900">
         สถานะในหน้านี้ใช้ติดตามรายการเท่านั้น ไม่มีการตัดเงินจริงหรือโอนเงิน
       </div>
-
-      <Link
-        href={isProvider ? `/provider/jobs/${encodeURIComponent(booking.id)}/chat` : "#chat"}
-        className="w-full py-2.5 px-4 bg-white hover:bg-zinc-50 text-zinc-800 rounded-xl border border-zinc-300 text-xs font-semibold transition-all flex items-center justify-center gap-2"
-      >
-        <MessageSquare className="w-4 h-4 text-zinc-500" />
-        <span>ไปที่แชทของงาน</span>
-      </Link>
     </div>
   );
 }
