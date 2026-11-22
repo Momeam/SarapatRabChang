@@ -13,7 +13,7 @@ import BookingChat from "@/components/orders/BookingChat";
 import ReviewForm from "@/components/orders/ReviewForm";
 import OrderSidebarSummary from "@/components/orders/OrderSidebarSummary";
 import { requestApi } from "@/lib/api";
-import { Booking, BookingAction } from "@/lib/booking";
+import { Booking, BookingAction, formatJobCode } from "@/lib/booking";
 
 const bookingIdPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 
@@ -155,7 +155,7 @@ export default function OrderTrackingPage() {
                 ติดตามงานและตรวจรับงาน
               </h1>
               <p className="text-xs sm:text-sm text-zinc-500 mt-1">
-                หมายเลขงาน <span className="font-mono font-semibold text-zinc-800">{booking.id}</span>
+                หมายเลขงาน <span className="font-mono font-semibold text-zinc-800">{formatJobCode(booking.id)}</span>
                 {" • "}นัดหมาย {formatDate(booking.date)} เวลา {booking.timeSlot.replace("-", "–")} น.
               </p>
             </div>

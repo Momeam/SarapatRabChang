@@ -8,6 +8,8 @@ export default function ProviderStatsRow({
 }: {
   stats: ProviderDashboardStats;
 }) {
+  const completedCount = stats.completedJobs ?? 0;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm space-y-2">
@@ -19,20 +21,20 @@ export default function ProviderStatsRow({
           ฿{stats.totalEarnings.toLocaleString("th-TH")}
         </div>
         <p className="text-xs text-zinc-500 pt-1">
-          รวมจากงานที่เสร็จแล้ว • ยังไม่รวมการโอนเงินจริง
+          รวมจากงานที่เสร็จสมบูรณ์แล้ว {completedCount} งาน • ยังไม่รวมการโอนเงินจริง
         </p>
       </div>
 
       <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm space-y-2">
         <div className="flex items-center justify-between text-zinc-500">
-          <span className="text-xs font-semibold">งานที่กำลังดำเนินการ</span>
+          <span className="text-xs font-semibold">จำนวนงานทั้งหมด / กำลังดำเนินการ</span>
           <Briefcase className="w-4 h-4 text-blue-500" />
         </div>
         <div className="text-2xl sm:text-3xl font-extrabold text-zinc-950 tracking-tight">
-          {stats.activeJobs} งาน
+          {stats.activeJobs + completedCount} งาน
         </div>
         <p className="text-xs text-orange-600 font-medium pt-1">
-          มีงานใหม่รอยืนยัน {stats.pendingJobs} งาน
+          เสร็จแล้ว {completedCount} งาน • กำลังทำ {stats.activeJobs} งาน • รอยืนยัน {stats.pendingJobs} งาน
         </p>
       </div>
 

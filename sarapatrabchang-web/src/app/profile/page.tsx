@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Lock } from "lucide-react";
+import { ChevronRight, Lock, Heart, Trash2, ArrowUpRight } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/components/AuthProvider";
@@ -15,6 +15,12 @@ import TaxInfoCard from "@/components/profile/TaxInfoCard";
 import PublicReviewsFeed from "@/components/profile/PublicReviewsFeed";
 import { requestApi } from "@/lib/api";
 import type { AccountProfile, ProfileUpdate } from "@/lib/profile";
+import type { Booking } from "@/lib/booking";
+import {
+  getSavedServices,
+  removeSavedService,
+  SavedServiceItem,
+} from "@/lib/savedServices";
 
 type ProfileLoadState =
   | { status: "loading"; userId: string | null }
@@ -28,17 +34,38 @@ export default function ProfilePage() {
     status: "loading",
     userId: null,
   });
+  const [unreviewedBookings, setUnreviewedBookings] = useState<Booking[]>([]);
+  const [savedServices, setSavedServices] = useState<SavedServiceItem[]>(() =>
+    getSavedServices(),
+  );
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => setSavedServices(getSavedServices());
+    window.addEventListener("saved-services-updated", handleSync);
+    return () => window.removeEventListener("saved-services-updated", handleSync);
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
     if (!userId) return;
 
     let active = true;
-    requestApi<AccountProfile>("/api/profile")
-      .then((data) => {
+    Promise.all([
+      requestApi<AccountProfile>("/api/profile"),
+      requestApi<Booking[]>("/api/bookings").catch(() => [] as Booking[]),
+    ])
+      .then(([data, bookings]) => {
         if (active) {
           setProfileState({ status: "loaded", userId, profile: data });
+          setUnreviewedBookings(
+            bookings.filter(
+              (b) =>
+                b.viewerRole === "customer" &&
+                b.status === "completed" &&
+                !b.hasReview,
+            ),
+          );
         }
       })
       .catch((requestError: unknown) => {
@@ -52,7 +79,7 @@ export default function ProfilePage() {
                 : "โหลดข้อมูลโปรไฟล์ไม่สำเร็จ",
           });
         }
-      })
+      });
 
     return () => {
       active = false;
@@ -118,7 +145,7 @@ export default function ProfilePage() {
               โปรไฟล์และข้อมูลส่วนตัว
             </h1>
             <p className="text-sm text-zinc-500 mt-1">
-              ข้อมูลบัญชีและรีวิวโหลดจากฐานข้อมูล
+              ข้อมูลบัญชี บริการที่บันทึกไว้ และรีวิวโหลดจากฐานข้อมูล
             </p>
           </div>
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-900 text-white shadow-xs w-fit">
@@ -195,7 +222,84 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <PublicReviewsFeed reviews={profile.reviews} />
+            {/* Saved / Bookmarked Services Section */}
+            <div
+              id="saved-services"
+              className="bg-white rounded-2xl border border-zinc-200 p-6 sm:p-8 shadow-sm space-y-5"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-100 pb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+                    <h3 className="text-base sm:text-lg font-bold text-zinc-900">
+                      บริการที่บันทึกไว้ (รายการโปรด)
+                    </h3>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    รายการบริการที่คุณกดปุ่ม &ldquo;บันทึกบริการ&rdquo; เพื่อกลับมาดูหรือจองภายหลัง
+                  </p>
+                </div>
+                <span className="text-xs text-zinc-500">
+                  ทั้งหมด ({savedServices.length})
+                </span>
+              </div>
+
+              {savedServices.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-8 text-center space-y-2">
+                  <p className="text-sm text-zinc-500">ยังไม่มีบริการที่บันทึกไว้</p>
+                  <Link
+                    href="/services"
+                    className="inline-block text-xs font-semibold text-orange-600 hover:underline"
+                  >
+                    เลือกดูและบันทึกบริการที่สนใจ →
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {savedServices.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-zinc-200 p-4 flex items-center justify-between gap-4 hover:border-orange-300 transition bg-zinc-50/40"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700">
+                          {item.category}
+                        </span>
+                        <h4 className="text-sm font-bold text-zinc-900 truncate">
+                          {item.serviceTitle}
+                        </h4>
+                        <p className="text-xs text-zinc-500 truncate">
+                          {item.name} • เริ่มต้น ฿{item.startingPrice.toLocaleString()}/{item.priceUnit}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Link
+                          href={`/services/${encodeURIComponent(item.id)}`}
+                          className="px-3 py-1.5 rounded-xl bg-zinc-950 hover:bg-orange-600 text-white text-xs font-semibold transition inline-flex items-center gap-1"
+                        >
+                          <span>ดูบริการ</span>
+                          <ArrowUpRight className="w-3.5 h-3.5" />
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setSavedServices(removeSavedService(item.id))}
+                          className="p-2 rounded-xl border border-zinc-200 text-zinc-400 hover:text-red-600 hover:border-red-200 transition cursor-pointer"
+                          title="ลบออกจากรายการที่บันทึก"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <PublicReviewsFeed
+              reviews={profile.reviews}
+              unreviewedBookings={unreviewedBookings}
+              onReviewSubmitted={() => setReloadKey((k) => k + 1)}
+            />
           </>
         ) : (
           <div className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500">

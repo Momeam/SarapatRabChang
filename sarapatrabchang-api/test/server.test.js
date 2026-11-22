@@ -513,7 +513,7 @@ const pool = {
       const viewerId = params[0];
       const results = [...bookings.values()].filter((booking) => {
         return booking.userId === viewerId || providerOwners.get(booking.providerId) === viewerId;
-      }).filter((booking) => !params[1] || booking.id === params[1]).map((booking) => ({
+      }).filter((booking) => !params[1] || booking.id === params[1] || booking.providerId === params[1]).map((booking) => ({
         ...booking,
         serviceTitle: providerRows[0].serviceTitle,
         category: providerRows[0].category,
@@ -1445,4 +1445,48 @@ test("booking validation and CORS handle local development ports safely", async 
     localOrigin.headers.get("access-control-allow-origin"),
     "http://localhost:3002",
   );
+});
+
+test("chat inquiry endpoint allows customer to start pre-booking conversation", async () => {
+  const customerAuth = await register("customer-inquire@example.com");
+  const response = await fetch(`${baseUrl}/api/bookings/inquire`, {
+    method: "POST",
+    headers: {
+      cookie: cookieFrom(customerAuth),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ providerId: "1" }),
+  });
+  assert.equal(response.status, 201);
+  const { data } = await response.json();
+  assert.ok(data.id);
+  assert.equal(data.providerId, "1");
+  assert.equal(data.status, "pending_payment");
+
+  const repeatResponse = await fetch(`${baseUrl}/api/bookings/inquire`, {
+    method: "POST",
+    headers: {
+      cookie: cookieFrom(customerAuth),
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ providerId: "1" }),
+  });
+  assert.equal(repeatResponse.status, 200);
+  const repeatData = await repeatResponse.json();
+  assert.equal(repeatData.data.id, data.id);
+});
+
+test("geocode search and reverse endpoints handle queries and return formatted coordinates", async () => {
+  const emptySearch = await fetch(`${baseUrl}/api/geocode/search?q=`);
+  assert.equal(emptySearch.status, 200);
+  const emptyData = await emptySearch.json();
+  assert.deepEqual(emptyData.data.results, []);
+
+  const invalidReverse = await fetch(`${baseUrl}/api/geocode/reverse?lat=invalid&lng=none`);
+  assert.equal(invalidReverse.status, 400);
+
+  const validReverse = await fetch(`${baseUrl}/api/geocode/reverse?lat=13.7326&lng=100.5703`);
+  assert.equal(validReverse.status, 200);
+  const revData = await validReverse.json();
+  assert.ok(revData.data.compactAddress);
 });

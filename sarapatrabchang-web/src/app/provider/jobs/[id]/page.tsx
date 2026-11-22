@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, MessageSquare } from "lucide-react";
 import ProviderNavbar from "@/components/provider/ProviderNavbar";
 import Footer from "@/components/Footer";
 import OrderStatusStepper from "@/components/orders/OrderStatusStepper";
@@ -12,7 +12,7 @@ import WorkApprovalCard from "@/components/orders/WorkApprovalCard";
 import BookingChat from "@/components/orders/BookingChat";
 import OrderSidebarSummary from "@/components/orders/OrderSidebarSummary";
 import { requestApi } from "@/lib/api";
-import { Booking, BookingAction } from "@/lib/booking";
+import { Booking, BookingAction, formatJobCode } from "@/lib/booking";
 
 const bookingIdPattern = /^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i;
 
@@ -118,7 +118,7 @@ export default function ProviderJobDetailPage() {
           <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
           <Link href="/provider/jobs" className="hover:text-orange-600">รายการงาน</Link>
           <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="text-zinc-900 font-mono font-medium">{jobId}</span>
+          <span className="text-zinc-900 font-mono font-medium">#{formatJobCode(jobId)}</span>
         </div>
 
         {isLoading ? (
@@ -138,11 +138,22 @@ export default function ProviderJobDetailPage() {
           </div>
         ) : (
           <>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950">รายละเอียดงานที่ได้รับ</h1>
-              <p className="text-sm text-zinc-500 mt-1">
-                {booking.serviceTitle} • นัดหมาย {formatDate(booking.date)} เวลา {booking.timeSlot.replace("-", "–")} น.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950">รายละเอียดงานที่ได้รับ</h1>
+                <p className="text-sm text-zinc-500 mt-1">
+                  {booking.serviceTitle} • นัดหมาย {formatDate(booking.date)} เวลา {booking.timeSlot.replace("-", "–")} น.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/provider/messages?bookingId=${encodeURIComponent(booking.id)}`}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold text-xs sm:text-sm border border-orange-200 transition-colors shadow-xs"
+                >
+                  <MessageSquare className="w-4 h-4 text-orange-600" />
+                  <span>แชทกับลูกค้า ({booking.contactName || "ผู้ว่าจ้าง"})</span>
+                </Link>
+              </div>
             </div>
 
             <OrderStatusStepper
@@ -169,7 +180,11 @@ export default function ProviderJobDetailPage() {
                   deliveredAt={booking.deliveredAt}
                   photos={booking.deliveryPhotoUrls}
                 />
-                <BookingChat bookingId={booking.id} viewerRole="provider" />
+                <BookingChat
+                  bookingId={booking.id}
+                  viewerRole="provider"
+                  isCompleted={booking.status === "completed"}
+                />
                 {booking.statusNote && (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                     รายละเอียดสถานะ: {booking.statusNote}

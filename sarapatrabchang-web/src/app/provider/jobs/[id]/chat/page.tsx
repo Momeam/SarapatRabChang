@@ -202,7 +202,7 @@ export default function ProviderBookingChatPage() {
                         {bookingStatusLabels[booking.status]}
                       </span>
                       <span className="shrink-0 font-mono text-[10px] text-zinc-400">
-                        #{booking.id.slice(0, 8).toUpperCase()}
+                        #{booking.id.slice(0, 6).toUpperCase()}
                       </span>
                     </div>
                   </button>

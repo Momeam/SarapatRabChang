@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Wrench, ArrowLeftRight } from "lucide-react";
+import { Wrench, ArrowLeftRight, MessageSquare } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { requestApi } from "@/lib/api";
 
@@ -44,6 +44,7 @@ export default function ProviderNavbar() {
         { label: "แดชบอร์ด", href: "/provider/dashboard" },
         { label: "จัดการประกาศบริการ", href: "/provider/services" },
         { label: "รายการงาน", href: "/provider/jobs" },
+        { label: "ข้อความ/แชท", href: "/provider/messages" },
         { label: "การเงิน/ถอนเงิน", href: "/provider/finance" },
       ]
     : [
@@ -91,8 +92,18 @@ export default function ProviderNavbar() {
             </nav>
           </div>
 
-          {/* Right side: Switch to Client mode + Profile */}
+          {/* Right side: Switch to Client mode + Messages + Profile */}
           <div className="flex items-center gap-3">
+            <Link
+              href="/provider/messages"
+              title="ข้อความ/แชทกับลูกค้า"
+              className={`p-2 rounded-xl text-zinc-600 hover:text-orange-600 hover:bg-orange-50 border border-zinc-200 transition-colors ${
+                pathname === "/provider/messages" ? "text-orange-600 bg-orange-50 border-orange-200" : ""
+              }`}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </Link>
+
             <Link
               href="/profile"
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-zinc-700 bg-zinc-100 hover:bg-zinc-200/80 border border-zinc-200/80 transition-colors"

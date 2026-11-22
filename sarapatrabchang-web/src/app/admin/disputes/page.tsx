@@ -227,7 +227,7 @@ export default function AdminDisputesPage() {
                       : "bg-[#171717] text-gray-300 border-gray-800 hover:border-gray-700"
                   }`}
                 >
-                  <span>#{d.bookingId.slice(0, 8).toUpperCase()}</span>
+                  <span>#{d.bookingId.slice(0, 6).toUpperCase()}</span>
                   <span>• {d.serviceTitle}</span>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[10px] ${
@@ -247,7 +247,7 @@ export default function AdminDisputesPage() {
                 <h2 className="text-white font-bold text-lg flex items-center gap-2">
                   <Scale className="w-5 h-5 text-[#f97316]" />
                   <span>
-                    ข้อพิพาทงาน #{currentDispute.bookingId.slice(0, 8).toUpperCase()} • {currentDispute.serviceTitle}
+                    ข้อพิพาทงาน #{currentDispute.bookingId.slice(0, 6).toUpperCase()} • {currentDispute.serviceTitle}
                   </span>
                 </h2>
                 <div className="flex items-center space-x-2 text-sm">

@@ -47,6 +47,7 @@ export interface ProviderDashboardStats {
   totalEarnings: number;
   activeJobs: number;
   pendingJobs: number;
+  completedJobs?: number;
   averageRating: number;
   reviewCount: number;
   kycStatus: string;

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, MessageSquare } from "lucide-react";
-import { saveBookingDraft } from "@/lib/booking";
+import { Check, MessageSquare, Loader2 } from "lucide-react";
+import { Booking, readBookingDraft, saveBookingDraft } from "@/lib/booking";
+import { requestApi } from "@/lib/api";
 import { Provider } from "@/types";
 
 interface ServiceBookingCardProps {
@@ -24,9 +24,35 @@ export default function ServiceBookingCard({
 }: ServiceBookingCardProps) {
   const router = useRouter();
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [isStartingChat, setIsStartingChat] = useState(false);
+
+  const handleStartChat = async () => {
+    setBookingError(null);
+    setIsStartingChat(true);
+    try {
+      const result = await requestApi<Booking>("/api/bookings/inquire", {
+        method: "POST",
+        body: JSON.stringify({ providerId: provider.id }),
+      });
+      router.push(`/messages?bookingId=${encodeURIComponent(result.id)}`);
+    } catch {
+      router.push(
+        `/messages?providerId=${encodeURIComponent(provider.id)}&providerName=${encodeURIComponent(provider.name)}&serviceTitle=${encodeURIComponent(provider.serviceTitle)}`
+      );
+    } finally {
+      setIsStartingChat(false);
+    }
+  };
 
   const startBooking = () => {
     try {
+      let existing = null;
+      try {
+        existing = readBookingDraft();
+      } catch {
+        existing = null;
+      }
+      const isSameProvider = existing?.providerId === provider.id;
       saveBookingDraft({
         providerId: provider.id,
         providerName: provider.name,
@@ -35,10 +61,13 @@ export default function ServiceBookingCard({
         price: provider.startingPrice,
         date: selectedDate,
         timeSlot: selectedTimeSlot,
-        contactName: "",
-        phone: "",
-        address: "",
-        note: "",
+        contactName: isSameProvider ? existing?.contactName ?? "" : "",
+        phone: isSameProvider ? existing?.phone ?? "" : "",
+        address: isSameProvider ? existing?.address ?? "" : "",
+        note: isSameProvider ? existing?.note ?? "" : "",
+        pinAddress: isSameProvider ? existing?.pinAddress : undefined,
+        pinCoords: isSameProvider ? existing?.pinCoords : undefined,
+        uploadedImages: isSameProvider ? existing?.uploadedImages : undefined,
       });
       router.push("/booking/details");
     } catch (error) {
@@ -141,13 +170,19 @@ export default function ServiceBookingCard({
             </p>
           )}
 
-          <Link
-            href={`/messages?providerId=${encodeURIComponent(provider.id)}&providerName=${encodeURIComponent(provider.name)}&serviceTitle=${encodeURIComponent(provider.serviceTitle)}`}
-            className="w-full py-2.5 px-4 bg-white hover:bg-zinc-50 text-zinc-800 rounded-xl border border-zinc-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+          <button
+            type="button"
+            disabled={isStartingChat}
+            onClick={handleStartChat}
+            className="w-full py-2.5 px-4 bg-white hover:bg-zinc-50 text-zinc-800 rounded-xl border border-zinc-300 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
           >
-            <MessageSquare className="w-4 h-4 text-zinc-500" />
-            <span>ส่งข้อความพูดคุย</span>
-          </Link>
+            {isStartingChat ? (
+              <Loader2 className="w-4 h-4 text-orange-500 animate-spin" />
+            ) : (
+              <MessageSquare className="w-4 h-4 text-zinc-500" />
+            )}
+            <span>{isStartingChat ? "กำลังเปิดห้องแชท..." : "ส่งข้อความพูดคุย"}</span>
+          </button>
         </div>
 
         <div className="text-center pt-2 text-[11px] text-amber-700">

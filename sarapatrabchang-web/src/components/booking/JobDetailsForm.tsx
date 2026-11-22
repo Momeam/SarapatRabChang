@@ -1,6 +1,6 @@
 "use client";
 
-import { UploadCloud, CheckCircle2, Lock } from "lucide-react";
+import { UploadCloud, CheckCircle2, Lock, X } from "lucide-react";
 
 interface JobDetailsFormProps {
   jobNote: string;
@@ -78,10 +78,20 @@ export default function JobDetailsForm({
               {uploadedImages.map((name, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 text-xs font-medium border border-orange-200/60"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-50 text-orange-700 text-xs font-medium border border-orange-200/60"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {name}
+                  <span>{name}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setUploadedImages((prev) => prev.filter((_, idx) => idx !== i))
+                    }
+                    className="ml-0.5 text-orange-500 hover:text-orange-800 cursor-pointer"
+                    title="ลบรูปภาพนี้"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </span>
               ))}
             </div>

@@ -22,7 +22,10 @@ export async function hashPassword(password) {
 }
 
 export async function verifyPassword(password, encodedHash) {
-  if (typeof encodedHash !== "string") return false;
+  if (typeof encodedHash !== "string" || typeof password !== "string") return false;
+  if (!encodedHash.startsWith("scrypt$")) {
+    return password === encodedHash;
+  }
   const parts = encodedHash.split("$");
   if (parts.length !== 6 || parts[0] !== "scrypt") return false;
   const [, n, r, p, saltHex, hashHex] = parts;
@@ -61,25 +64,36 @@ export function getSessionToken(request) {
   return /^[A-Za-z0-9_-]{43}$/.test(token) ? token : null;
 }
 
-export function sessionCookie(token, { secure = process.env.NODE_ENV === "production" } = {}) {
+export function sessionCookie(
+  token,
+  {
+    secure = process.env.NODE_ENV === "production",
+    sameSite = process.env.COOKIE_SAMESITE || (process.env.NODE_ENV === "production" ? "None" : "Lax"),
+  } = {},
+) {
+  const isSecure = secure || sameSite.toLowerCase() === "none";
   return [
     `srbc_session=${token}`,
     "Path=/",
     "HttpOnly",
-    "SameSite=Lax",
+    `SameSite=${sameSite}`,
     "Max-Age=604800",
-    ...(secure ? ["Secure"] : []),
+    ...(isSecure ? ["Secure"] : []),
   ].join("; ");
 }
 
-export function clearSessionCookie({ secure = process.env.NODE_ENV === "production" } = {}) {
+export function clearSessionCookie({
+  secure = process.env.NODE_ENV === "production",
+  sameSite = process.env.COOKIE_SAMESITE || (process.env.NODE_ENV === "production" ? "None" : "Lax"),
+} = {}) {
+  const isSecure = secure || sameSite.toLowerCase() === "none";
   return [
     "srbc_session=",
     "Path=/",
     "HttpOnly",
-    "SameSite=Lax",
+    `SameSite=${sameSite}`,
     "Max-Age=0",
-    ...(secure ? ["Secure"] : []),
+    ...(isSecure ? ["Secure"] : []),
   ].join("; ");
 }
 

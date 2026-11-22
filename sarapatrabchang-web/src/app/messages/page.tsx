@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, Search, Send } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { ArrowLeft, Search, Send, Sparkles } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { requestApi } from "@/lib/api";
@@ -41,7 +42,11 @@ function formatBookingDate(value: string) {
   });
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
+  const searchParams = useSearchParams();
+  const queryBookingId = searchParams.get("bookingId");
+  const queryProviderId = searchParams.get("providerId");
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [messageLoad, setMessageLoad] = useState<{
     bookingId: string;
@@ -78,10 +83,50 @@ export default function MessagesPage() {
   useEffect(() => {
     let active = true;
     requestApi<Booking[]>("/api/bookings")
-      .then((result) => {
-        if (active) {
-          setBookings(result.filter((booking) => booking.viewerRole === "customer"));
+      .then(async (result) => {
+        if (!active) return;
+        let customerBookings = result.filter((booking) => booking.viewerRole === "customer");
+
+        if (queryBookingId) {
+          const directMatch = result.find((b) => b.id === queryBookingId);
+          if (directMatch) {
+            if (directMatch.viewerRole === "provider") {
+              customerBookings = result.filter((b) => b.viewerRole === "provider");
+            }
+            setSelectedBookingId(directMatch.id);
+            setIsMobileConversationOpen(true);
+          }
+        } else if (customerBookings.length === 0 && result.some((b) => b.viewerRole === "provider")) {
+          customerBookings = result.filter((b) => b.viewerRole === "provider");
+        } else if (queryProviderId) {
+          const existing = customerBookings.find(
+            (b) => b.providerId === queryProviderId && b.status !== "completed",
+          ) ?? customerBookings.find((b) => b.providerId === queryProviderId);
+
+          if (existing) {
+            setSelectedBookingId(existing.id);
+            setIsMobileConversationOpen(true);
+          } else {
+            try {
+              const newInquiry = await requestApi<Booking>("/api/bookings/inquire", {
+                method: "POST",
+                body: JSON.stringify({ providerId: queryProviderId }),
+              });
+              if (active) {
+                customerBookings = [
+                  newInquiry,
+                  ...customerBookings.filter((b) => b.id !== newInquiry.id),
+                ];
+                setSelectedBookingId(newInquiry.id);
+                setIsMobileConversationOpen(true);
+              }
+            } catch (err) {
+              console.warn("Could not auto-create inquiry chat:", err);
+            }
+          }
         }
+
+        setBookings(customerBookings);
       })
       .catch((cause: unknown) => {
         if (active) {
@@ -94,7 +139,7 @@ export default function MessagesPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [queryBookingId, queryProviderId]);
 
   async function retryBookings() {
     setIsLoadingBookings(true);
@@ -264,7 +309,7 @@ export default function MessagesPage() {
                         {bookingStatusLabels[booking.status]}
                       </span>
                       <span className="shrink-0 font-mono text-[10px] text-zinc-400">
-                        #{booking.id.slice(0, 8).toUpperCase()}
+                        #{booking.id.slice(0, 6).toUpperCase()}
                       </span>
                     </div>
                   </button>
@@ -300,12 +345,23 @@ export default function MessagesPage() {
                       </p>
                     </div>
                   </div>
-                  <Link
-                    href={`/orders/${encodeURIComponent(activeBooking.id)}`}
-                    className="shrink-0 rounded-lg border border-zinc-200 px-2.5 py-2 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50 sm:px-3 sm:text-xs"
-                  >
-                    ดูรายละเอียดงาน
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    {activeBooking.status === "pending_payment" && (
+                      <Link
+                        href={`/services/${encodeURIComponent(activeBooking.providerId)}`}
+                        className="shrink-0 rounded-lg bg-orange-600 hover:bg-orange-700 px-2.5 py-2 text-[11px] font-semibold text-white sm:px-3 sm:text-xs flex items-center gap-1.5 transition shadow-sm"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>ไปหน้าจองบริการ</span>
+                      </Link>
+                    )}
+                    <Link
+                      href={`/orders/${encodeURIComponent(activeBooking.id)}`}
+                      className="shrink-0 rounded-lg border border-zinc-200 px-2.5 py-2 text-[11px] font-semibold text-zinc-700 hover:bg-zinc-50 sm:px-3 sm:text-xs"
+                    >
+                      ดูรายละเอียดงาน
+                    </Link>
+                  </div>
                 </header>
 
                 <div className="flex-1 overflow-y-auto bg-zinc-50/40 px-3 py-4 sm:px-6 sm:py-5">
@@ -426,5 +482,23 @@ export default function MessagesPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex flex-col bg-zinc-50">
+          <Navbar />
+          <main className="flex-1 max-w-7xl w-full mx-auto p-8 text-center text-zinc-500 text-sm">
+            กำลังโหลดบทสนทนา...
+          </main>
+          <Footer />
+        </div>
+      }
+    >
+      <MessagesContent />
+    </Suspense>
   );
 }

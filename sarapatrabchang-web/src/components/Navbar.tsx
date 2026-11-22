@@ -429,7 +429,17 @@ export default function Navbar() {
                 {loading ? (
                   <span className="text-xs text-zinc-400">กำลังตรวจสอบบัญชี...</span>
                 ) : user ? (
-                  <div className="relative" ref={profileRef}>
+                  <>
+                    {user.role?.toLowerCase() === "admin" && (
+                      <Link
+                        href="/admin/dashboard"
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-zinc-950 hover:bg-orange-600 text-white text-xs font-bold transition-colors shadow-xs"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5 text-orange-400" />
+                        <span>แผงควบคุมแอดมิน</span>
+                      </Link>
+                    )}
+                    <div className="relative" ref={profileRef}>
                     <button
                       type="button"
                       onClick={() => {
@@ -514,6 +524,7 @@ export default function Navbar() {
                       </div>
                     )}
                   </div>
+                  </>
                 ) : (
                   <Link
                     href="/auth"

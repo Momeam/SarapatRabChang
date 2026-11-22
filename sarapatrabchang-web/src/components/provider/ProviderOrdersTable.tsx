@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Check, Info } from "lucide-react";
-import { Booking, BookingStatus } from "@/lib/booking";
+import { Booking, BookingStatus, formatJobCode } from "@/lib/booking";
 import { requestApi } from "@/lib/api";
 
 type OrderTab = "all" | "pending" | "in_progress";
@@ -152,7 +152,7 @@ export default function ProviderOrdersTable() {
                   <td className="py-4 px-6">
                     <div className="font-bold text-zinc-900 text-sm">{order.contactName}</div>
                     <div className="text-[11px] text-zinc-400 font-mono mt-0.5">
-                      ORD-{order.id.slice(0, 8).toUpperCase()}
+                      #{formatJobCode(order.id)}
                     </div>
                   </td>
                   <td className="py-4 px-6">
@@ -195,14 +195,16 @@ export default function ProviderOrdersTable() {
                           <span>{acceptingId === order.id ? "กำลังรับงาน..." : "รับงาน"}</span>
                         </button>
                       )}
-                      {order.status !== "pending_payment" && (
-                        <Link
-                          href={`/provider/jobs/${encodeURIComponent(order.id)}/chat`}
-                          className="px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-700 bg-zinc-100 hover:bg-zinc-200 transition-colors border border-zinc-200"
-                        >
-                          แชทลูกค้า
-                        </Link>
-                      )}
+                      <Link
+                        href={`/provider/messages?bookingId=${encodeURIComponent(order.id)}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors border ${
+                          order.status === "pending_payment"
+                            ? "bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200"
+                            : "bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200"
+                        }`}
+                      >
+                        {order.status === "pending_payment" ? "แชทตอบลูกค้า" : "แชทลูกค้า"}
+                      </Link>
                     </div>
                   </td>
                 </tr>

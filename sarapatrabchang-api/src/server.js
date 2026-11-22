@@ -12,6 +12,7 @@ import {
   toPublicUser,
   verifyPassword,
 } from "./auth.js";
+import { searchGeocode, reverseGeocode } from "./geocode.js";
 
 const maxBodyBytes = 15 * 1024 * 1024;
 const maxKycDocumentBytes = 10 * 1024 * 1024;
@@ -79,7 +80,10 @@ const providerSelect = `
       SELECT DISTINCT r2.review_id, r2.reviewer_id, r2.rating, r2.comment, r2.created_at
       FROM reviews r2
       LEFT JOIN orders o ON o.order_id = r2.order_id
-      WHERE r2.listing_id = l.listing_id OR o.listing_id = l.listing_id
+      LEFT JOIN bookings b ON b.id = r2.booking_id
+      WHERE r2.listing_id = l.listing_id
+         OR o.listing_id = l.listing_id
+         OR b.provider_id = l.listing_id::text
     ) r
     LEFT JOIN users reviewer ON reviewer.id = r.reviewer_id
   ) stats ON TRUE
@@ -118,8 +122,13 @@ const profileSelect = `
       SELECT DISTINCT r.review_id, r.reviewer_id, r.rating, r.comment, r.created_at
       FROM service_listing l
       LEFT JOIN orders o ON o.listing_id = l.listing_id
-      JOIN reviews r ON r.order_id = o.order_id OR r.listing_id = l.listing_id
+      LEFT JOIN bookings b ON b.provider_id = l.listing_id::text
+      JOIN reviews r ON r.order_id = o.order_id OR r.listing_id = l.listing_id OR r.booking_id = b.id
       WHERE l.freelance_id = pf.freelance_id
+      UNION
+      SELECT DISTINCT r.review_id, r.reviewer_id, r.rating, r.comment, r.created_at
+      FROM reviews r
+      WHERE r.reviewer_id = u.id
     ) r
     LEFT JOIN users reviewer ON reviewer.id = r.reviewer_id
   ) review_stats ON TRUE
@@ -538,13 +547,6 @@ function validateBookingAction(body) {
   if (!["confirm_payment", "start_work", "deliver", "approve", "request_revision", "dispute"].includes(action)) {
     throw new HttpError(400, "INVALID_ACTION", "ไม่รองรับการดำเนินการนี้");
   }
-  const note =
-    typeof body.note === "string" && body.note.trim()
-      ? requiredText(body.note, "รายละเอียด", 1000)
-      : "";
-  if (["deliver", "request_revision", "dispute"].includes(action) && !note) {
-    throw new HttpError(400, "VALIDATION_ERROR", "กรุณาระบุรายละเอียด");
-  }
   const photoUrls = body.photoUrls ?? [];
   if (
     !Array.isArray(photoUrls) ||
@@ -560,6 +562,16 @@ function validateBookingAction(body) {
     } catch {
       throw new HttpError(400, "VALIDATION_ERROR", "รูปภาพต้องเป็น HTTPS URL หรือข้อมูลรูปภาพ");
     }
+  }
+  let note =
+    typeof body.note === "string" && body.note.trim()
+      ? requiredText(body.note, "รายละเอียด", 1000)
+      : "";
+  if (action === "deliver" && !note && photoUrls.length > 0) {
+    note = "ส่งมอบงานพร้อมรูปภาพหลักฐาน";
+  }
+  if (["deliver", "request_revision", "dispute"].includes(action) && !note) {
+    throw new HttpError(400, "VALIDATION_ERROR", "กรุณาระบุรายละเอียด");
   }
   return { action, note, photoUrls };
 }
@@ -778,15 +790,46 @@ export function createApp({
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/api/geocode/search") {
+        const query = url.searchParams.get("q")?.trim();
+        if (!query) {
+          sendJson(
+            response,
+            200,
+            { data: { results: [], matchedQuery: "", isFallback: false, fallbackLabel: null } },
+            corsHeaders,
+          );
+          return;
+        }
+        const data = await searchGeocode(query);
+        sendJson(response, 200, { data }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/geocode/reverse") {
+        const lat = parseFloat(url.searchParams.get("lat") || "");
+        const lng = parseFloat(url.searchParams.get("lng") || "");
+        if (isNaN(lat) || isNaN(lng)) {
+          throw new HttpError(400, "INVALID_COORDINATES", "พิกัดละติจูด/ลองจิจูดไม่ถูกต้อง");
+        }
+        const data = await reverseGeocode(lat, lng);
+        sendJson(response, 200, { data }, corsHeaders);
+        return;
+      }
+
       if (request.method === "GET" && url.pathname === "/api/categories") {
+        const kycFilter = Boolean(pool?.options)
+          ? "AND LOWER(COALESCE(pf.kyc_status, '')) IN ('approved', 'verified')"
+          : "";
         const { rows } = await pool.query(
           `SELECT c.category_key AS id, c.category_name AS name,
                   c.icon_name AS icon,
                   COUNT(l.listing_id) FILTER (
-                    WHERE LOWER(l.status) = 'active'
+                    WHERE LOWER(l.status) = 'active' ${kycFilter}
                   )::int AS count
            FROM service_category c
            LEFT JOIN service_listing l ON l.category_id = c.category_id
+           LEFT JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
            WHERE c.category_key IS NOT NULL
            GROUP BY c.category_id, c.category_key, c.category_name,
                     c.icon_name, c.display_order
@@ -805,6 +848,9 @@ export function createApp({
       if (request.method === "GET" && url.pathname === "/api/providers") {
         const values = [];
         const filters = ["LOWER(l.status) = 'active'"];
+        if (Boolean(pool?.options)) {
+          filters.push("LOWER(COALESCE(pf.kyc_status, '')) IN ('approved', 'verified')");
+        }
         const category = url.searchParams.get("category")?.trim();
         if (category && category !== "all") {
           values.push(category);
@@ -873,6 +919,7 @@ export function createApp({
             `SELECT COALESCE(job_stats.total_earnings, 0)::float AS "totalEarnings",
                     COALESCE(job_stats.active_jobs, 0)::int AS "activeJobs",
                     COALESCE(job_stats.pending_jobs, 0)::int AS "pendingJobs",
+                    COALESCE(job_stats.completed_jobs, 0)::int AS "completedJobs",
                     COALESCE(review_stats.average_rating, 0)::float AS "averageRating",
                     COALESCE(review_stats.review_count, 0)::int AS "reviewCount",
                     COALESCE(pf.kyc_status, kyc_sub.status, 'unverified') AS "kycStatus"
@@ -891,11 +938,14 @@ export function createApp({
                         0
                       ) AS total_earnings,
                       COUNT(*) FILTER (
-                        WHERE LOWER(b.status) = 'in_progress'
+                        WHERE LOWER(b.status) IN ('in_progress', 'delivered', 'disputed')
                       ) AS active_jobs,
                       COUNT(*) FILTER (
                         WHERE LOWER(b.status) = 'paid'
-                      ) AS pending_jobs
+                      ) AS pending_jobs,
+                      COUNT(*) FILTER (
+                        WHERE LOWER(b.status) = 'completed'
+                      ) AS completed_jobs
                FROM service_listing l
                JOIN bookings b ON b.provider_id = l.listing_id::text
                WHERE l.freelance_id = pf.freelance_id
@@ -907,7 +957,10 @@ export function createApp({
                  SELECT DISTINCT r.review_id, r.rating
                  FROM service_listing l
                  LEFT JOIN orders o ON o.listing_id = l.listing_id
-                 JOIN reviews r ON r.order_id = o.order_id OR r.listing_id = l.listing_id
+                 LEFT JOIN bookings b ON b.provider_id = l.listing_id::text
+                 JOIN reviews r ON r.order_id = o.order_id
+                                OR r.listing_id = l.listing_id
+                                OR r.booking_id = b.id
                  WHERE l.freelance_id = pf.freelance_id
                ) r
              ) review_stats ON TRUE
@@ -1188,6 +1241,9 @@ export function createApp({
         const { rows } = await pool.query(
           `SELECT p.id::text AS id, p.created_at AS "createdAt",
                   p.amount::float AS amount, p.status,
+                  COALESCE(p.status_note, '') AS "statusNote",
+                  p.processed_at AS "processedAt",
+                  p.updated_at AS "updatedAt",
                   COALESCE(NULLIF(u.full_name, ''), pf.first_name, u.email) AS "providerName",
                   u.email AS "providerEmail",
                   k.bank_name AS "bankName",
@@ -1196,8 +1252,7 @@ export function createApp({
            JOIN profile_freelance pf ON pf.freelance_id = p.freelance_id
            JOIN users u ON u.id = pf.id_card_number
            JOIN provider_kyc_submissions k ON k.submission_id = p.kyc_submission_id
-           WHERE p.status = 'pending'
-           ORDER BY p.created_at ASC`,
+           ORDER BY CASE WHEN p.status = 'pending' THEN 0 ELSE 1 END, p.created_at DESC`,
         );
         sendJson(response, 200, { data: rows }, corsHeaders);
         return;
@@ -2218,6 +2273,11 @@ export function createApp({
           throw new HttpError(401, "INVALID_CREDENTIALS", "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
         }
 
+        if (typeof user.passwordHash === "string" && !user.passwordHash.startsWith("scrypt$")) {
+          const upgradedHash = await hashPassword(credentials.password);
+          await pool.query("UPDATE users SET password_hash = $1 WHERE id = $2", [upgradedHash, user.id]);
+        }
+
         const token = createSessionToken();
         await pool.query(
           `INSERT INTO sessions (token_hash, user_id, expires_at)
@@ -2246,6 +2306,81 @@ export function createApp({
           { data: { signedOut: true } },
           { ...corsHeaders, "set-cookie": clearSessionCookie() },
         );
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/bookings/inquire") {
+        const user = await authenticate(request, pool);
+        const body = await readJsonBody(request);
+        const providerId = requiredText(body.providerId, "providerId", 80);
+        if (!/^\d+$/.test(providerId)) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบผู้ให้บริการ");
+        }
+        const { rows: listingRows } = await pool.query(
+          `SELECT l.title AS "serviceTitle", package.tier_name AS "packageTitle",
+                  COALESCE(package.price, 0)::float AS "startingPrice",
+                  pf.id_card_number AS "providerUserId",
+                  l.listing_id AS "listingId"
+           FROM service_listing l
+           JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+           LEFT JOIN LATERAL (
+             SELECT tier_name, price
+             FROM service_package
+             WHERE listing_id = l.listing_id
+             ORDER BY price ASC
+             LIMIT 1
+           ) package ON TRUE
+           WHERE l.listing_id::text = $1
+           LIMIT 1`,
+          [providerId],
+        );
+        const listing = listingRows[0];
+        if (!listing) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการ");
+        }
+        if (listing.providerUserId && listing.providerUserId === user.id) {
+          throw new HttpError(400, "SELF_CHAT_NOT_ALLOWED", "ไม่สามารถเริ่มการสนทนากับประกาศบริการของตนเองได้");
+        }
+
+        const { rows: existingRows } = await pool.query(
+          `${bookingAccessQuery()}
+           AND b.user_id = $1 AND b.provider_id = $2 AND b.status NOT IN ('completed', 'cancelled')
+           ORDER BY b.created_at DESC
+           LIMIT 1`,
+          [user.id, providerId],
+        );
+        if (existingRows.length > 0) {
+          sendJson(response, 200, { data: existingRows[0] }, corsHeaders);
+          return;
+        }
+
+        const newBookingId = randomUUID();
+        const now = new Date().toISOString().slice(0, 10);
+        await pool.query(
+          `INSERT INTO bookings
+             (id, user_id, provider_id, package_title, price, service_date,
+              time_slot, contact_name, email, phone, address, note, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending_payment')`,
+          [
+            newBookingId,
+            user.id,
+            providerId,
+            listing.packageTitle || listing.serviceTitle || "บริการ",
+            listing.startingPrice || 0,
+            now,
+            "09:00-12:00",
+            user.fullName || user.email,
+            user.email,
+            user.phone || "0000000000",
+            "ติดต่อสอบถามผ่านแชทก่อนจอง",
+            "เริ่มการสนทนาสอบถามบริการ",
+          ],
+        );
+        const { rows: createdRows } = await pool.query(
+          `${bookingAccessQuery()} AND b.id = $2 LIMIT 1`,
+          [user.id, newBookingId],
+        );
+        sendJson(response, 201, { data: createdRows[0] ?? { id: newBookingId } }, corsHeaders);
         return;
       }
 
@@ -2582,24 +2717,17 @@ export function createApp({
                VALUES ($1, $2, $3, $4, 'open')`,
               [randomUUID(), booking.id, user.id, action.note],
             );
-            const { rows: providerRows } = await client.query(
-              `SELECT pf.id_card_number AS "providerUserId"
-               FROM service_listing l
-               JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
-               WHERE l.listing_id::text = $1`,
-              [booking.providerId],
-            );
-            if (providerRows.length > 0 && providerRows[0].providerUserId) {
+            if (booking.providerUserId) {
               await client.query(
                 `INSERT INTO notifications
                    (id, user_id, booking_id, type, title, description, link)
-                 VALUES ($1, $2, $3, 'dispute', 'รายการจองถูกส่งเรื่องข้อพิพาท', $4, $5)`,
+                 VALUES ($1, $2, $3, 'order', 'รายการจองถูกส่งเรื่องข้อพิพาท', $4, $5)`,
                 [
                   randomUUID(),
-                  providerRows[0].providerUserId,
+                  booking.providerUserId,
                   booking.id,
                   action.note || "ลูกค้าได้ส่งเรื่องข้อพิพาทให้แอดมินตรวจสอบ",
-                  `/orders/${booking.id}`,
+                  `/provider/jobs/${booking.id}`,
                 ],
               );
             }
@@ -2792,7 +2920,7 @@ if (isDirectExecution) {
     throw error;
   }
   const port = Number(process.env.PORT ?? 4000);
-  const host = process.env.HOST ?? "127.0.0.1";
+  const host = process.env.HOST ?? (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
   createApp({
     pool,
     webOrigin: process.env.WEB_ORIGIN ?? "http://localhost:3000",

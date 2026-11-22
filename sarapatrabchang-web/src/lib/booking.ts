@@ -35,6 +35,14 @@ export interface BookingDraft {
   phone: string;
   address: string;
   note: string;
+  pinAddress?: string;
+  pinCoords?: string;
+  uploadedImages?: string[];
+}
+
+export function formatJobCode(id: string): string {
+  if (!id) return "";
+  return id.replace(/[^a-zA-Z0-9]/g, "").slice(0, 6).toUpperCase();
 }
 
 export interface Booking {

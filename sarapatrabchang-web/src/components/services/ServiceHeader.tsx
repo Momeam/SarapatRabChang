@@ -1,16 +1,29 @@
 "use client";
 
-import { useState } from "react";
-import { Heart, Clock, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Heart, Clock, CheckCircle2, BookmarkCheck } from "lucide-react";
 import StarRating from "@/components/StarRating";
 import { Provider } from "@/types";
+import { isServiceSaved, toggleSavedService } from "@/lib/savedServices";
 
 interface ServiceHeaderProps {
   provider: Provider;
 }
 
 export default function ServiceHeader({ provider }: ServiceHeaderProps) {
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(() => isServiceSaved(provider.id));
+
+  useEffect(() => {
+    const handleSync = () => setIsSaved(isServiceSaved(provider.id));
+    window.addEventListener("saved-services-updated", handleSync);
+    return () => window.removeEventListener("saved-services-updated", handleSync);
+  }, [provider.id]);
+
+  const handleToggleSave = () => {
+    const nextState = toggleSavedService(provider);
+    setIsSaved(nextState);
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-zinc-200 p-6 shadow-sm">
@@ -75,30 +88,40 @@ export default function ServiceHeader({ provider }: ServiceHeaderProps) {
         </div>
 
         {/* Quick Actions */}
-        <div className="flex items-center sm:flex-col items-end gap-3 w-full sm:w-auto justify-between sm:justify-start">
-          <button
-            type="button"
-            onClick={() => setIsSaved(!isSaved)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-              isSaved
-                ? "bg-rose-50 text-rose-600 border-rose-200"
-                : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50"
-            }`}
-          >
-            <Heart
-              className={`w-4 h-4 ${
-                isSaved ? "fill-rose-500 text-rose-500" : "text-zinc-500"
+        <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
+          <div className="flex items-center sm:flex-col items-end gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
+            <button
+              type="button"
+              onClick={handleToggleSave}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                isSaved
+                  ? "bg-rose-50 text-rose-600 border-rose-200"
+                  : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50"
               }`}
-            />
-            <span>{isSaved ? "บันทึกแล้ว" : "บันทึกบริการ"}</span>
-          </button>
-          <div className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/50">
-            <Clock className="w-3.5 h-3.5" />
-            <span>{provider.responseTime}</span>
+            >
+              <Heart
+                className={`w-4 h-4 ${
+                  isSaved ? "fill-rose-500 text-rose-500" : "text-zinc-500"
+                }`}
+              />
+              <span>{isSaved ? "บันทึกแล้ว" : "บันทึกบริการ"}</span>
+            </button>
+            <div className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/50">
+              <Clock className="w-3.5 h-3.5" />
+              <span>{provider.responseTime}</span>
+            </div>
           </div>
+          {isSaved && (
+            <Link
+              href="/profile#saved-services"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-600 hover:text-orange-700 hover:underline"
+            >
+              <BookmarkCheck className="w-3.5 h-3.5" />
+              <span>ดูบริการที่บันทึกไว้ในหน้าโปรไฟล์ →</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

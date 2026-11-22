@@ -55,8 +55,22 @@ export default function InterestsCard({ initial, onSave }: InterestsCardProps) {
     setSaving(true);
     setError("");
     try {
-      const saved = await onSave({ interests });
+      const pending = newInterest.trim();
+      let next = interests;
+      if (
+        pending &&
+        pending.length <= 50 &&
+        !interests.some((interest) => interest.toLocaleLowerCase() === pending.toLocaleLowerCase())
+      ) {
+        next = [...interests, pending];
+      } else if (pending.length > 50) {
+        setError("ประเภทงานต้องไม่เกิน 50 ตัวอักษร");
+        setSaving(false);
+        return;
+      }
+      const saved = await onSave({ interests: next });
       setInterests(saved.interests);
+      setNewInterest("");
       setShowAdd(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "บันทึกประเภทงานไม่สำเร็จ");

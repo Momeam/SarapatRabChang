@@ -5,7 +5,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { requestApi } from "@/lib/api";
-import { Booking, bookingStatusLabels } from "@/lib/booking";
+import { Booking, bookingStatusLabels, formatJobCode } from "@/lib/booking";
 
 function formatDate(value: string) {
   return new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString("th-TH", {
@@ -116,7 +116,7 @@ export default function TrackingPage() {
                   </div>
                   <div className="sm:text-right">
                     <span className="text-xs font-semibold text-orange-700">{bookingStatusLabels[booking.status]}</span>
-                    <p className="mt-1 font-mono text-[11px] text-zinc-400">{booking.id}</p>
+                    <p className="mt-1 font-mono text-[11px] text-zinc-400">#{formatJobCode(booking.id)}</p>
                   </div>
                 </div>
               </Link>

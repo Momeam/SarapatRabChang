@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
@@ -10,6 +10,8 @@ import JobDetailsForm from "@/components/booking/JobDetailsForm";
 import InteractiveMapPicker from "@/components/booking/InteractiveMapPicker";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import { readBookingDraft, saveBookingDraft } from "@/lib/booking";
+import { requestApi } from "@/lib/api";
+import type { AccountProfile } from "@/lib/profile";
 
 export default function BookingDetailsPage() {
   const router = useRouter();
@@ -18,16 +20,64 @@ export default function BookingDetailsPage() {
   const [contactName, setContactName] = useState(() => readBookingDraft()?.contactName ?? "");
   const [phone, setPhone] = useState(() => readBookingDraft()?.phone ?? "");
   const [addressDetail, setAddressDetail] = useState(() => readBookingDraft()?.address ?? "");
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>(
+    () => readBookingDraft()?.uploadedImages ?? [],
+  );
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [pinAddress, setPinAddress] = useState(
-    () => readBookingDraft()?.address || "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ",
+    () =>
+      readBookingDraft()?.pinAddress ||
+      readBookingDraft()?.address ||
+      "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ",
   );
-  const [pinCoords, setPinCoords] = useState("13.7326, 100.5703");
+  const [pinCoords, setPinCoords] = useState(
+    () => readBookingDraft()?.pinCoords || "13.7326, 100.5703",
+  );
+
+  // Auto-fill empty contact fields from user's saved profile
+  useEffect(() => {
+    let active = true;
+    const draft = readBookingDraft();
+    if (draft?.contactName && draft?.phone && draft?.address) return;
+    requestApi<AccountProfile>("/api/profile")
+      .then((profile) => {
+        if (!active || !profile) return;
+        setContactName((prev) => prev || profile.fullName || "");
+        setPhone((prev) => prev || profile.phone || "");
+        setAddressDetail((prev) => prev || profile.address || "");
+      })
+      .catch(() => {
+        // Ignore if not logged in
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Persist draft fields automatically so going back/forward never loses images, map pin, or text
+  useEffect(() => {
+    try {
+      const draft = readBookingDraft();
+      if (!draft) return;
+      saveBookingDraft({
+        ...draft,
+        contactName,
+        phone,
+        address: addressDetail || pinAddress,
+        note: jobNote,
+        pinAddress,
+        pinCoords,
+        uploadedImages,
+      });
+    } catch {
+      // Ignore draft read errors
+    }
+  }, [jobNote, contactName, phone, addressDetail, pinAddress, pinCoords, uploadedImages]);
 
   const handleLocationSelect = useCallback((selectedAddr: string, lat: number, lng: number) => {
+    const nextCoords = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
     setPinAddress(selectedAddr);
-    setPinCoords(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    setPinCoords(nextCoords);
     setAddressDetail((prev) => (!prev || prev === pinAddress ? selectedAddr : prev));
   }, [pinAddress]);
 
@@ -44,6 +94,9 @@ export default function BookingDetailsPage() {
         phone,
         address: addressDetail || pinAddress,
         note: jobNote,
+        pinAddress,
+        pinCoords,
+        uploadedImages,
       });
       setBookingError(null);
       router.push("/booking/checkout");
@@ -108,6 +161,7 @@ export default function BookingDetailsPage() {
             <InteractiveMapPicker
               pinAddress={pinAddress}
               pinCoords={pinCoords}
+              formAddress={addressDetail}
               onLocationSelect={handleLocationSelect}
             />
           </div>

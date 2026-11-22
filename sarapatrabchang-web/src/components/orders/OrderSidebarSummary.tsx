@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle2 } from "lucide-react";
-import { Booking, bookingStatusLabels } from "@/lib/booking";
+import { Booking, bookingStatusLabels, formatJobCode } from "@/lib/booking";
 
 interface OrderSidebarSummaryProps {
   booking: Booking;
@@ -38,7 +38,7 @@ export default function OrderSidebarSummary({ booking }: OrderSidebarSummaryProp
 
       <div className="text-xs text-zinc-500">
         หมายเลขงาน:{" "}
-        <span className="font-mono font-semibold text-zinc-800">{booking.id}</span>
+        <span className="font-mono font-semibold text-zinc-800">{formatJobCode(booking.id)}</span>
       </div>
 
       <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
