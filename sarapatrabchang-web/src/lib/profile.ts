@@ -20,6 +20,7 @@ export interface AccountProfile {
   taxAddress: string;
   taxEmail: string;
   isProvider: boolean;
+  kycStatus?: string;
   rating: number;
   reviewCount: number;
   reviews: ProfileReview[];

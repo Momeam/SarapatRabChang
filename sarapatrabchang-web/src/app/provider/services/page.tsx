@@ -5,12 +5,16 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import ProviderNavbar from "@/components/provider/ProviderNavbar";
 import ProviderServiceCard from "@/components/provider/ProviderServiceCard";
+import KycForm from "@/components/provider/KycForm";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/components/AuthProvider";
 import { requestApi } from "@/lib/api";
 import { ProviderDashboard, ProviderDashboardService } from "@/types";
 
 export default function ProviderServicesPage() {
+  const { user, loading: authLoading } = useAuth();
   const [services, setServices] = useState<ProviderDashboardService[]>([]);
+  const [kycStatus, setKycStatus] = useState<string>("unverified");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -18,7 +22,10 @@ export default function ProviderServicesPage() {
     let active = true;
     requestApi<ProviderDashboard>("/api/provider/dashboard")
       .then((result) => {
-        if (active) setServices(result.services);
+        if (active) {
+          setServices(result.services);
+          setKycStatus(result.stats.kycStatus.toLowerCase());
+        }
       })
       .catch((cause: unknown) => {
         if (active) setError(cause instanceof Error ? cause.message : "โหลดประกาศบริการไม่สำเร็จ");
@@ -30,6 +37,12 @@ export default function ProviderServicesPage() {
       active = false;
     };
   }, []);
+
+  const isKycVerified = ["approved", "verified"].includes(kycStatus);
+  const displayName =
+    typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name
+      : "";
 
   function handleStatusChange(id: string, status: string) {
     setServices((current) =>
@@ -46,13 +59,15 @@ export default function ProviderServicesPage() {
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-950">จัดการประกาศบริการ</h1>
             <p className="text-sm text-zinc-500 mt-1">แก้ไขประกาศและเปิดหรือหยุดเผยแพร่บริการของคุณ</p>
           </div>
-          <Link
-            href="/provider/services/new"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-950 hover:bg-orange-600 text-white font-semibold text-sm transition-all shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            สร้างประกาศใหม่
-          </Link>
+          {isKycVerified && (
+            <Link
+              href="/provider/services/new"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-950 hover:bg-orange-600 text-white font-semibold text-sm transition-all shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              สร้างประกาศใหม่
+            </Link>
+          )}
         </div>
 
         {error && (
@@ -66,6 +81,16 @@ export default function ProviderServicesPage() {
           <p role="status" className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-500">
             กำลังโหลดประกาศบริการ...
           </p>
+        ) : !isKycVerified ? (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              <p className="font-bold">ต้องผ่านการยืนยันตัวตนเป็นฟรีแลนซ์ (KYC) ก่อนจัดการประกาศบริการ</p>
+              <p className="text-xs text-amber-800 mt-1">
+                กรุณากรอกข้อมูลและส่งคำขอผ่านแบบฟอร์มด้านล่างเพื่อรอให้แอดมินตรวจสอบและกดยืนยันอนุมัติ
+              </p>
+            </div>
+            <KycForm initialName={displayName} isAuthLoading={authLoading} />
+          </div>
         ) : services.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {services.map((service) => (

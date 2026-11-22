@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UploadCloud, CheckCircle2, FileCheck, ArrowRight, ShieldCheck } from "lucide-react";
+import { UploadCloud, CheckCircle2, FileCheck, ArrowRight, ShieldCheck, Clock } from "lucide-react";
 import { requestApi } from "@/lib/api";
 
 interface KycDocument {
@@ -159,24 +159,81 @@ export default function KycForm({ initialName, isAuthLoading }: KycFormProps) {
   }
 
   if (submission && submission.status !== "rejected") {
+    const isApproved = submission.status === "approved";
     const message = submittedMessage(submission.status);
+    const categoryLabel =
+      categories.find((c) => c.id === submission.categoryKey)?.name || submission.categoryKey;
     return (
       <div className="bg-white rounded-2xl border border-zinc-200 p-8 text-center space-y-6 shadow-sm">
-        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-10 h-10" />
+        <div
+          className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${
+            isApproved
+              ? "bg-emerald-100 text-emerald-600"
+              : "bg-amber-100 text-amber-600"
+          }`}
+        >
+          {isApproved ? (
+            <CheckCircle2 className="w-10 h-10" />
+          ) : (
+            <Clock className="w-10 h-10" />
+          )}
         </div>
         <div className="space-y-2">
-          <h3 className="text-xl font-bold text-zinc-950">{message.title}</h3>
-          <p className="text-sm text-zinc-600 max-w-md mx-auto">{message.description}</p>
+          <span
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+              isApproved
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-800 border border-amber-200"
+            }`}
+          >
+            {isApproved ? "อนุมัติเป็นฟรีแลนซ์แล้ว" : "ส่งคำขอแล้ว • รอแอดมินตรวจสอบและยืนยัน"}
+          </span>
+          <h3 className="text-xl font-bold text-zinc-950 pt-1">{message.title}</h3>
+          <p className="text-sm text-zinc-600 max-w-md mx-auto">
+            {isApproved
+              ? message.description
+              : "ข้อมูลและเอกสารของคุณถูกส่งเป็นคำขอไปยังผู้ดูแลระบบแล้ว กรุณารอแอดมินตรวจสอบข้อมูลและกดยืนยันอนุมัติก่อนจึงจะสามารถเปิดใช้งานโหมดฟรีแลนซ์ได้"}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push("/provider/dashboard")}
-          className="w-full sm:w-auto px-6 py-3 bg-zinc-950 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors inline-flex items-center justify-center gap-2"
-        >
-          <span>ไปที่แดชบอร์ดผู้รับจ้าง</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
+
+        <div className="max-w-md mx-auto rounded-xl bg-zinc-50 border border-zinc-200 p-4 text-left text-xs space-y-2 text-zinc-700">
+          <div className="flex justify-between">
+            <span className="text-zinc-500">ชื่อผู้ยื่นคำขอ:</span>
+            <span className="font-semibold text-zinc-900">{submission.fullName}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-zinc-500">หมวดหมู่บริการที่ขอรับงาน:</span>
+            <span className="font-semibold text-zinc-900">{categoryLabel}</span>
+          </div>
+          {submission.submittedAt && (
+            <div className="flex justify-between">
+              <span className="text-zinc-500">วันที่ส่งคำขอ:</span>
+              <span className="font-medium text-zinc-800">
+                {new Date(submission.submittedAt).toLocaleString("th-TH")}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {isApproved ? (
+          <button
+            type="button"
+            onClick={() => router.push("/provider/dashboard")}
+            className="w-full sm:w-auto px-6 py-3 bg-zinc-950 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+          >
+            <span>ไปที่แดชบอร์ดผู้รับจ้าง</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.push("/profile")}
+            className="w-full sm:w-auto px-6 py-3 bg-zinc-900 hover:bg-zinc-800 text-white text-sm font-semibold rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+          >
+            <span>กลับไปหน้าโปรไฟล์</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
     );
   }

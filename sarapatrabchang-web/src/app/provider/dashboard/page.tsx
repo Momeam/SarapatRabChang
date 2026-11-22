@@ -8,12 +8,14 @@ import Footer from "@/components/Footer";
 import ProviderStatsRow from "@/components/provider/ProviderStatsRow";
 import ProviderServiceCard from "@/components/provider/ProviderServiceCard";
 import ProviderOrdersTable from "@/components/provider/ProviderOrdersTable";
+import KycForm from "@/components/provider/KycForm";
+import KycSidebar from "@/components/provider/KycSidebar";
 import { useAuth } from "@/components/AuthProvider";
 import { requestApi } from "@/lib/api";
 import { ProviderDashboard } from "@/types";
 
 export default function ProviderDashboardPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [dashboard, setDashboard] = useState<ProviderDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -98,13 +100,15 @@ export default function ProviderDashboardPage() {
             )}
           </div>
 
-          <Link
-            href="/provider/services/new"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-950 hover:bg-orange-600 text-white font-semibold text-sm transition-all shadow-md"
-          >
-            <Plus className="w-4 h-4" />
-            <span>สร้างประกาศบริการใหม่</span>
-          </Link>
+          {isKycVerified && (
+            <Link
+              href="/provider/services/new"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-zinc-950 hover:bg-orange-600 text-white font-semibold text-sm transition-all shadow-md"
+            >
+              <Plus className="w-4 h-4" />
+              <span>สร้างประกาศบริการใหม่</span>
+            </Link>
+          )}
         </div>
 
         {error && (
@@ -120,6 +124,23 @@ export default function ProviderDashboardPage() {
           <p role="status" className="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-500">
             กำลังโหลดข้อมูลแดชบอร์ด...
           </p>
+        ) : dashboard && !isKycVerified ? (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              <p className="font-bold">ต้องทำการยืนยันตัวตนเป็นฟรีแลนซ์ (KYC) ก่อนเข้าใช้งานระบบผู้รับจ้าง</p>
+              <p className="text-xs text-amber-800 mt-1">
+                กรุณากรอกข้อมูลส่วนตัว บัญชีธนาคาร และแนบเอกสารผ่านแบบฟอร์มด้านล่างเพื่อส่งคำขอให้แอดมินตรวจสอบและกดยืนยันอนุมัติ
+              </p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+              <div className="lg:col-span-2">
+                <KycForm initialName={displayName} isAuthLoading={authLoading} />
+              </div>
+              <div className="lg:col-span-1">
+                <KycSidebar displayName={displayName} email={user?.email ?? ""} />
+              </div>
+            </div>
+          </div>
         ) : dashboard ? (
           <>
             <ProviderStatsRow stats={dashboard.stats} />
@@ -157,12 +178,12 @@ export default function ProviderDashboardPage() {
                 </div>
               )}
             </div>
+
+            <div id="orders">
+              <ProviderOrdersTable />
+            </div>
           </>
         ) : null}
-
-        <div id="orders">
-          <ProviderOrdersTable />
-        </div>
       </main>
 
       <Footer />

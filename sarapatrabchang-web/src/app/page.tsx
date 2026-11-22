@@ -6,10 +6,12 @@ import Footer from "@/components/Footer";
 import HeroSearch from "@/components/home/HeroSearch";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import RecommendedProviders from "@/components/home/RecommendedProviders";
+import { useAuth } from "@/components/AuthProvider";
 import { requestApi } from "@/lib/api";
 import { Provider, ServiceCategory } from "@/types";
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [selectedLocation, setSelectedLocation] = useState("ห้วยขวาง, กรุงเทพมหานคร");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
@@ -88,6 +90,11 @@ export default function HomePage() {
     void loadPageData(selectedCategory, selectedLocation, true);
   };
 
+  const userName =
+    typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
+      ? user.user_metadata.full_name
+      : user?.email ?? "คุณ";
+
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50">
       <Navbar />
@@ -98,9 +105,11 @@ export default function HomePage() {
           setLocation={setSelectedLocation}
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
+          onQuickCategorySelect={handleCategorySelect}
           categories={categories}
           onSearch={handleSearch}
           isSearching={isLoading}
+          userName={userName}
         />
 
         <CategoryGrid

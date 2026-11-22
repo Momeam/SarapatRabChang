@@ -1,25 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Wrench, ArrowLeftRight } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import { requestApi } from "@/lib/api";
 
 export default function ProviderNavbar() {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+  const [kycStatus, setKycStatus] = useState<string>("unverified");
+
+  useEffect(() => {
+    if (loading || !user) return;
+    let active = true;
+    requestApi<{ status: string } | null>("/api/kyc")
+      .then((res) => {
+        if (active) setKycStatus(res?.status?.toLowerCase() ?? "unverified");
+      })
+      .catch(() => {
+        if (active) setKycStatus("unverified");
+      });
+    return () => {
+      active = false;
+    };
+  }, [loading, user]);
 
   const displayName =
     typeof user?.user_metadata.full_name === "string" && user.user_metadata.full_name.trim()
       ? user.user_metadata.full_name
-      : "คุณพิมพ์ชนก ใจดี";
+      : user?.email ?? "ผู้ใช้งาน";
 
-  const navLinks = [
-    { label: "แดชบอร์ด", href: "/provider/dashboard" },
-    { label: "จัดการประกาศบริการ", href: "/provider/services" },
-    { label: "รายการงาน", href: "/provider/jobs" },
-    { label: "การเงิน/ถอนเงิน", href: "/provider/finance" },
-  ];
+  const isApproved = kycStatus === "approved" || kycStatus === "verified";
+  const kycLabel = isApproved
+    ? "ยืนยัน KYC แล้ว"
+    : kycStatus === "pending"
+      ? "รอแอดมินตรวจ KYC"
+      : "ยังไม่ยืนยัน KYC";
+
+  const navLinks = isApproved
+    ? [
+        { label: "แดชบอร์ด", href: "/provider/dashboard" },
+        { label: "จัดการประกาศบริการ", href: "/provider/services" },
+        { label: "รายการงาน", href: "/provider/jobs" },
+        { label: "การเงิน/ถอนเงิน", href: "/provider/finance" },
+      ]
+    : [
+        { label: "ยืนยันตัวตนฟรีแลนซ์ (KYC)", href: "/provider/kyc" },
+      ];
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-zinc-200 transition-all">
@@ -82,7 +111,17 @@ export default function ProviderNavbar() {
                 <span className="text-xs font-semibold text-zinc-900 leading-tight">
                   {displayName}
                 </span>
-                <span className="text-[10px] text-emerald-600 font-medium">ยืนยัน KYC แล้ว</span>
+                <span
+                  className={`text-[10px] font-medium ${
+                    isApproved
+                      ? "text-emerald-600"
+                      : kycStatus === "pending"
+                        ? "text-amber-600"
+                        : "text-zinc-500"
+                  }`}
+                >
+                  {kycLabel}
+                </span>
               </div>
             </div>
           </div>

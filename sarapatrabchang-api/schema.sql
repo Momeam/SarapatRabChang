@@ -338,3 +338,13 @@ CREATE INDEX IF NOT EXISTS provider_payout_requests_freelance_created
 
 CREATE INDEX IF NOT EXISTS provider_payout_requests_status_created
   ON provider_payout_requests (status, created_at DESC);
+
+ALTER TABLE booking_disputes
+  ADD COLUMN IF NOT EXISTS resolution_note TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS platform_settings (
+  key VARCHAR(100) PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

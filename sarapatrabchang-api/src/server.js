@@ -51,9 +51,8 @@ const providerSelect = `
     ORDER BY price ASC
     LIMIT 1
   ) package ON TRUE
-  LEFT JOIN (
-    SELECT o.listing_id,
-           AVG(r.rating)::float AS rating,
+  LEFT JOIN LATERAL (
+    SELECT AVG(r.rating)::float AS rating,
            COUNT(r.review_id)::int AS review_count,
            JSONB_AGG(
              JSONB_BUILD_OBJECT(
@@ -65,14 +64,25 @@ const providerSelect = `
              )
              ORDER BY r.created_at DESC
            ) FILTER (WHERE r.review_id IS NOT NULL) AS reviews,
-           COUNT(DISTINCT o.order_id) FILTER (
-             WHERE LOWER(o.order_status) IN ('completed', 'done', 'finished')
-           )::int AS completed_jobs
-    FROM orders o
-    LEFT JOIN reviews r ON r.order_id = o.order_id
+           (
+             SELECT COUNT(*)::int
+             FROM bookings b2
+             WHERE b2.provider_id = l.listing_id::text
+               AND LOWER(b2.status) = 'completed'
+           ) + (
+             SELECT COUNT(DISTINCT o2.order_id)::int
+             FROM orders o2
+             WHERE o2.listing_id = l.listing_id
+               AND LOWER(o2.order_status) IN ('completed', 'done', 'finished')
+           ) AS completed_jobs
+    FROM (
+      SELECT DISTINCT r2.review_id, r2.reviewer_id, r2.rating, r2.comment, r2.created_at
+      FROM reviews r2
+      LEFT JOIN orders o ON o.order_id = r2.order_id
+      WHERE r2.listing_id = l.listing_id OR o.listing_id = l.listing_id
+    ) r
     LEFT JOIN users reviewer ON reviewer.id = r.reviewer_id
-    GROUP BY o.listing_id
-  ) stats ON stats.listing_id = l.listing_id
+  ) stats ON TRUE
 `;
 
 const profileSelect = `
@@ -83,7 +93,8 @@ const profileSelect = `
          COALESCE(pc.tax_id, '') AS "taxId",
          COALESCE(pc.tax_address, '') AS "taxAddress",
          COALESCE(pc.tax_email, u.email) AS "taxEmail",
-         (pf.freelance_id IS NOT NULL) AS "isProvider",
+         LOWER(COALESCE(pf.kyc_status, '')) IN ('approved', 'verified') AS "isProvider",
+         LOWER(COALESCE(pf.kyc_status, 'unverified')) AS "kycStatus",
          COALESCE(review_stats.rating, 0)::float AS rating,
          COALESCE(review_stats.review_count, 0)::int AS "reviewCount",
          COALESCE(review_stats.reviews, '[]'::jsonb) AS reviews
@@ -103,11 +114,14 @@ const profileSelect = `
              )
              ORDER BY r.created_at DESC
            ) FILTER (WHERE r.review_id IS NOT NULL) AS reviews
-    FROM service_listing l
-    JOIN orders o ON o.listing_id = l.listing_id
-    JOIN reviews r ON r.order_id = o.order_id
+    FROM (
+      SELECT DISTINCT r.review_id, r.reviewer_id, r.rating, r.comment, r.created_at
+      FROM service_listing l
+      LEFT JOIN orders o ON o.listing_id = l.listing_id
+      JOIN reviews r ON r.order_id = o.order_id OR r.listing_id = l.listing_id
+      WHERE l.freelance_id = pf.freelance_id
+    ) r
     LEFT JOIN users reviewer ON reviewer.id = r.reviewer_id
-    WHERE l.freelance_id = pf.freelance_id
   ) review_stats ON TRUE
   WHERE u.id = $1
 `;
@@ -473,6 +487,7 @@ function bookingAccessQuery() {
                  l.title AS "serviceTitle", c.category_name AS category,
                  COALESCE(NULLIF(provider.full_name, ''), NULLIF(pf.first_name, ''), 'ผู้ให้บริการ')
                    AS "providerName",
+                 EXISTS (SELECT 1 FROM reviews r WHERE r.booking_id = b.id) AS "hasReview",
                  CASE WHEN b.user_id = $1 THEN 'customer' ELSE 'provider' END
                    AS "viewerRole"
           FROM bookings b
@@ -665,6 +680,7 @@ function mapProfile(row) {
     taxAddress: row.taxAddress ?? "",
     taxEmail: row.taxEmail ?? row.email,
     isProvider: Boolean(row.isProvider),
+    kycStatus: row.kycStatus ?? (row.isProvider ? "approved" : "unverified"),
     rating: Number(row.rating),
     reviewCount: Number(row.reviewCount),
     reviews: row.reviews ?? [],
@@ -719,7 +735,7 @@ export function createApp({
     const corsHeaders = origin
       ? {
           "access-control-allow-origin": origin,
-          "access-control-allow-methods": "GET, POST, PATCH, OPTIONS",
+          "access-control-allow-methods": "GET, POST, PATCH, DELETE, OPTIONS",
           "access-control-allow-headers": "Content-Type",
           "access-control-allow-credentials": "true",
           vary: "Origin",
@@ -860,10 +876,13 @@ export function createApp({
              LEFT JOIN LATERAL (
                SELECT AVG(r.rating) AS average_rating,
                       COUNT(r.review_id) AS review_count
-               FROM service_listing l
-               JOIN orders o ON o.listing_id = l.listing_id
-               JOIN reviews r ON r.order_id = o.order_id
-               WHERE l.freelance_id = pf.freelance_id
+               FROM (
+                 SELECT DISTINCT r.review_id, r.rating
+                 FROM service_listing l
+                 LEFT JOIN orders o ON o.listing_id = l.listing_id
+                 JOIN reviews r ON r.order_id = o.order_id OR r.listing_id = l.listing_id
+                 WHERE l.freelance_id = pf.freelance_id
+               ) r
              ) review_stats ON TRUE
              WHERE u.id = $1`,
             [user.id],
@@ -1377,6 +1396,389 @@ export function createApp({
         return;
       }
 
+      if (request.method === "GET" && url.pathname === "/api/admin/jobs") {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const { rows } = await pool.query(
+          `SELECT l.listing_id::text AS id,
+                  'SV-' || LPAD(l.listing_id::text, 3, '0') AS code,
+                  l.title,
+                  l.description,
+                  LOWER(l.status) AS status,
+                  l.service_areas AS "serviceAreas",
+                  l.cover_image_url AS "coverImageUrl",
+                  l.portfolio,
+                  sc.category_key AS "categoryKey",
+                  sc.category_name AS "categoryName",
+                  COALESCE(package.tier_name, '') AS "packageName",
+                  COALESCE(package.duration_label, '') AS duration,
+                  COALESCE(package.price, 0)::float AS price,
+                  COALESCE(package.features, '[]'::jsonb) AS features,
+                  COALESCE(NULLIF(u.full_name, ''), pf.first_name, u.email) AS "freelancerName",
+                  u.email AS "freelancerEmail",
+                  u.id::text AS "freelancerUserId",
+                  COALESCE(pf.kyc_status, 'unverified') AS "kycStatus"
+           FROM service_listing l
+           JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+           JOIN users u ON u.id = pf.id_card_number
+           JOIN service_category sc ON sc.category_id = l.category_id
+           LEFT JOIN LATERAL (
+             SELECT tier_name, duration_label, price, features
+             FROM service_package
+             WHERE listing_id = l.listing_id
+             ORDER BY price ASC
+             LIMIT 1
+           ) package ON TRUE
+           ORDER BY l.listing_id DESC`,
+        );
+        sendJson(response, 200, { data: rows }, corsHeaders);
+        return;
+      }
+
+      if (
+        (request.method === "PATCH" || request.method === "DELETE") &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "admin" &&
+        segments[2] === "jobs"
+      ) {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const listingId = segments[3];
+        if (!/^\d+$/.test(listingId)) {
+          throw new HttpError(404, "JOB_NOT_FOUND", "ไม่พบประกาศบริการ");
+        }
+        if (request.method === "DELETE") {
+          const { rows } = await pool.query(
+            `DELETE FROM service_listing WHERE listing_id = $1 RETURNING listing_id::text AS id`,
+            [listingId],
+          );
+          if (rows.length === 0) {
+            throw new HttpError(404, "JOB_NOT_FOUND", "ไม่พบประกาศบริการ");
+          }
+          sendJson(response, 200, { data: { id: listingId, deleted: true } }, corsHeaders);
+          return;
+        }
+        const body = await readJsonBody(request);
+        const nextStatus = requiredText(body.status, "status", 20).toLowerCase();
+        if (!["active", "paused", "rejected", "pending"].includes(nextStatus)) {
+          throw new HttpError(400, "INVALID_STATUS", "สถานะประกาศไม่ถูกต้อง");
+        }
+        const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+        const updated = await withTransaction(pool, async (client) => {
+          const { rows } = await client.query(
+            `UPDATE service_listing l
+             SET status = $2
+             FROM profile_freelance pf
+             WHERE l.listing_id = $1 AND pf.freelance_id = l.freelance_id
+             RETURNING l.listing_id::text AS id, l.title, l.status, pf.id_card_number AS "ownerId"`,
+            [listingId, nextStatus],
+          );
+          if (rows.length === 0) {
+            throw new HttpError(404, "JOB_NOT_FOUND", "ไม่พบประกาศบริการ");
+          }
+          const job = rows[0];
+          const notifTitle =
+            nextStatus === "active"
+              ? `ประกาศ "${job.title}" ได้รับการอนุมัติแล้ว`
+              : nextStatus === "rejected"
+                ? `ประกาศ "${job.title}" ไม่ผ่านการอนุมัติ`
+                : `ประกาศ "${job.title}" ถูกเปลี่ยนสถานะเป็น ${nextStatus}`;
+          const notifDesc =
+            reason ||
+            (nextStatus === "active"
+              ? "ประกาศบริการของคุณเปิดแสดงบนหน้าแพลตฟอร์มเรียบร้อยแล้ว"
+              : "กรุณาตรวจสอบรายละเอียดประกาศบริการของคุณ");
+          await client.query(
+            `INSERT INTO notifications (id, user_id, type, title, description, link)
+             VALUES ($1, $2, 'order', $3, $4, '/provider/services')`,
+            [randomUUID(), job.ownerId, notifTitle, notifDesc],
+          );
+          return { id: job.id, status: job.status };
+        });
+        sendJson(response, 200, { data: updated }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/admin/disputes") {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        await pool.query(`
+          ALTER TABLE booking_disputes
+          ADD COLUMN IF NOT EXISTS resolution_note TEXT NOT NULL DEFAULT '',
+          ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ
+        `);
+        const { rows } = await pool.query(
+          `SELECT COALESCE(d.id::text, b.id::text) AS id,
+                  b.id::text AS "bookingId",
+                  COALESCE(d.reason, NULLIF(b.status_note, ''), 'แจ้งข้อพิพาทจากผู้ว่าจ้าง') AS reason,
+                  COALESCE(d.status, CASE WHEN b.status = 'disputed' THEN 'open' ELSE 'resolved' END) AS status,
+                  COALESCE(d.resolution_note, '') AS "resolutionNote",
+                  COALESCE(d.created_at, b.updated_at, b.created_at) AS "createdAt",
+                  d.resolved_at AS "resolvedAt",
+                  b.package_title AS "packageTitle",
+                  b.price::float AS amount,
+                  b.status AS "bookingStatus",
+                  b.delivery_note AS "deliveryNote",
+                  b.delivery_photo_urls AS "deliveryPhotoUrls",
+                  l.title AS "serviceTitle",
+                  COALESCE(NULLIF(client.full_name, ''), b.contact_name, client.email) AS "clientName",
+                  client.email AS "clientEmail",
+                  COALESCE(NULLIF(provider.full_name, ''), pf.first_name, provider.email) AS "freelancerName",
+                  provider.email AS "freelancerEmail",
+                  COALESCE(chat.messages, '[]'::jsonb) AS messages
+           FROM bookings b
+           LEFT JOIN booking_disputes d ON d.booking_id = b.id
+           JOIN users client ON client.id = b.user_id
+           JOIN service_listing l ON l.listing_id::text = b.provider_id
+           JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+           JOIN users provider ON provider.id = pf.id_card_number
+           LEFT JOIN LATERAL (
+             SELECT JSONB_AGG(
+                      JSONB_BUILD_OBJECT(
+                        'id', m.id::text,
+                        'body', m.body,
+                        'senderRole', CASE WHEN m.sender_user_id = b.user_id THEN 'customer' ELSE 'provider' END,
+                        'senderName', COALESCE(NULLIF(u2.full_name, ''), u2.email),
+                        'createdAt', m.created_at
+                      )
+                      ORDER BY m.created_at ASC
+                    ) AS messages
+             FROM booking_messages m
+             JOIN users u2 ON u2.id = m.sender_user_id
+             WHERE m.booking_id = b.id
+           ) chat ON TRUE
+           WHERE d.id IS NOT NULL OR b.status = 'disputed'
+           ORDER BY COALESCE(d.created_at, b.updated_at) DESC`,
+        );
+        sendJson(response, 200, { data: rows }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "PATCH" &&
+        segments.length === 4 &&
+        segments[0] === "api" &&
+        segments[1] === "admin" &&
+        segments[2] === "disputes"
+      ) {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        const disputeOrBookingId = segments[3];
+        if (!/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}$/i.test(disputeOrBookingId)) {
+          throw new HttpError(404, "DISPUTE_NOT_FOUND", "ไม่พบรายการข้อพิพาท");
+        }
+        const body = await readJsonBody(request);
+        const winner = requiredText(body.winner, "winner", 20).toUpperCase();
+        if (!["CLIENT", "FREELANCER"].includes(winner)) {
+          throw new HttpError(400, "INVALID_DECISION", "ผลการตัดสินต้องเป็น CLIENT หรือ FREELANCER");
+        }
+        const note = requiredText(body.note, "บันทึกคำตัดสินของแอดมิน", 1000);
+
+        const resolved = await withTransaction(pool, async (client) => {
+          await client.query(`
+            ALTER TABLE booking_disputes
+            ADD COLUMN IF NOT EXISTS resolution_note TEXT NOT NULL DEFAULT '',
+            ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ
+          `);
+          const { rows } = await client.query(
+            `SELECT b.id AS "bookingId", b.user_id AS "clientUserId",
+                    pf.id_card_number AS "providerUserId", l.title AS "serviceTitle",
+                    d.id AS "disputeId"
+             FROM bookings b
+             LEFT JOIN booking_disputes d ON d.booking_id = b.id
+             JOIN service_listing l ON l.listing_id::text = b.provider_id
+             JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+             WHERE d.id = $1 OR b.id = $1
+             LIMIT 1`,
+            [disputeOrBookingId],
+          );
+          const item = rows[0];
+          if (!item) {
+            throw new HttpError(404, "DISPUTE_NOT_FOUND", "ไม่พบรายการข้อพิพาท");
+          }
+          const nextBookingStatus = winner === "FREELANCER" ? "completed" : "in_progress";
+          const statusNote =
+            winner === "FREELANCER"
+              ? `[แอดมินตัดสินอนุมัติงานให้ฟรีแลนซ์] ${note}`
+              : `[แอดมินตัดสินให้ผู้ว่าจ้าง / แก้ไขหรือคืนสิทธิ์] ${note}`;
+
+          await client.query(
+            `UPDATE bookings
+             SET status = $2, status_note = $3, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $1`,
+            [item.bookingId, nextBookingStatus, statusNote],
+          );
+
+          if (item.disputeId) {
+            await client.query(
+              `UPDATE booking_disputes
+               SET status = $2, resolution_note = $3, resolved_at = CURRENT_TIMESTAMP
+               WHERE id = $1`,
+              [item.disputeId, winner === "FREELANCER" ? "resolved_freelancer" : "resolved_client", note],
+            );
+          } else {
+            await client.query(
+              `INSERT INTO booking_disputes (id, booking_id, raised_by_user_id, reason, status, resolution_note, resolved_at)
+               VALUES ($1, $2, $3, 'ข้อพิพาทงานบริการ', $4, $5, CURRENT_TIMESTAMP)`,
+              [
+                randomUUID(),
+                item.bookingId,
+                item.clientUserId,
+                winner === "FREELANCER" ? "resolved_freelancer" : "resolved_client",
+                note,
+              ],
+            );
+          }
+
+          await client.query(
+            `INSERT INTO notifications (id, user_id, booking_id, type, title, description, link)
+             VALUES ($1, $2, $3, 'order', $4, $5, $6),
+                    ($7, $8, $3, 'order', $4, $5, $9)`,
+            [
+              randomUUID(),
+              item.clientUserId,
+              item.bookingId,
+              `ผลการตัดสินข้อพิพาท: ${item.serviceTitle}`,
+              statusNote,
+              `/orders/${item.bookingId}`,
+              randomUUID(),
+              item.providerUserId,
+              `/provider/jobs/${item.bookingId}`,
+            ],
+          );
+
+          return {
+            id: disputeOrBookingId,
+            bookingId: item.bookingId,
+            status: winner === "FREELANCER" ? "resolved_freelancer" : "resolved_client",
+            bookingStatus: nextBookingStatus,
+            resolutionNote: note,
+          };
+        });
+        sendJson(response, 200, { data: resolved }, corsHeaders);
+        return;
+      }
+
+      if (
+        (request.method === "GET" || request.method === "PATCH") &&
+        url.pathname === "/api/admin/settings"
+      ) {
+        const user = await authenticate(request, pool);
+        requireAdmin(user);
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS platform_settings (
+            key VARCHAR(100) PRIMARY KEY,
+            value JSONB NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )
+        `);
+        const defaultSettings = {
+          siteName: "SarapatRabChang (สารพัดรับจ้าง)",
+          adminEmail: "admin@sarapatrabchang.com",
+          supportPhone: "02-123-4567",
+          announcement: "ยินดีต้อนรับสู่แพลตฟอร์มสารพัดรับจ้าง ศูนย์รวมฟรีแลนซ์คุณภาพ",
+          platformFeePercent: 5,
+          minPayoutAmount: 500,
+          isMaintenance: false,
+          allowRegister: true,
+        };
+        if (request.method === "GET") {
+          const { rows } = await pool.query(
+            `SELECT value FROM platform_settings WHERE key = 'general' LIMIT 1`,
+          );
+          sendJson(
+            response,
+            200,
+            { data: { ...defaultSettings, ...(rows[0]?.value ?? {}) } },
+            corsHeaders,
+          );
+          return;
+        }
+        const body = await readJsonBody(request);
+        const merged = {
+          siteName: typeof body.siteName === "string" && body.siteName.trim() ? body.siteName.trim().slice(0, 120) : defaultSettings.siteName,
+          adminEmail: typeof body.adminEmail === "string" && body.adminEmail.trim() ? body.adminEmail.trim().slice(0, 120) : defaultSettings.adminEmail,
+          supportPhone: typeof body.supportPhone === "string" && body.supportPhone.trim() ? body.supportPhone.trim().slice(0, 40) : defaultSettings.supportPhone,
+          announcement: typeof body.announcement === "string" ? body.announcement.trim().slice(0, 300) : defaultSettings.announcement,
+          platformFeePercent: Number.isFinite(Number(body.platformFeePercent)) ? Math.max(0, Math.min(50, Number(body.platformFeePercent))) : defaultSettings.platformFeePercent,
+          minPayoutAmount: Number.isFinite(Number(body.minPayoutAmount)) ? Math.max(100, Number(body.minPayoutAmount)) : defaultSettings.minPayoutAmount,
+          isMaintenance: Boolean(body.isMaintenance),
+          allowRegister: body.allowRegister === undefined ? true : Boolean(body.allowRegister),
+        };
+        await pool.query(
+          `INSERT INTO platform_settings (key, value, updated_at)
+           VALUES ('general', $1::jsonb, CURRENT_TIMESTAMP)
+           ON CONFLICT (key) DO UPDATE
+           SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
+          [JSON.stringify(merged)],
+        );
+        sendJson(response, 200, { data: merged }, corsHeaders);
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/auth/change-password") {
+        const user = await authenticate(request, pool);
+        const body = await readJsonBody(request);
+        const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+        const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+        if (!currentPassword) {
+          throw new HttpError(400, "VALIDATION_ERROR", "กรุณาระบุรหัสผ่านปัจจุบัน");
+        }
+        if (
+          newPassword.length < 8 ||
+          newPassword.length > 128 ||
+          !/[A-Za-z]/.test(newPassword) ||
+          !/[0-9]/.test(newPassword)
+        ) {
+          throw new HttpError(
+            400,
+            "VALIDATION_ERROR",
+            "รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร และมีทั้งตัวอักษรกับตัวเลข",
+          );
+        }
+        const { rows } = await pool.query(
+          `SELECT password_hash AS "passwordHash" FROM users WHERE id = $1 LIMIT 1`,
+          [user.id],
+        );
+        if (!rows[0] || !(await verifyPassword(currentPassword, rows[0].passwordHash))) {
+          throw new HttpError(401, "INVALID_PASSWORD", "รหัสผ่านปัจจุบันไม่ถูกต้อง");
+        }
+        const nextHash = await hashPassword(newPassword);
+        await pool.query(
+          `UPDATE users SET password_hash = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
+          [user.id, nextHash],
+        );
+        sendJson(response, 200, { data: { updated: true } }, corsHeaders);
+        return;
+      }
+
+      if (
+        request.method === "DELETE" &&
+        segments.length === 3 &&
+        segments[0] === "api" &&
+        segments[1] === "providers"
+      ) {
+        const user = await authenticate(request, pool);
+        if (!/^\d+$/.test(segments[2])) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการ");
+        }
+        const { rows } = await pool.query(
+          `DELETE FROM service_listing l
+           USING profile_freelance pf
+           WHERE l.listing_id = $1
+             AND pf.freelance_id = l.freelance_id
+             AND pf.id_card_number = $2
+           RETURNING l.listing_id::text AS id`,
+          [segments[2], user.id],
+        );
+        if (rows.length === 0) {
+          throw new HttpError(404, "PROVIDER_NOT_FOUND", "ไม่พบประกาศบริการหรือคุณไม่มีสิทธิ์ลบ");
+        }
+        sendJson(response, 200, { data: { id: rows[0].id, deleted: true } }, corsHeaders);
+        return;
+      }
+
       if (
         request.method === "PATCH" &&
         segments.length === 3 &&
@@ -1836,8 +2238,8 @@ export function createApp({
           `SELECT n.id::text AS id, n.type, n.title, n.description,
                   n.created_at AS "createdAt", n.read_at IS NOT NULL AS read, n.link
            FROM notifications n
-           JOIN bookings b ON b.id = n.booking_id
-           WHERE n.user_id = $1 AND b.user_id = $1
+           LEFT JOIN bookings b ON b.id = n.booking_id
+           WHERE n.user_id = $1
            ORDER BY n.created_at DESC
            LIMIT 50`,
           [user.id],
@@ -1864,10 +2266,7 @@ export function createApp({
         const { rows } = await pool.query(
           `UPDATE notifications n
            SET read_at = COALESCE(n.read_at, CURRENT_TIMESTAMP)
-           FROM bookings b
-           WHERE n.booking_id = b.id
-             AND n.user_id = $1
-             AND b.user_id = $1
+           WHERE n.user_id = $1
              AND ($2::text IS NULL OR n.type = $2)
            RETURNING n.id::text AS id`,
           [user.id, type],
@@ -1889,11 +2288,8 @@ export function createApp({
         const { rows } = await pool.query(
           `UPDATE notifications n
            SET read_at = COALESCE(n.read_at, CURRENT_TIMESTAMP)
-           FROM bookings b
            WHERE n.id = $2
-             AND n.booking_id = b.id
              AND n.user_id = $1
-             AND b.user_id = $1
            RETURNING n.id::text AS id`,
           [user.id, segments[2]],
         );
@@ -2178,6 +2574,14 @@ export function createApp({
         }
         if (booking.status !== "completed") {
           throw new HttpError(400, "BOOKING_NOT_COMPLETED", "สามารถรีวิวได้เฉพาะงานที่เสร็จสมบูรณ์แล้วเท่านั้น");
+        }
+
+        const { rows: existingReview } = await pool.query(
+          `SELECT 1 FROM reviews WHERE booking_id = $1 LIMIT 1`,
+          [booking.id],
+        );
+        if (existingReview.length > 0) {
+          throw new HttpError(409, "REVIEW_ALREADY_EXISTS", "คุณได้ส่งรีวิวสำหรับงานนี้ไปแล้ว");
         }
 
         const { rows: reviewRows } = await pool.query(

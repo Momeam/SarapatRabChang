@@ -56,6 +56,7 @@ export interface Booking {
   deliveryNote: string;
   deliveryPhotoUrls: string[];
   deliveredAt: string | null;
+  hasReview?: boolean;
   viewerRole: "customer" | "provider";
   createdAt: string;
   updatedAt: string;

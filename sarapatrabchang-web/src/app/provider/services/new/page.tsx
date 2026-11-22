@@ -10,6 +10,7 @@ import ServiceFormBasicInfo from "@/components/provider/ServiceFormBasicInfo";
 import ServiceFormPricing from "@/components/provider/ServiceFormPricing";
 import ServiceFormImages from "@/components/provider/ServiceFormImages";
 import ServiceFormSidebar from "@/components/provider/ServiceFormSidebar";
+import KycForm from "@/components/provider/KycForm";
 import { useAuth } from "@/components/AuthProvider";
 import { requestApi } from "@/lib/api";
 import { Provider, ProviderDashboard, ServiceCategory } from "@/types";
@@ -50,6 +51,7 @@ export default function NewServicePage() {
   const [createdProviderId, setCreatedProviderId] = useState<string | null>(null);
   const [editServiceId, setEditServiceId] = useState<string | null>(null);
   const [isLoadingEdit, setIsLoadingEdit] = useState(true);
+  const [kycStatus, setKycStatus] = useState<string>("unverified");
 
   useEffect(() => {
     let active = true;
@@ -57,13 +59,12 @@ export default function NewServicePage() {
 
     Promise.all([
       requestApi<ServiceCategory[]>("/api/categories"),
-      serviceId
-        ? requestApi<ProviderDashboard>("/api/provider/dashboard")
-        : Promise.resolve(null),
+      requestApi<ProviderDashboard>("/api/provider/dashboard").catch(() => null),
     ])
       .then(([result, dashboard]) => {
         if (!active) return;
         setEditServiceId(serviceId);
+        setKycStatus(dashboard?.stats.kycStatus?.toLowerCase() ?? "unverified");
         const availableCategories = result.filter((item) => item.id !== "all");
         setCategories(availableCategories);
         const service = dashboard?.services.find((item) => item.id === serviceId);
@@ -172,6 +173,17 @@ export default function NewServicePage() {
         </div>
 
         {/* Form Grid */}
+        {!isLoadingEdit && !["approved", "verified"].includes(kycStatus) ? (
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+              <p className="font-bold">ต้องยืนยันตัวตนเป็นฟรีแลนซ์ (KYC) และได้รับการอนุมัติจากแอดมินก่อนสร้างประกาศบริการ</p>
+              <p className="text-xs text-amber-800 mt-1">
+                กรุณากรอกข้อมูลและส่งคำขอผ่านแบบฟอร์มด้านล่างเพื่อรอให้แอดมินกดยืนยันอนุมัติ
+              </p>
+            </div>
+            <KycForm initialName={displayName} isAuthLoading={false} />
+          </div>
+        ) : (
         <form onSubmit={handlePublish}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             {/* Left 2 Cols: Form Sections */}
@@ -264,6 +276,7 @@ export default function NewServicePage() {
             </div>
           </div>
         </form>
+        )}
       </main>
 
       {/* Success Modal */}

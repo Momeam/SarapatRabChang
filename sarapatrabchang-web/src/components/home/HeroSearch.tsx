@@ -8,6 +8,7 @@ interface HeroSearchProps {
   setLocation: (loc: string) => void;
   selectedCategory: string;
   setSelectedCategory: (cat: string) => void;
+  onQuickCategorySelect?: (cat: string) => void;
   categories: ServiceCategory[];
   onSearch: () => void;
   isSearching: boolean;
@@ -19,11 +20,19 @@ export default function HeroSearch({
   setLocation,
   selectedCategory,
   setSelectedCategory,
+  onQuickCategorySelect,
   categories,
   onSearch,
   isSearching,
-  userName = "คุณพิมพ์ชนก",
+  userName = "คุณ",
 }: HeroSearchProps) {
+  const handleQuickCategory = (cat: string) => {
+    if (onQuickCategorySelect) {
+      onQuickCategorySelect(cat);
+    } else {
+      setSelectedCategory(cat);
+    }
+  };
   return (
     <div className="space-y-6">
       <div>
@@ -98,7 +107,7 @@ export default function HeroSearch({
           <span className="font-medium text-zinc-700">ค้นหายอดนิยม:</span>
           <button
             type="button"
-            onClick={() => setSelectedCategory("maid")}
+            onClick={() => handleQuickCategory("maid")}
             className="hover:text-orange-600 transition-colors cursor-pointer"
           >
             ทำความสะอาดคอนโด
@@ -106,7 +115,7 @@ export default function HeroSearch({
           <span>•</span>
           <button
             type="button"
-            onClick={() => setSelectedCategory("electrician")}
+            onClick={() => handleQuickCategory("electrician")}
             className="hover:text-orange-600 transition-colors cursor-pointer"
           >
             ซ่อมแอร์
@@ -114,7 +123,7 @@ export default function HeroSearch({
           <span>•</span>
           <button
             type="button"
-            onClick={() => setSelectedCategory("moving")}
+            onClick={() => handleQuickCategory("moving")}
             className="hover:text-orange-600 transition-colors cursor-pointer"
           >
             ย้ายหอพัก

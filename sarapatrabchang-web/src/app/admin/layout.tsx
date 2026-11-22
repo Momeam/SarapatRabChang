@@ -82,6 +82,13 @@ export default function AdminLayout({
             >
               <i className="fa-solid fa-scale-balanced w-6"></i> <span className="ml-3">ข้อพิพาท</span>
             </Link>
+
+            <Link 
+              href="/account/payouts" 
+              className={isActive("/account/payouts") ? activeClass : inactiveClass}
+            >
+              <i className="fa-solid fa-wallet w-6"></i> <span className="ml-3">อนุมัติการถอนเงิน</span>
+            </Link>
             
             <Link 
               href="/admin/settings" 

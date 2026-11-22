@@ -8,6 +8,7 @@ import StarRating from "@/components/StarRating";
 interface ReviewFormProps {
   providerName: string;
   providerRole: string;
+  reviewerName?: string;
   initialRating?: number;
   initialText?: string;
   onSubmit: (rating: number, text: string) => void;
@@ -25,6 +26,7 @@ const RATING_LABELS: Record<number, string> = {
 export default function ReviewForm({
   providerName,
   providerRole,
+  reviewerName = "ผู้ใช้บริการ",
   initialRating = 5,
   initialText = "",
   onSubmit,
@@ -96,7 +98,7 @@ export default function ReviewForm({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
           <span className="text-xs text-zinc-500">
             รีวิวจะแสดงบนโปรไฟล์ของผู้ให้บริการในชื่อ{" "}
-            <strong className="text-zinc-800">พิมพ์ชนก ส.</strong>
+            <strong className="text-zinc-800">{reviewerName}</strong>
           </span>
           <button
             type="submit"

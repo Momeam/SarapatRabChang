@@ -188,8 +188,9 @@ export default function OrderTrackingPage() {
                   <ReviewForm
                     providerName={booking.providerName}
                     providerRole={booking.category || "ผู้ให้บริการ"}
+                    reviewerName={booking.contactName || "ผู้ใช้บริการ"}
                     onSubmit={handleReviewSubmit}
-                    submitted={reviewSubmitted}
+                    submitted={Boolean(booking.hasReview || reviewSubmitted)}
                   />
                 )}
                 <BookingChat bookingId={booking.id} viewerRole={booking.viewerRole} />
