@@ -282,7 +282,7 @@ export default function AdminJobsPage() {
                         <p className="text-gray-500 text-[11px]">{job.freelancerEmail}</p>
                       </td>
                       <td className="p-4 font-bold text-orange-400 text-sm">
-                        ฿{job.price.toLocaleString("th-TH")}
+                        ฿{Number(job.price || 0).toLocaleString("th-TH")}
                       </td>
                       <td className="p-4 text-center">
                         {status === "active" ? (
@@ -353,12 +353,17 @@ export default function AdminJobsPage() {
 
       {/* Preview Modal */}
       {selectedJob && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedJob(null);
+          }}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+        >
           <div className="bg-[#141414] border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
             <div className="p-5 border-b border-gray-800 flex items-center justify-between bg-black/50">
               <div>
-                <span className="text-xs font-mono text-orange-400">{selectedJob.code}</span>
-                <h3 className="font-bold text-base text-white">{selectedJob.title}</h3>
+                <span className="text-xs font-mono text-orange-400">{selectedJob.code || "SV-SERVICE"}</span>
+                <h3 className="font-bold text-base text-white">{selectedJob.title || "ไม่มีชื่อประกาศ"}</h3>
               </div>
               <button
                 onClick={() => setSelectedJob(null)}
@@ -384,25 +389,29 @@ export default function AdminJobsPage() {
                   <span className="text-gray-400 flex items-center gap-1 mb-1">
                     <UserIcon className="w-3.5 h-3.5" /> ผู้ให้บริการ:
                   </span>
-                  <p className="font-semibold text-white text-sm">{selectedJob.freelancerName}</p>
-                  <p className="text-gray-400">{selectedJob.freelancerEmail}</p>
+                  <p className="font-semibold text-white text-sm">{selectedJob.freelancerName || "-"}</p>
+                  <p className="text-gray-400">{selectedJob.freelancerEmail || "-"}</p>
                 </div>
                 <div>
                   <span className="text-gray-400 flex items-center gap-1 mb-1">
                     <Tag className="w-3.5 h-3.5" /> หมวดหมู่ & ราคา:
                   </span>
                   <p className="font-semibold text-orange-400 text-sm">
-                    {selectedJob.categoryName} • ฿{selectedJob.price.toLocaleString("th-TH")}
+                    {selectedJob.categoryName || "บริการทั่วไป"} • ฿{Number(selectedJob.price || 0).toLocaleString("th-TH")}
                   </p>
                   <p className="text-gray-400 flex items-center gap-1 mt-0.5">
-                    <Clock className="w-3 h-3" /> {selectedJob.packageName} ({selectedJob.duration})
+                    <Clock className="w-3 h-3" /> {selectedJob.packageName || "มาตรฐาน"} ({selectedJob.duration || "ตามนัดหมาย"})
                   </p>
                 </div>
                 <div className="sm:col-span-2">
                   <span className="text-gray-400 flex items-center gap-1 mb-1">
                     <MapPin className="w-3.5 h-3.5" /> พื้นที่ให้บริการ:
                   </span>
-                  <p className="text-zinc-200">{selectedJob.serviceAreas.join(", ") || "-"}</p>
+                  <p className="text-zinc-200">
+                    {Array.isArray(selectedJob.serviceAreas) && selectedJob.serviceAreas.length > 0
+                      ? selectedJob.serviceAreas.join(", ")
+                      : "ทั่วประเทศ"}
+                  </p>
                 </div>
               </div>
 
@@ -413,7 +422,7 @@ export default function AdminJobsPage() {
                 </p>
               </div>
 
-              {selectedJob.features && selectedJob.features.length > 0 && (
+              {Array.isArray(selectedJob.features) && selectedJob.features.length > 0 && (
                 <div>
                   <h4 className="font-bold text-gray-300 mb-1.5">สิ่งที่รวมในแพ็กเกจ</h4>
                   <ul className="space-y-1 bg-black/30 p-3.5 rounded-xl border border-gray-800">
@@ -427,24 +436,29 @@ export default function AdminJobsPage() {
                 </div>
               )}
 
-              {selectedJob.portfolio && selectedJob.portfolio.length > 0 && (
+              {Array.isArray(selectedJob.portfolio) && selectedJob.portfolio.length > 0 && (
                 <div>
                   <h4 className="font-bold text-gray-300 mb-2">
                     รูปภาพผลงาน ({selectedJob.portfolio.length} รูป)
                   </h4>
                   <div className="grid grid-cols-3 gap-3">
-                    {selectedJob.portfolio.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="h-28 rounded-xl overflow-hidden border border-gray-800 bg-black"
-                      >
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+                    {selectedJob.portfolio.map((item, idx) => {
+                      const imgUrl = typeof item === "string" ? item : item?.image || "";
+                      const title = typeof item === "string" ? `ผลงาน ${idx + 1}` : item?.title || `ผลงาน ${idx + 1}`;
+                      if (!imgUrl) return null;
+                      return (
+                        <div
+                          key={idx}
+                          className="h-28 rounded-xl overflow-hidden border border-gray-800 bg-black"
+                        >
+                          <img
+                            src={imgUrl}
+                            alt={title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { AlertTriangle, CheckCircle2, RotateCcw, Upload, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, RotateCcw, Upload, X, Scale, ShieldAlert } from "lucide-react";
 import { BookingAction, BookingStatus } from "@/lib/booking";
 
 interface WorkApprovalCardProps {
@@ -15,6 +15,14 @@ interface WorkApprovalCardProps {
   onAction: (action: BookingAction, note?: string, photoUrls?: string[]) => void;
 }
 
+const DISPUTE_REASONS = [
+  "ผู้ให้บริการไม่มาตามเวลานัดหมาย / ไม่สามารถติดต่อได้",
+  "งานไม่เสร็จสมบูรณ์ / คุณภาพงานไม่ตรงตามที่ตกลงกัน",
+  "เกิดความเสียหายต่อทรัพย์สินหรือสถานที่",
+  "ผู้ให้บริการปฏิเสธที่จะแก้ไขงานตามเงื่อนไข",
+  "อื่นๆ (โปรดระบุรายละเอียดด้านล่าง)",
+];
+
 export default function WorkApprovalCard({
   providerName,
   amount,
@@ -27,6 +35,9 @@ export default function WorkApprovalCard({
 }: WorkApprovalCardProps) {
   const [note, setNote] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [isDisputeModalOpen, setIsDisputeModalOpen] = useState(false);
+  const [selectedDisputeCategory, setSelectedDisputeCategory] = useState(DISPUTE_REASONS[0]);
+  const [disputeDetail, setDisputeDetail] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const disabled = isSubmitting;
 
@@ -57,12 +68,34 @@ export default function WorkApprovalCard({
     setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleOpenDispute = () => {
+    setSelectedDisputeCategory(DISPUTE_REASONS[0]);
+    setDisputeDetail("");
+    setIsDisputeModalOpen(true);
+  };
+
+  const handleConfirmDispute = () => {
+    const reasonText = disputeDetail.trim()
+      ? `[${selectedDisputeCategory}] ${disputeDetail.trim()}`
+      : selectedDisputeCategory;
+    onAction("dispute", reasonText);
+    setIsDisputeModalOpen(false);
+  };
+
+  const handleRequestRevision = () => {
+    if (!note.trim()) {
+      window.alert("กรุณาระบุรายละเอียดสิ่งที่ต้องการให้ผู้ให้บริการแก้ไขในช่องข้อความ");
+      return;
+    }
+    onAction("request_revision", note.trim());
+  };
+
   return (
     <div className="rounded-2xl border-2 border-emerald-500/50 bg-emerald-50/40 p-5 space-y-4">
       <div>
         <h4 className="text-sm font-bold text-zinc-900">จัดการสถานะงาน</h4>
         <p className="text-xs text-zinc-600 mt-1 leading-relaxed">
-          รายการนี้ราคา ฿{amount.toLocaleString()} • การเปลี่ยนสถานะไม่ทำธุรกรรมหรือโอนเงินจริง
+          รายการนี้ราคา ฿{amount.toLocaleString("th-TH")} • การเปลี่ยนสถานะไม่ทำธุรกรรมหรือโอนเงินจริง
         </p>
       </div>
 
@@ -71,7 +104,7 @@ export default function WorkApprovalCard({
           type="button"
           disabled={disabled}
           onClick={() => onAction("confirm_payment")}
-          className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold"
+          className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold shadow-sm transition"
         >
           บันทึกสถานะชำระเงิน (ทดสอบระบบ)
         </button>
@@ -82,7 +115,7 @@ export default function WorkApprovalCard({
           type="button"
           disabled={disabled}
           onClick={() => onAction("start_work")}
-          className="w-full py-3 px-4 bg-zinc-900 hover:bg-orange-600 disabled:opacity-60 text-white rounded-xl text-sm font-bold"
+          className="w-full py-3 px-4 bg-zinc-900 hover:bg-orange-600 disabled:opacity-60 text-white rounded-xl text-sm font-bold shadow-sm transition"
         >
           เริ่มดำเนินงาน
         </button>
@@ -152,7 +185,7 @@ export default function WorkApprovalCard({
             type="button"
             disabled={disabled || !note.trim() || photos.length > 5}
             onClick={() => onAction("deliver", note, photos)}
-            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold"
+            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold shadow-sm transition"
           >
             ส่งมอบงานให้ลูกค้าตรวจ
           </button>
@@ -160,73 +193,192 @@ export default function WorkApprovalCard({
       )}
 
       {viewerRole === "customer" && status === "delivered" && (
-        <div className="space-y-3">
-          <p className="text-xs text-zinc-700">
-            ตรวจสอบงานของ {providerName} แล้วเลือกยืนยันหรือส่งคำขอแก้ไข/ข้อพิพาท
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-700 leading-relaxed">
+            ผู้ให้บริการ <span className="font-semibold text-zinc-900">{providerName}</span> ได้ส่งมอบงานแล้ว กรุณาตรวจสอบผลงานก่อนกดยืนยัน หากมีส่วนที่ต้องแก้ไขสามารถส่งคำขอแก้ไข หรือหากมีข้อพิพาทสามารถแจ้งเรื่องให้แอดมินกลางตรวจสอบได้
           </p>
+
           <label className="block text-xs font-semibold text-zinc-700">
-            รายละเอียด (ใช้เมื่อขอแก้ไขหรือแจ้งข้อพิพาท)
+            ระบุรายละเอียดเพิ่มเติม (ใช้เมื่อขอแก้ไขงาน)
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
               maxLength={1000}
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white p-3 font-normal"
-              placeholder="อธิบายสิ่งที่ต้องการให้แก้ไขหรือปัญหาที่พบ"
+              rows={2}
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white p-3 font-normal text-xs"
+              placeholder="ระบุสิ่งที่ต้องการให้ช่างแก้ไขเพิ่มเติม..."
             />
           </label>
+
           <button
             type="button"
             disabled={disabled}
             onClick={() => onAction("approve")}
-            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm transition"
           >
             <CheckCircle2 className="w-5 h-5" />
-            ยืนยันตรวจรับงาน
+            ยืนยันตรวจรับงานและปิดงาน
           </button>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-1 text-xs">
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
             <button
               type="button"
-              disabled={disabled || !note.trim()}
-              onClick={() => onAction("request_revision", note)}
-              className="text-zinc-600 hover:text-zinc-900 disabled:opacity-50 font-medium flex items-center justify-center gap-1"
+              disabled={disabled}
+              onClick={handleRequestRevision}
+              className="py-2.5 px-3 border border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition disabled:opacity-50"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              ส่งคำขอแก้ไขงาน
+              <RotateCcw className="w-3.5 h-3.5 text-zinc-500" />
+              ขอให้แก้ไขงาน
             </button>
             <button
               type="button"
-              disabled={disabled || !note.trim()}
-              onClick={() => onAction("dispute", note)}
-              className="text-rose-600 hover:text-rose-700 disabled:opacity-50 font-medium flex items-center justify-center gap-1"
+              disabled={disabled}
+              onClick={handleOpenDispute}
+              className="py-2.5 px-3 border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition disabled:opacity-50"
             >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              แจ้งข้อพิพาท
+              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+              แจ้งข้อพิพาทให้แอดมิน
             </button>
           </div>
         </div>
       )}
 
-      {viewerRole === "customer" && status === "paid" && (
-        <p className="text-xs text-zinc-600">รอผู้ให้บริการเริ่มดำเนินงาน</p>
+      {viewerRole === "customer" && (status === "paid" || status === "in_progress") && (
+        <div className="space-y-3 pt-1">
+          <p className="text-xs text-zinc-600">
+            {status === "paid"
+              ? "ชำระเงินเรียบร้อยแล้ว กำลังรอผู้ให้บริการเริ่มดำเนินงาน"
+              : "ผู้ให้บริการกำลังดำเนินงานตามนัดหมาย"}
+          </p>
+          <div className="border-t border-zinc-200/80 pt-3">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={handleOpenDispute}
+              className="w-full py-2 px-3 border border-rose-200 bg-white hover:bg-rose-50 text-rose-700 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition"
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
+              พบปัญหา / ผู้ให้บริการไม่มาตามนัด? แจ้งข้อพิพาทให้แอดมิน
+            </button>
+          </div>
+        </div>
       )}
-      {viewerRole === "customer" && status === "in_progress" && (
-        <p className="text-xs text-zinc-600">ผู้ให้บริการกำลังดำเนินงาน</p>
-      )}
+
       {viewerRole === "provider" && status === "delivered" && (
         <p className="text-xs text-zinc-600">ส่งมอบงานแล้ว กำลังรอลูกค้าตรวจรับ</p>
       )}
+
       {status === "completed" && (
-        <p className="text-xs font-semibold text-emerald-700">ลูกค้าตรวจรับงานแล้ว</p>
-      )}
-      {status === "disputed" && (
-        <p className="text-xs font-semibold text-rose-700">ข้อพิพาทนี้ถูกบันทึกแล้ว</p>
+        <div className="p-3.5 rounded-xl bg-emerald-100/60 border border-emerald-300 flex items-center gap-2.5 text-xs text-emerald-800 font-semibold">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>ลูกค้าตรวจรับงานเรียบร้อยแล้ว การบริการเสร็จสมบูรณ์</span>
+        </div>
       )}
 
-      {error && <p role="alert" className="text-xs text-rose-700">{error}</p>}
-      {notice && <p role="status" className="text-xs text-emerald-700">{notice}</p>}
+      {status === "disputed" && (
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 space-y-2 text-xs text-rose-900">
+          <div className="flex items-center gap-2 font-bold text-rose-700">
+            <Scale className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>เรื่องนี้อยู่ระหว่างการตรวจสอบข้อพิพาทโดยแอดมินกลาง</span>
+          </div>
+          <p className="text-zinc-600 leading-relaxed">
+            ระบบได้รับคำร้องข้อพิพาทแล้ว ทีมงานแอดมินกลางกำลังตรวจสอบหลักฐาน รายละเอียดงาน และประวัติการสนทนาเพื่อพิจารณาข้อยุติที่เป็นธรรม
+          </p>
+        </div>
+      )}
+
+      {error && <p role="alert" className="text-xs text-rose-700 bg-rose-50 p-2 rounded-lg border border-rose-200">{error}</p>}
+      {notice && <p role="status" className="text-xs text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200">{notice}</p>}
       {isSubmitting && (
         <p className="text-xs text-zinc-500">กำลังบันทึกสถานะ...</p>
+      )}
+
+      {/* Dispute Modal */}
+      {isDisputeModalOpen && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsDisputeModalOpen(false);
+          }}
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+        >
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-zinc-200 overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-zinc-900">แจ้งข้อพิพาทให้แอดมินกลาง</h3>
+                  <p className="text-[11px] text-zinc-500">ส่งเรื่องเพื่อให้แอดมินเข้าตรวจสอบและระงับข้อพิพาท</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDisputeModalOpen(false)}
+                className="w-7 h-7 rounded-lg bg-zinc-200 hover:bg-zinc-300 text-zinc-600 flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-zinc-800 mb-1.5">
+                  เลือกหัวข้อปัญหา / สาเหตุข้อพิพาท:
+                </label>
+                <select
+                  value={selectedDisputeCategory}
+                  onChange={(e) => setSelectedDisputeCategory(e.target.value)}
+                  className="w-full p-2.5 border border-zinc-300 rounded-xl bg-white text-zinc-800 focus:outline-none focus:border-rose-500"
+                >
+                  {DISPUTE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {reason}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-zinc-800 mb-1.5">
+                  รายละเอียดเหตุผลและปัญหาที่พบ:
+                </label>
+                <textarea
+                  value={disputeDetail}
+                  onChange={(e) => setDisputeDetail(e.target.value)}
+                  maxLength={1000}
+                  rows={4}
+                  placeholder="อธิบายสิ่งที่เกิดขึ้น เช่น นัดหมายเวลาใด ช่างไม่มา หรือผลงานเสียหายอย่างไร..."
+                  className="w-full p-3 border border-zinc-300 rounded-xl bg-white text-zinc-800 focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] leading-relaxed">
+                <span className="font-bold">หมายเหตุ:</span> เมื่อส่งข้อพิพาทแล้ว สถานะของงานจะเปลี่ยนเป็น &ldquo;อยู่ระหว่างตรวจสอบข้อพิพาท&rdquo; และเรื่องจะถูกส่งไปยังหน้ากระดานแอดมินทันที
+              </div>
+            </div>
+
+            <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => setIsDisputeModalOpen(false)}
+                className="px-4 py-2 border border-zinc-300 rounded-xl text-zinc-700 font-semibold hover:bg-zinc-100 transition text-xs"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={handleConfirmDispute}
+                className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition text-xs shadow-sm flex items-center gap-1.5 disabled:opacity-60"
+              >
+                <Scale className="w-4 h-4" />
+                ยืนยันส่งข้อพิพาทให้แอดมิน
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

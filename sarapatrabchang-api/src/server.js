@@ -1442,11 +1442,11 @@ export function createApp({
           `SELECT l.listing_id::text AS id,
                   'SV-' || LPAD(l.listing_id::text, 3, '0') AS code,
                   l.title,
-                  l.description,
+                  COALESCE(l.description, '') AS description,
                   LOWER(l.status) AS status,
-                  l.service_areas AS "serviceAreas",
+                  COALESCE(l.service_areas, '{}') AS "serviceAreas",
                   l.cover_image_url AS "coverImageUrl",
-                  l.portfolio,
+                  COALESCE(l.portfolio, '[]'::jsonb) AS portfolio,
                   sc.category_key AS "categoryKey",
                   sc.category_name AS "categoryName",
                   COALESCE(package.tier_name, '') AS "packageName",
@@ -2517,18 +2517,19 @@ export function createApp({
           if (!viewerRole) throw new HttpError(404, "BOOKING_NOT_FOUND", "ไม่พบรายการจอง");
 
           const transitions = {
-            confirm_payment: { role: "customer", from: "pending_payment", to: "paid" },
-            start_work: { role: "provider", from: "paid", to: "in_progress" },
-            deliver: { role: "provider", from: "in_progress", to: "delivered" },
-            approve: { role: "customer", from: "delivered", to: "completed" },
-            request_revision: { role: "customer", from: "delivered", to: "in_progress" },
-            dispute: { role: "customer", from: "delivered", to: "disputed" },
+            confirm_payment: { role: "customer", from: ["pending_payment"], to: "paid" },
+            start_work: { role: "provider", from: ["paid"], to: "in_progress" },
+            deliver: { role: "provider", from: ["in_progress"], to: "delivered" },
+            approve: { role: "customer", from: ["delivered"], to: "completed" },
+            request_revision: { role: "customer", from: ["delivered"], to: "in_progress" },
+            dispute: { role: "customer", from: ["paid", "in_progress", "delivered"], to: "disputed" },
           };
           const transition = transitions[action.action];
           if (viewerRole !== transition.role) {
             throw new HttpError(403, "BOOKING_ACTION_FORBIDDEN", "ไม่มีสิทธิ์ดำเนินการนี้");
           }
-          if (booking.status !== transition.from) {
+          const allowedFrom = Array.isArray(transition.from) ? transition.from : [transition.from];
+          if (!allowedFrom.includes(booking.status)) {
             throw new HttpError(409, "INVALID_BOOKING_STATE", "สถานะรายการจองเปลี่ยนไปแล้ว กรุณาโหลดข้อมูลใหม่");
           }
 
@@ -2545,7 +2546,7 @@ export function createApp({
                 transition.to,
                 action.note,
                 JSON.stringify(action.photoUrls),
-                transition.from,
+                booking.status,
               ],
             );
           } else if (action.action === "request_revision") {
@@ -2556,7 +2557,7 @@ export function createApp({
                    updated_at = CURRENT_TIMESTAMP
                WHERE id = $1 AND status = $4
                RETURNING status, updated_at AS "updatedAt"`,
-              [booking.id, transition.to, action.note, transition.from],
+              [booking.id, transition.to, action.note, booking.status],
             );
           } else {
             update = await client.query(
@@ -2568,7 +2569,7 @@ export function createApp({
                 booking.id,
                 transition.to,
                 action.action === "dispute" ? action.note : "",
-                transition.from,
+                booking.status,
               ],
             );
           }
@@ -2577,10 +2578,31 @@ export function createApp({
           }
           if (action.action === "dispute") {
             await client.query(
-              `INSERT INTO booking_disputes (id, booking_id, raised_by_user_id, reason)
-               VALUES ($1, $2, $3, $4)`,
+              `INSERT INTO booking_disputes (id, booking_id, raised_by_user_id, reason, status)
+               VALUES ($1, $2, $3, $4, 'open')`,
               [randomUUID(), booking.id, user.id, action.note],
             );
+            const { rows: providerRows } = await client.query(
+              `SELECT pf.id_card_number AS "providerUserId"
+               FROM service_listing l
+               JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
+               WHERE l.listing_id::text = $1`,
+              [booking.providerId],
+            );
+            if (providerRows.length > 0 && providerRows[0].providerUserId) {
+              await client.query(
+                `INSERT INTO notifications
+                   (id, user_id, booking_id, type, title, description, link)
+                 VALUES ($1, $2, $3, 'dispute', 'รายการจองถูกส่งเรื่องข้อพิพาท', $4, $5)`,
+                [
+                  randomUUID(),
+                  providerRows[0].providerUserId,
+                  booking.id,
+                  action.note || "ลูกค้าได้ส่งเรื่องข้อพิพาทให้แอดมินตรวจสอบ",
+                  `/orders/${booking.id}`,
+                ],
+              );
+            }
           }
           if (viewerRole === "provider") {
             const title = action.action === "deliver"
@@ -2737,6 +2759,32 @@ if (isDirectExecution) {
   pool.on("error", (err) => {
     console.error("Database pool idle client error:", err.message);
   });
+  const originalPoolQuery = pool.query.bind(pool);
+  pool.query = async function resilientQuery(...args) {
+    let retries = 0;
+    while (true) {
+      try {
+        return await originalPoolQuery(...args);
+      } catch (err) {
+        retries++;
+        const isTransient =
+          err.code === "ECONNRESET" ||
+          err.code === "57P01" ||
+          err.code === "08006" ||
+          err.code === "08001" ||
+          err.code === "08004" ||
+          err.message?.includes("Connection terminated") ||
+          err.message?.includes("connection timeout") ||
+          err.message?.includes("socket hang up");
+        if (isTransient && retries <= 2) {
+          console.warn(`Transient DB connection error (${err.message}). Retrying attempt ${retries}...`);
+          await new Promise((resolve) => setTimeout(resolve, 500 * retries));
+          continue;
+        }
+        throw err;
+      }
+    }
+  };
   try {
     await pool.query("SELECT 1");
   } catch (error) {

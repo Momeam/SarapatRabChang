@@ -73,9 +73,12 @@ export default function OrderStatusStepper({
         })}
       </div>
       {status === "disputed" && (
-        <p className="mt-5 text-xs text-rose-700">
-          รายการนี้ถูกแจ้งข้อพิพาทแล้ว ยังไม่มีการดำเนินการทางการเงินในระบบ
-        </p>
+        <div className="mt-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+          <p className="font-bold">รายการนี้ถูกแจ้งข้อพิพาท</p>
+          <p className="text-zinc-600 mt-0.5">
+            อยู่ระหว่างการตรวจสอบโดยผู้ดูแลระบบ (Admin) เพื่อพิจารณาข้อมูลและหลักฐานจากทั้งสองฝ่าย
+          </p>
+        </div>
       )}
     </div>
   );
