@@ -81,6 +81,34 @@ const pool = {
     if (sql.trim() === "SELECT 1" || ["BEGIN", "COMMIT", "ROLLBACK"].includes(sql)) {
       return { rows: [] };
     }
+    if (sql.includes("WITH buckets AS") && sql.includes('AS "previousRevenue"')) {
+      const monthSeries = sql.includes("generate_series(0, 11)");
+      return {
+        rows: [{
+          label: monthSeries ? "2026-11" : "2026-11-23",
+          revenue: 1800,
+          previousRevenue: 1200,
+          bookings: 3,
+          previousBookings: 2,
+        }],
+      };
+    }
+    if (sql.includes("SELECT status, COUNT(*)::int AS count") && sql.includes("FROM bookings")) {
+      return { rows: [{ status: "completed", count: 3 }, { status: "paid", count: 2 }] };
+    }
+    if (sql.includes('AS "totalUsers"')) return { rows: [{ totalUsers: 4 }] };
+    if (sql.includes('AS "totalKyc"')) {
+      return { rows: [{ pendingKyc: 1, approvedKyc: 2, totalKyc: 3 }] };
+    }
+    if (sql.includes('AS "totalBookings"')) {
+      return { rows: [{ totalBookings: 5, totalVolume: 3000, completedBookings: 3 }] };
+    }
+    if (sql.includes('AS "pendingPayouts"') && sql.includes("COUNT(*) FILTER (WHERE status = 'pending')")) {
+      return { rows: [{ pendingPayouts: 1, paidAmount: 500 }] };
+    }
+    if (sql.includes("FROM provider_kyc_submissions s") && sql.includes("ORDER BY s.submitted_at DESC")) {
+      return { rows: [] };
+    }
     if (sql.includes('AS "availableBalance"') && sql.includes("FROM users u")) {
       const ownerId = params[0];
       const freelanceId = freelanceIdForUser(ownerId);
@@ -702,6 +730,34 @@ test("provider dashboard aggregates only the signed-in provider's data", async (
   assert.ok(statsQuery.sql.includes("pf.id_card_number = u.id"));
   assert.ok(serviceQuery.sql.includes("pf.id_card_number = $1"));
   assert.deepEqual(statsQuery.params, [users.get("dashboard@example.com").id]);
+});
+
+test("admin dashboard returns weekly, monthly, and booking-status database aggregates", async () => {
+  const anonymous = await fetch(`${baseUrl}/api/admin/dashboard`);
+  assert.equal(anonymous.status, 401);
+
+  const authResponse = await register("dashboard-admin@example.com");
+  users.get("dashboard-admin@example.com").role = "Admin";
+  const cookie = cookieFrom(authResponse);
+
+  const forbidden = await fetch(`${baseUrl}/api/admin/dashboard`, { headers: { cookie: cookieFrom(await register("dashboard-user@example.com")) } });
+  assert.equal(forbidden.status, 403);
+
+  const response = await fetch(`${baseUrl}/api/admin/dashboard`, {
+    headers: { cookie },
+  });
+  const result = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(result.data.totalBookings, 5);
+  assert.equal(result.data.trends.weekly[0].revenue, 1800);
+  assert.equal(result.data.trends.weekly[0].previousRevenue, 1200);
+  assert.equal(result.data.trends.monthly[0].bookings, 3);
+  assert.deepEqual(result.data.bookingStatuses, [
+    { status: "completed", count: 3 },
+    { status: "paid", count: 2 },
+  ]);
+  assert.ok(statements.some(({ sql }) => sql.includes("generate_series(0, 6)") && sql.includes("date_trunc('week'")));
+  assert.ok(statements.some(({ sql }) => sql.includes("generate_series(0, 11)") && sql.includes("date_trunc('month'")));
 });
 
 test("providers can pause or republish only their own listings", async () => {

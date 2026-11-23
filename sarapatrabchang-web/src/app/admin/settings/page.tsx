@@ -164,9 +164,16 @@ export default function AdminSettingsPage() {
                 <div>
                   <label className="block text-gray-400 mb-1.5">เบอร์โทรศัพท์ซัพพอร์ต</label>
                   <input
-                    type="text"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={settings.supportPhone}
-                    onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        supportPhone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                      })
+                    }
                     className="w-full bg-black border border-gray-700 text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#f97316]"
                   />
                 </div>

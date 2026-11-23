@@ -1312,6 +1312,9 @@ export function createApp({
           { rows: bookingStats },
           { rows: payoutStats },
           { rows: recentKyc },
+          { rows: weeklyTrend },
+          { rows: monthlyTrend },
+          { rows: bookingStatuses },
         ] = await Promise.all([
           pool.query(`SELECT COUNT(*)::int AS "totalUsers" FROM users`),
           pool.query(`SELECT 
@@ -1338,6 +1341,74 @@ export function createApp({
                       LEFT JOIN service_category sc ON sc.category_key = s.category_key
                       ORDER BY s.submitted_at DESC
                       LIMIT 8`),
+          pool.query(`WITH buckets AS (
+                        SELECT bucket_index,
+                               (date_trunc('week', CURRENT_DATE)::date + bucket_index)::date AS current_start,
+                               (date_trunc('week', CURRENT_DATE)::date + bucket_index - 7)::date AS previous_start
+                        FROM generate_series(0, 6) AS series(bucket_index)
+                      )
+                      SELECT TO_CHAR(current_start, 'YYYY-MM-DD') AS label,
+                             COALESCE(SUM(b.price) FILTER (
+                               WHERE b.created_at >= current_start
+                                 AND b.created_at < current_start + INTERVAL '1 day'
+                             ), 0)::float AS revenue,
+                             COUNT(b.id) FILTER (
+                               WHERE b.created_at >= current_start
+                                 AND b.created_at < current_start + INTERVAL '1 day'
+                             )::int AS bookings,
+                             COALESCE(SUM(b.price) FILTER (
+                               WHERE b.created_at >= previous_start
+                                 AND b.created_at < previous_start + INTERVAL '1 day'
+                             ), 0)::float AS "previousRevenue",
+                             COUNT(b.id) FILTER (
+                               WHERE b.created_at >= previous_start
+                                 AND b.created_at < previous_start + INTERVAL '1 day'
+                             )::int AS "previousBookings"
+                      FROM buckets
+                      LEFT JOIN bookings b
+                        ON (b.created_at >= current_start
+                            AND b.created_at < current_start + INTERVAL '1 day')
+                        OR (b.created_at >= previous_start
+                            AND b.created_at < previous_start + INTERVAL '1 day')
+                      GROUP BY bucket_index, current_start
+                      ORDER BY bucket_index`),
+          pool.query(`WITH buckets AS (
+                        SELECT bucket_index,
+                               (date_trunc('month', CURRENT_DATE)::date
+                                 - INTERVAL '11 months' + bucket_index * INTERVAL '1 month')::date AS current_start,
+                               (date_trunc('month', CURRENT_DATE)::date
+                                 - INTERVAL '23 months' + bucket_index * INTERVAL '1 month')::date AS previous_start
+                        FROM generate_series(0, 11) AS series(bucket_index)
+                      )
+                      SELECT TO_CHAR(current_start, 'YYYY-MM') AS label,
+                             COALESCE(SUM(b.price) FILTER (
+                               WHERE b.created_at >= current_start
+                                 AND b.created_at < current_start + INTERVAL '1 month'
+                             ), 0)::float AS revenue,
+                             COUNT(b.id) FILTER (
+                               WHERE b.created_at >= current_start
+                                 AND b.created_at < current_start + INTERVAL '1 month'
+                             )::int AS bookings,
+                             COALESCE(SUM(b.price) FILTER (
+                               WHERE b.created_at >= previous_start
+                                 AND b.created_at < previous_start + INTERVAL '1 month'
+                             ), 0)::float AS "previousRevenue",
+                             COUNT(b.id) FILTER (
+                               WHERE b.created_at >= previous_start
+                                 AND b.created_at < previous_start + INTERVAL '1 month'
+                             )::int AS "previousBookings"
+                      FROM buckets
+                      LEFT JOIN bookings b
+                        ON (b.created_at >= current_start
+                            AND b.created_at < current_start + INTERVAL '1 month')
+                        OR (b.created_at >= previous_start
+                            AND b.created_at < previous_start + INTERVAL '1 month')
+                      GROUP BY bucket_index, current_start
+                      ORDER BY bucket_index`),
+          pool.query(`SELECT status, COUNT(*)::int AS count
+                      FROM bookings
+                      GROUP BY status
+                      ORDER BY status`),
         ]);
         sendJson(
           response,
@@ -1353,6 +1424,11 @@ export function createApp({
               pendingPayouts: payoutStats[0]?.pendingPayouts ?? 0,
               paidAmount: payoutStats[0]?.paidAmount ?? 0,
               recentKyc,
+              trends: {
+                weekly: weeklyTrend,
+                monthly: monthlyTrend,
+              },
+              bookingStatuses,
             },
           },
           corsHeaders,

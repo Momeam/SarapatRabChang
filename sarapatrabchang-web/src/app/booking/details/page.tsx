@@ -16,63 +16,112 @@ import type { AccountProfile } from "@/lib/profile";
 export default function BookingDetailsPage() {
   const router = useRouter();
 
-  const [jobNote, setJobNote] = useState(() => readBookingDraft()?.note ?? "");
-  const [contactName, setContactName] = useState(() => readBookingDraft()?.contactName ?? "");
-  const [phone, setPhone] = useState(() => readBookingDraft()?.phone ?? "");
-  const [addressDetail, setAddressDetail] = useState(() => readBookingDraft()?.address ?? "");
-  const [uploadedImages, setUploadedImages] = useState<string[]>(
-    () => readBookingDraft()?.uploadedImages ?? [],
-  );
+  const [jobNote, setJobNote] = useState("");
+  const [contactName, setContactName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [bookingError, setBookingError] = useState<string | null>(null);
-  const [pinAddress, setPinAddress] = useState(
-    () =>
-      readBookingDraft()?.pinAddress ||
-      readBookingDraft()?.address ||
-      "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ",
-  );
-  const [pinCoords, setPinCoords] = useState(
-    () => readBookingDraft()?.pinCoords || "13.7326, 100.5703",
-  );
+  const [pinAddress, setPinAddress] = useState("บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ");
+  const [pinCoords, setPinCoords] = useState("13.7326, 100.5703");
+  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
-  // Auto-fill empty contact fields from user's saved profile
   useEffect(() => {
     let active = true;
-    const draft = readBookingDraft();
-    if (draft?.contactName && draft?.phone && draft?.address) return;
-    requestApi<AccountProfile>("/api/profile")
-      .then((profile) => {
-        if (!active || !profile) return;
-        setContactName((prev) => prev || profile.fullName || "");
-        setPhone((prev) => prev || profile.phone || "");
-        setAddressDetail((prev) => prev || profile.address || "");
+    Promise.resolve()
+      .then(() => readBookingDraft())
+      .then((draft) => {
+        if (!active) return;
+        if (draft) {
+          setJobNote(draft.note);
+          setContactName(draft.contactName);
+          setPhone(draft.phone);
+          setAddressDetail(draft.address);
+          setUploadedImages(draft.uploadedImages ?? []);
+          setPinAddress(
+            draft.pinAddress || draft.address || "บริเวณซอยสุขุมวิท 39 เขตวัฒนา กรุงเทพฯ",
+          );
+          setPinCoords(draft.pinCoords || "13.7326, 100.5703");
+        }
+        setIsDraftLoaded(true);
       })
-      .catch(() => {
-        // Ignore if not logged in
+      .catch((error: unknown) => {
+        if (!active) return;
+        setBookingError(
+          error instanceof Error ? error.message : "อ่านรายละเอียดการจองไม่สำเร็จ",
+        );
       });
     return () => {
       active = false;
     };
   }, []);
 
+  // Auto-fill empty contact fields from user's saved profile
+  useEffect(() => {
+    if (!isDraftLoaded) return;
+    let active = true;
+    Promise.resolve()
+      .then(() => readBookingDraft())
+      .then((draft) => {
+        if (draft?.contactName && draft.phone && draft.address) return null;
+        return requestApi<AccountProfile>("/api/profile").catch(() => null);
+      })
+      .then((profile) => {
+        if (!active || !profile) return;
+        setContactName((prev) => prev || profile.fullName || "");
+        setPhone((prev) => prev || profile.phone || "");
+        setAddressDetail((prev) => prev || profile.address || "");
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setBookingError(
+          error instanceof Error ? error.message : "อ่านรายละเอียดการจองไม่สำเร็จ",
+        );
+      });
+    return () => {
+      active = false;
+    };
+  }, [isDraftLoaded]);
+
   // Persist draft fields automatically so going back/forward never loses images, map pin, or text
   useEffect(() => {
-    try {
-      const draft = readBookingDraft();
-      if (!draft) return;
-      saveBookingDraft({
-        ...draft,
-        contactName,
-        phone,
-        address: addressDetail || pinAddress,
-        note: jobNote,
-        pinAddress,
-        pinCoords,
-        uploadedImages,
+    if (!isDraftLoaded) return;
+    let active = true;
+    Promise.resolve()
+      .then(() => {
+        if (!active) return;
+        const draft = readBookingDraft();
+        if (!draft) return;
+        saveBookingDraft({
+          ...draft,
+          contactName,
+          phone,
+          address: addressDetail || pinAddress,
+          note: jobNote,
+          pinAddress,
+          pinCoords,
+          uploadedImages,
+        });
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        setBookingError(
+          error instanceof Error ? error.message : "บันทึกรายละเอียดการจองไม่สำเร็จ",
+        );
       });
-    } catch {
-      // Ignore draft read errors
-    }
-  }, [jobNote, contactName, phone, addressDetail, pinAddress, pinCoords, uploadedImages]);
+    return () => {
+      active = false;
+    };
+  }, [
+    isDraftLoaded,
+    jobNote,
+    contactName,
+    phone,
+    addressDetail,
+    pinAddress,
+    pinCoords,
+    uploadedImages,
+  ]);
 
   const handleLocationSelect = useCallback((selectedAddr: string, lat: number, lng: number) => {
     const nextCoords = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
@@ -189,9 +238,14 @@ export default function BookingDetailsPage() {
             <button
               type="button"
               onClick={handleNext}
-              className="w-full sm:w-auto py-2.5 px-6 bg-zinc-950 hover:bg-orange-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+              disabled={!isDraftLoaded}
+              className="w-full sm:w-auto py-2.5 px-6 bg-zinc-950 hover:bg-orange-500 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
             >
-              <span>ดำเนินการต่อเพื่อตรวจสอบรายการ</span>
+              <span>
+                {isDraftLoaded
+                  ? "ดำเนินการต่อเพื่อตรวจสอบรายการ"
+                  : "กำลังโหลดรายละเอียด..."}
+              </span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

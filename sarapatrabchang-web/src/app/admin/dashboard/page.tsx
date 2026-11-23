@@ -27,6 +27,11 @@ interface AdminDashboardData {
   completedBookings: number;
   pendingPayouts: number;
   paidAmount: number;
+  trends: {
+    weekly: DashboardTrendPoint[];
+    monthly: DashboardTrendPoint[];
+  };
+  bookingStatuses: Array<{ status: string; count: number }>;
   recentKyc: Array<{
     id: string;
     userId: string;
@@ -43,10 +48,245 @@ interface AdminDashboardData {
   }>;
 }
 
+interface DashboardTrendPoint {
+  label: string;
+  revenue: number;
+  previousRevenue: number;
+  bookings: number;
+  previousBookings: number;
+}
+
+type TrendMetric = "revenue" | "bookings";
+
+const bookingStatusLabels: Record<string, string> = {
+  pending_payment: "รอชำระเงิน",
+  paid: "ชำระเงินแล้ว",
+  in_progress: "กำลังดำเนินงาน",
+  delivered: "ส่งมอบงานแล้ว",
+  completed: "เสร็จสิ้น",
+  disputed: "อยู่ระหว่างข้อพิพาท",
+};
+
+const bookingStatusColors: Record<string, string> = {
+  pending_payment: "#f59e0b",
+  paid: "#3b82f6",
+  in_progress: "#8b5cf6",
+  delivered: "#06b6d4",
+  completed: "#10b981",
+  disputed: "#f43f5e",
+};
+
+function getTrendValues(point: DashboardTrendPoint, metric: TrendMetric) {
+  return metric === "revenue"
+    ? [point.revenue, point.previousRevenue]
+    : [point.bookings, point.previousBookings];
+}
+
+function formatTrendLabel(label: string, period: "weekly" | "monthly") {
+  const date = new Date(`${label}${period === "monthly" ? "-02" : ""}T12:00:00`);
+  return new Intl.DateTimeFormat("th-TH", {
+    ...(period === "weekly" ? { day: "numeric", month: "short" } : { month: "short" }),
+  }).format(date);
+}
+
+function formatAxisValue(value: number, metric: TrendMetric) {
+  if (metric === "bookings") return Math.round(value).toLocaleString("th-TH");
+  if (value >= 1000) return `฿${(value / 1000).toLocaleString("th-TH", { maximumFractionDigits: 1 })}k`;
+  return `฿${Math.round(value).toLocaleString("th-TH")}`;
+}
+
+function TrendChart({
+  points,
+  metric,
+  period,
+}: {
+  points: DashboardTrendPoint[];
+  metric: TrendMetric;
+  period: "weekly" | "monthly";
+}) {
+  const width = 640;
+  const height = 220;
+  const left = 58;
+  const right = 624;
+  const top = 14;
+  const bottom = 174;
+  const values = points.flatMap((point) => getTrendValues(point, metric));
+  const maxValue = Math.max(1, ...values);
+  const currentPoints: string[] = [];
+  const previousPoints: string[] = [];
+  const x = (index: number) =>
+    points.length < 2 ? (left + right) / 2 : left + (index * (right - left)) / (points.length - 1);
+  const y = (value: number) => bottom - (value / maxValue) * (bottom - top);
+
+  points.forEach((point, index) => {
+    const [current, previous] = getTrendValues(point, metric);
+    currentPoints.push(`${x(index)},${y(current)}`);
+    previousPoints.push(`${x(index)},${y(previous)}`);
+  });
+
+  const currentPath = currentPoints.length ? `M ${currentPoints.join(" L ")}` : "";
+  const previousPath = previousPoints.length ? `M ${previousPoints.join(" L ")}` : "";
+  const areaPath = currentPoints.length
+    ? `${currentPath} L ${x(points.length - 1)},${bottom} L ${x(0)},${bottom} Z`
+    : "";
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      className="mt-4 h-auto w-full min-w-[520px]"
+      role="img"
+      aria-label={metric === "revenue" ? "กราฟเปรียบเทียบมูลค่างาน" : "กราฟเปรียบเทียบจำนวนงานจอง"}
+    >
+      {[0, 1, 2, 3].map((step) => {
+        const tickValue = (maxValue * step) / 3;
+        const tickY = bottom - (tickValue / maxValue) * (bottom - top);
+        return (
+          <g key={step}>
+            <line x1={left} x2={right} y1={tickY} y2={tickY} stroke="#303030" strokeDasharray="3 4" />
+            <text x={left - 8} y={tickY + 4} textAnchor="end" fill="#858585" fontSize="10">
+              {formatAxisValue(tickValue, metric)}
+            </text>
+          </g>
+        );
+      })}
+      <path d={areaPath} fill="#3b82f6" fillOpacity="0.13" />
+      <path d={previousPath} fill="none" stroke="#737373" strokeWidth="2" />
+      <path d={currentPath} fill="none" stroke="#3b82f6" strokeWidth="2.5" />
+      {points.map((point, index) => (
+        <text
+          key={point.label}
+          x={x(index)}
+          y={bottom + 22}
+          textAnchor="middle"
+          fill="#a3a3a3"
+          fontSize="10"
+        >
+          {formatTrendLabel(point.label, period)}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+function TrendCard({
+  title,
+  metric,
+  points,
+  period,
+}: {
+  title: string;
+  metric: TrendMetric;
+  points: DashboardTrendPoint[];
+  period: "weekly" | "monthly";
+}) {
+  const [currentTotal, previousTotal] = points.reduce(
+    ([current, previous], point) => {
+      const [currentValue, previousValue] = getTrendValues(point, metric);
+      return [current + currentValue, previous + previousValue];
+    },
+    [0, 0],
+  );
+  const change = previousTotal === 0
+    ? currentTotal === 0 ? "0.0%" : "ใหม่"
+    : `${currentTotal >= previousTotal ? "+" : ""}${(((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1)}%`;
+
+  return (
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-gray-800 bg-[#171717] p-5 shadow-lg">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-medium text-gray-400">{title}</h2>
+          <div className="mt-1 flex flex-wrap items-baseline gap-2">
+            <span className="text-2xl font-bold text-white">
+              {metric === "revenue" ? "฿" : ""}{currentTotal.toLocaleString("th-TH")}
+            </span>
+            <span className={`text-xs font-semibold ${currentTotal >= previousTotal ? "text-emerald-400" : "text-rose-400"}`}>
+              {change}
+            </span>
+            <span className="text-xs text-gray-500">เทียบกับ{period === "weekly" ? "สัปดาห์ก่อน" : "ช่วงเดียวกันปีก่อน"}</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 text-[11px] text-gray-400">
+          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-3 bg-blue-500" />{period === "weekly" ? "สัปดาห์นี้" : "12 เดือนล่าสุด"}</span>
+          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-3 bg-neutral-500" />{period === "weekly" ? "สัปดาห์ก่อน" : "12 เดือนก่อนหน้า"}</span>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <TrendChart points={points} metric={metric} period={period} />
+      </div>
+    </section>
+  );
+}
+
+function BookingStatusChart({ statuses }: { statuses: Array<{ status: string; count: number }> }) {
+  const total = statuses.reduce((sum, item) => sum + item.count, 0);
+  const segments = statuses
+    .filter((item) => item.count > 0)
+    .map((item, index, items) => ({
+        ...item,
+        color: bookingStatusColors[item.status] ?? "#a3a3a3",
+        offset: (items.slice(0, index).reduce((sum, previous) => sum + previous.count, 0) / total) * 100,
+      }));
+
+  return (
+    <section className="rounded-2xl border border-gray-800 bg-[#171717] p-5 shadow-lg">
+      <div className="mb-5">
+        <h2 className="text-base font-bold text-white">สัดส่วนสถานะงานจอง</h2>
+        <p className="mt-1 text-xs text-gray-500">ข้อมูลทั้งหมดจากฐานข้อมูล</p>
+      </div>
+      {total === 0 ? (
+        <div className="flex min-h-44 items-center justify-center text-sm text-gray-500">ยังไม่มีข้อมูลงานจอง</div>
+      ) : (
+        <div className="flex flex-col items-center gap-6 sm:flex-row">
+          <div className="relative h-40 w-40 shrink-0">
+            <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90" role="img" aria-label="กราฟวงกลมสัดส่วนสถานะงานจอง">
+              <circle cx="60" cy="60" r="48" fill="none" stroke="#303030" strokeWidth="16" />
+              {segments.map((item) => {
+                const circumference = 2 * Math.PI * 48;
+                const length = (item.count / total) * circumference;
+                return (
+                  <circle
+                    key={item.status}
+                    cx="60"
+                    cy="60"
+                    r="48"
+                    fill="none"
+                    stroke={item.color}
+                    strokeWidth="16"
+                    strokeDasharray={`${length} ${circumference - length}`}
+                    strokeDashoffset={-(item.offset / 100) * circumference}
+                  />
+                );
+              })}
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold text-white">{total.toLocaleString("th-TH")}</span>
+              <span className="text-[11px] text-gray-500">งานทั้งหมด</span>
+            </div>
+          </div>
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+            {segments.map((item) => (
+              <div key={item.status} className="flex items-center justify-between gap-3 rounded-lg bg-black/30 px-3 py-2 text-xs">
+                <span className="flex min-w-0 items-center gap-2 text-gray-300">
+                  <i className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="truncate">{bookingStatusLabels[item.status] ?? item.status}</span>
+                </span>
+                <span className="shrink-0 font-semibold text-white">
+                  {item.count.toLocaleString("th-TH")} <span className="font-normal text-gray-500">({((item.count / total) * 100).toFixed(1)}%)</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function AdminDashboardPage() {
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [trendPeriod, setTrendPeriod] = useState<"weekly" | "monthly">("weekly");
 
   const fetchDashboardData = useCallback(async () => {
     setIsLoading(true);
@@ -229,6 +469,41 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <section className="mb-8">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-white">แนวโน้มการจ้างงาน</h2>
+            <p className="mt-1 text-xs text-gray-500">มูลค่าบริการและจำนวนงาน เปรียบเทียบกับช่วงก่อนหน้า</p>
+          </div>
+          <div className="inline-flex rounded-xl border border-gray-800 bg-[#171717] p-1" role="group" aria-label="เลือกระยะเวลากราฟ">
+            <button
+              type="button"
+              onClick={() => setTrendPeriod("weekly")}
+              aria-pressed={trendPeriod === "weekly"}
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${trendPeriod === "weekly" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
+            >
+              รายสัปดาห์
+            </button>
+            <button
+              type="button"
+              onClick={() => setTrendPeriod("monthly")}
+              aria-pressed={trendPeriod === "monthly"}
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${trendPeriod === "monthly" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
+            >
+              รายเดือน
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <TrendCard title="มูลค่างานจอง (GMV)" metric="revenue" points={data?.trends?.[trendPeriod] ?? []} period={trendPeriod} />
+          <TrendCard title="จำนวนงานจอง" metric="bookings" points={data?.trends?.[trendPeriod] ?? []} period={trendPeriod} />
+        </div>
+      </section>
+
+      <div className="mb-8">
+        <BookingStatusChart statuses={data?.bookingStatuses ?? []} />
       </div>
 
       {/* Main Content Split: Recent Submissions & Management Hub */}

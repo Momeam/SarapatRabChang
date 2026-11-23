@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Bell,
-  ChevronDown,
   LayoutDashboard,
   Users,
   Briefcase,
@@ -13,8 +12,6 @@ import {
   Wallet,
   Settings,
   LogOut,
-  ExternalLink,
-  Search,
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
@@ -36,8 +33,6 @@ export default function AdminLayout({
   const { user, loading, signOut } = useAuth();
 
   const [showNotifMenu, setShowNotifMenu] = useState(false);
-  const [showAdminMenu, setShowAdminMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [quickStats, setQuickStats] = useState<AdminQuickStats>({
     pendingKyc: 0,
     pendingPayouts: 0,
@@ -45,7 +40,6 @@ export default function AdminLayout({
   });
 
   const notifRef = useRef<HTMLDivElement>(null);
-  const adminMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (loading) return;
@@ -91,9 +85,6 @@ export default function AdminLayout({
       if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
         setShowNotifMenu(false);
       }
-      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
-        setShowAdminMenu(false);
-      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -108,26 +99,10 @@ export default function AdminLayout({
   }
 
   const handleSignOut = async () => {
-    setShowAdminMenu(false);
     try {
       await signOut();
     } finally {
       router.replace("/admin-login");
-    }
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    if (!q) return;
-    if (q.includes("ข้อพิพาท") || q.toLowerCase().includes("dsp")) {
-      router.push("/admin/disputes");
-    } else if (q.includes("ถอน") || q.includes("เงิน")) {
-      router.push("/account/payouts");
-    } else if (q.includes("งาน") || q.includes("ประกาศ")) {
-      router.push("/admin/jobs");
-    } else {
-      router.push("/admin/users");
     }
   };
 
@@ -275,26 +250,11 @@ export default function AdminLayout({
           </div>
 
           <div className="flex items-center space-x-5">
-            {/* Search Form */}
-            <form onSubmit={handleSearchSubmit} className="relative hidden sm:block">
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="ค้นหาผู้ใช้ / งาน / ข้อพิพาท..."
-                className="bg-[#171717] border border-gray-700 text-white text-sm rounded-lg pl-9 pr-4 py-1.5 focus:outline-none focus:border-[#f97316] w-60"
-              />
-            </form>
-
             {/* Notification Bell Dropdown */}
             <div className="relative" ref={notifRef}>
               <button
                 type="button"
-                onClick={() => {
-                  setShowNotifMenu((prev) => !prev);
-                  setShowAdminMenu(false);
-                }}
+                onClick={() => setShowNotifMenu((prev) => !prev)}
                 className="relative p-2 rounded-lg text-gray-400 hover:text-white hover:bg-[#171717] transition cursor-pointer"
                 title="การแจ้งเตือนแอดมิน"
               >
@@ -379,92 +339,6 @@ export default function AdminLayout({
                       </span>
                     </Link>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Admin Profile Dropdown */}
-            <div className="relative" ref={adminMenuRef}>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAdminMenu((prev) => !prev);
-                  setShowNotifMenu(false);
-                }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#171717] border border-transparent hover:border-gray-800 transition cursor-pointer"
-              >
-                <span className="text-sm font-medium text-white">Admin</span>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-400 transition-transform ${
-                    showAdminMenu ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {showAdminMenu && (
-                <div className="absolute right-0 mt-2 w-60 bg-[#171717] border border-gray-800 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
-                  <div className="px-4 py-2.5 border-b border-gray-800">
-                    <p className="font-bold text-white text-sm truncate">{adminDisplayName}</p>
-                    <p className="text-gray-400 truncate mt-0.5">{user.email}</p>
-                  </div>
-
-                  <Link
-                    href="/admin/dashboard"
-                    onClick={() => setShowAdminMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-gray-300 hover:bg-black/50 hover:text-[#f97316] transition"
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span>หน้าแดชบอร์ดแอดมิน</span>
-                  </Link>
-
-                  <Link
-                    href="/admin/users"
-                    onClick={() => setShowAdminMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-gray-300 hover:bg-black/50 hover:text-[#f97316] transition"
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>จัดการผู้ใช้ & ตรวจ KYC</span>
-                  </Link>
-
-                  <Link
-                    href="/account/payouts"
-                    onClick={() => setShowAdminMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-gray-300 hover:bg-black/50 hover:text-[#f97316] transition"
-                  >
-                    <Wallet className="w-4 h-4" />
-                    <span>อนุมัติการถอนเงิน (Payouts)</span>
-                  </Link>
-
-                  <Link
-                    href="/admin/settings"
-                    onClick={() => setShowAdminMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-gray-300 hover:bg-black/50 hover:text-[#f97316] transition"
-                  >
-                    <Settings className="w-4 h-4" />
-                    <span>ตั้งค่าระบบ</span>
-                  </Link>
-
-                  <div className="border-t border-gray-800 my-1" />
-
-                  <Link
-                    href="/?preview=user"
-                    onClick={() => setShowAdminMenu(false)}
-                    className="flex items-center gap-2.5 px-4 py-2.5 text-gray-300 hover:bg-black/50 hover:text-white transition"
-                  >
-                    <ExternalLink className="w-4 h-4 text-[#f97316]" />
-                    <span>ดูหน้าเว็บไซต์หลัก (มุมมองผู้ใช้)</span>
-                  </Link>
-
-                  <div className="border-t border-gray-800 my-1" />
-
-                  <button
-                    type="button"
-                    onClick={() => void handleSignOut()}
-                    className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-rose-400 hover:bg-rose-950/30 transition cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>ออกจากระบบ</span>
-                  </button>
                 </div>
               )}
             </div>
