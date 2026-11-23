@@ -516,6 +516,15 @@ function bookingAccessQuery() {
                  l.title AS "serviceTitle", c.category_name AS category,
                  COALESCE(NULLIF(provider.full_name, ''), NULLIF(pf.first_name, ''), 'ผู้ให้บริการ')
                    AS "providerName",
+                 CASE
+                   WHEN b.user_id = $1
+                     AND b.status = 'pending_payment'
+                   THEN NULLIF(
+                     COALESCE(admin_settings.value->>'adminPromptPayPhone', '0612013936'),
+                     ''
+                   )
+                   ELSE NULL
+                 END AS "adminPromptPayPhone",
                  EXISTS (SELECT 1 FROM reviews r WHERE r.booking_id = b.id) AS "hasReview",
                  CASE WHEN b.user_id = $1 THEN 'customer' ELSE 'provider' END
                    AS "viewerRole"
@@ -524,6 +533,7 @@ function bookingAccessQuery() {
           JOIN profile_freelance pf ON pf.freelance_id = l.freelance_id
           JOIN users provider ON provider.id = pf.id_card_number
           JOIN service_category c ON c.category_id = l.category_id
+          LEFT JOIN platform_settings admin_settings ON admin_settings.key = 'general'
           WHERE (b.user_id = $1 OR pf.id_card_number = $1)`;
 }
 
@@ -1850,6 +1860,7 @@ export function createApp({
           announcement: "ยินดีต้อนรับสู่แพลตฟอร์มสารพัดรับจ้าง ศูนย์รวมฟรีแลนซ์คุณภาพ",
           platformFeePercent: 5,
           minPayoutAmount: 500,
+          adminPromptPayPhone: "0612013936",
           isMaintenance: false,
           allowRegister: true,
         };
@@ -1866,6 +1877,17 @@ export function createApp({
           return;
         }
         const body = await readJsonBody(request);
+        const adminPromptPayPhone =
+          typeof body.adminPromptPayPhone === "string"
+            ? body.adminPromptPayPhone.trim()
+            : defaultSettings.adminPromptPayPhone;
+        if (adminPromptPayPhone && !/^0\d{9}$/.test(adminPromptPayPhone)) {
+          throw new HttpError(
+            400,
+            "VALIDATION_ERROR",
+            "เบอร์ PromptPay ของแอดมินต้องเป็นตัวเลข 10 หลักและขึ้นต้นด้วย 0",
+          );
+        }
         const merged = {
           siteName: typeof body.siteName === "string" && body.siteName.trim() ? body.siteName.trim().slice(0, 120) : defaultSettings.siteName,
           adminEmail: typeof body.adminEmail === "string" && body.adminEmail.trim() ? body.adminEmail.trim().slice(0, 120) : defaultSettings.adminEmail,
@@ -1873,6 +1895,7 @@ export function createApp({
           announcement: typeof body.announcement === "string" ? body.announcement.trim().slice(0, 300) : defaultSettings.announcement,
           platformFeePercent: Number.isFinite(Number(body.platformFeePercent)) ? Math.max(0, Math.min(50, Number(body.platformFeePercent))) : defaultSettings.platformFeePercent,
           minPayoutAmount: Number.isFinite(Number(body.minPayoutAmount)) ? Math.max(100, Number(body.minPayoutAmount)) : defaultSettings.minPayoutAmount,
+          adminPromptPayPhone,
           isMaintenance: Boolean(body.isMaintenance),
           allowRegister: body.allowRegister === undefined ? true : Boolean(body.allowRegister),
         };

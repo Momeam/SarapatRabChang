@@ -10,6 +10,7 @@ interface PlatformSettings {
   announcement: string;
   platformFeePercent: number;
   minPayoutAmount: number;
+  adminPromptPayPhone: string;
   isMaintenance: boolean;
   allowRegister: boolean;
 }
@@ -22,6 +23,7 @@ export default function AdminSettingsPage() {
     announcement: "ยินดีต้อนรับสู่แพลตฟอร์มสารพัดรับจ้าง ศูนย์รวมฟรีแลนซ์คุณภาพ",
     platformFeePercent: 5,
     minPayoutAmount: 500,
+    adminPromptPayPhone: "0612013936",
     isMaintenance: false,
     allowRegister: true,
   });
@@ -190,6 +192,7 @@ export default function AdminSettingsPage() {
                 />
               </div>
             </div>
+
           </div>
 
           {/* Card 2: Fee & Payout Settings */}
@@ -230,6 +233,33 @@ export default function AdminSettingsPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="bg-[#171717] border border-gray-800 rounded-xl p-6">
+            <h2 className="text-base font-semibold text-white mb-2 flex items-center border-l-4 border-[#f97316] pl-2">
+              <i className="fa-solid fa-qrcode text-[#f97316] mr-2"></i> PromptPay รับเงินของแอดมิน
+            </h2>
+            <p className="mb-5 text-xs text-gray-400">
+              เบอร์นี้ใช้สร้าง QR PromptPay พร้อมยอดงาน และจะแสดงให้ผู้ว่าจ้างเฉพาะงานที่รอชำระเงิน
+            </p>
+            <div>
+              <label className="mb-1.5 block text-sm text-gray-400">เบอร์ PromptPay แอดมิน</label>
+              <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={10}
+                value={settings.adminPromptPayPhone}
+                onChange={(event) =>
+                  setSettings({
+                    ...settings,
+                    adminPromptPayPhone: event.target.value.replace(/\D/g, "").slice(0, 10),
+                  })
+                }
+                className="w-full rounded-lg border border-gray-700 bg-black px-4 py-2.5 font-mono text-white focus:border-[#f97316] focus:outline-none"
+                placeholder="0612013936"
+              />
             </div>
           </div>
         </div>

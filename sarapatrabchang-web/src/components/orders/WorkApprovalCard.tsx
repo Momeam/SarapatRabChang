@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { AlertTriangle, CheckCircle2, RotateCcw, Upload, X, Scale, ShieldAlert } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { AlertTriangle, CheckCircle2, RotateCcw, Upload, X, Scale, ShieldAlert, QrCode } from "lucide-react";
+import Image from "next/image";
+import QRCode from "qrcode";
 import { BookingAction, BookingStatus } from "@/lib/booking";
+import { createPromptPayPayload } from "@/lib/promptPayQr";
 
 interface WorkApprovalCardProps {
   providerName: string;
   amount: number;
+  adminPromptPayPhone: string | null;
   status: BookingStatus;
   viewerRole: "customer" | "provider";
   isSubmitting: boolean;
@@ -26,6 +30,7 @@ const DISPUTE_REASONS = [
 export default function WorkApprovalCard({
   providerName,
   amount,
+  adminPromptPayPhone,
   status,
   viewerRole,
   isSubmitting,
@@ -40,8 +45,49 @@ export default function WorkApprovalCard({
   const [disputeDetail, setDisputeDetail] = useState("");
   const [isRevisionModalOpen, setIsRevisionModalOpen] = useState(false);
   const [revisionDetail, setRevisionDetail] = useState("");
+  const [promptPayQrState, setPromptPayQrState] = useState<{
+    key: string;
+    dataUrl?: string;
+    error?: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const disabled = isSubmitting;
+  const promptPayQrKey = JSON.stringify([adminPromptPayPhone, amount]);
+  const currentPromptPayQr = promptPayQrState?.key === promptPayQrKey ? promptPayQrState : null;
+
+  useEffect(() => {
+    let active = true;
+    if (viewerRole !== "customer" || status !== "pending_payment") return;
+    void Promise.resolve()
+      .then(() => {
+        if (!adminPromptPayPhone) {
+          throw new Error("ผู้ดูแลระบบยังไม่ได้ตั้งค่าเบอร์ PromptPay");
+        }
+        return createPromptPayPayload(adminPromptPayPhone, amount);
+      })
+      .then((payload) =>
+        QRCode.toDataURL(payload, {
+          errorCorrectionLevel: "M",
+          margin: 1,
+          width: 220,
+        }),
+      )
+      .then((dataUrl) => {
+        if (active) setPromptPayQrState({ key: promptPayQrKey, dataUrl });
+      })
+      .catch((cause: unknown) => {
+        if (active) {
+          setPromptPayQrState({
+            key: promptPayQrKey,
+            error: cause instanceof Error ? cause.message : "สร้าง QR PromptPay ไม่สำเร็จ",
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [adminPromptPayPhone, amount, promptPayQrKey, status, viewerRole]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -106,19 +152,54 @@ export default function WorkApprovalCard({
       <div>
         <h4 className="text-sm font-bold text-zinc-900">จัดการสถานะงาน</h4>
         <p className="text-xs text-zinc-600 mt-1 leading-relaxed">
-          รายการนี้ราคา ฿{amount.toLocaleString("th-TH")} • การเปลี่ยนสถานะไม่ทำธุรกรรมหรือโอนเงินจริง
+          รายการนี้ราคา ฿{amount.toLocaleString("th-TH")} • ระบบไม่ตรวจสอบการโอนเงินโดยอัตโนมัติ
         </p>
       </div>
 
       {viewerRole === "customer" && status === "pending_payment" && (
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => onAction("confirm_payment")}
-          className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer"
-        >
-          บันทึกสถานะชำระเงิน (ทดสอบระบบ)
-        </button>
+        <div className="space-y-3">
+          <div className="rounded-xl border border-emerald-200 bg-white p-4">
+            <div className="flex items-center gap-2">
+              <QrCode className="h-4 w-4 text-emerald-700" />
+              <h5 className="text-sm font-bold text-zinc-900">PromptPay ของแอดมิน</h5>
+            </div>
+            {currentPromptPayQr?.dataUrl ? (
+              <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-center">
+                <Image
+                  src={currentPromptPayQr.dataUrl}
+                  width={220}
+                  height={220}
+                  unoptimized
+                  alt={`QR PromptPay ของแอดมิน สำหรับยอด ฿${amount.toLocaleString("th-TH")}`}
+                  className="rounded-lg border border-zinc-200"
+                />
+                <div className="space-y-1 text-xs text-zinc-600">
+                  <p className="font-semibold text-zinc-900">ผู้รับเงิน: แอดมิน</p>
+                  <p className="font-semibold text-zinc-900">
+                    ยอดโอน ฿{amount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-amber-700">
+                    ตรวจสอบชื่อผู้รับเงินและยอดก่อนยืนยัน ระบบไม่ตรวจสอบหรือพักเงินอัตโนมัติ
+                  </p>
+                </div>
+              </div>
+            ) : currentPromptPayQr?.error ? (
+              <p role="alert" className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+                {currentPromptPayQr.error}
+              </p>
+            ) : (
+              <p role="status" className="mt-3 text-xs text-zinc-500">กำลังสร้าง QR PromptPay...</p>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onAction("confirm_payment")}
+            className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white rounded-xl text-sm font-bold shadow-sm transition cursor-pointer"
+          >
+            แจ้งยืนยันว่าโอนเข้าบัญชีแอดมินแล้ว
+          </button>
+        </div>
       )}
 
       {viewerRole === "provider" && status === "paid" && (

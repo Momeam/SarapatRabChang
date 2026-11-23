@@ -167,6 +167,7 @@ export default function ProviderJobDetailPage() {
                 <WorkApprovalCard
                   providerName="คุณ"
                   amount={booking.price}
+                  adminPromptPayPhone={booking.adminPromptPayPhone}
                   status={booking.status}
                   viewerRole="provider"
                   isSubmitting={isSubmitting}

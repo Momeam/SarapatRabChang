@@ -177,6 +177,7 @@ export default function OrderTrackingPage() {
                 <WorkApprovalCard
                   providerName={booking.providerName}
                   amount={booking.price}
+                  adminPromptPayPhone={booking.adminPromptPayPhone}
                   status={booking.status}
                   viewerRole={booking.viewerRole}
                   isSubmitting={isSubmitting}

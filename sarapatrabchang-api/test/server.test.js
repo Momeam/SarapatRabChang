@@ -15,6 +15,7 @@ const payoutRequests = new Map();
 const bookingDisputes = [];
 const providerOwners = new Map();
 const clientProfiles = new Map();
+let platformSettings = null;
 const categoryRows = [
   { id: "maid", name: "แม่บ้าน", icon: "Sparkles", count: 1 },
   { id: "all", name: "บริการทั้งหมด", icon: "LayoutGrid", count: 1 },
@@ -79,6 +80,13 @@ const pool = {
   async query(sql, params = []) {
     statements.push({ sql, params });
     if (sql.trim() === "SELECT 1" || ["BEGIN", "COMMIT", "ROLLBACK"].includes(sql)) {
+      return { rows: [] };
+    }
+    if (sql.includes("SELECT value FROM platform_settings")) {
+      return { rows: platformSettings ? [{ value: platformSettings }] : [] };
+    }
+    if (sql.includes("INSERT INTO platform_settings")) {
+      platformSettings = JSON.parse(params[0]);
       return { rows: [] };
     }
     if (sql.includes("WITH buckets AS") && sql.includes('AS "previousRevenue"')) {
@@ -539,6 +547,7 @@ const pool = {
     }
     if (sql.includes("FROM bookings b")) {
       const viewerId = params[0];
+      const paymentSettings = platformSettings ?? { adminPromptPayPhone: "0612013936" };
       const results = [...bookings.values()].filter((booking) => {
         return booking.userId === viewerId || providerOwners.get(booking.providerId) === viewerId;
       }).filter((booking) => !params[1] || booking.id === params[1] || booking.providerId === params[1]).map((booking) => ({
@@ -547,6 +556,12 @@ const pool = {
         category: providerRows[0].category,
         providerName: providerRows[0].name,
         viewerRole: booking.userId === viewerId ? "customer" : "provider",
+        adminPromptPayPhone:
+          booking.userId === viewerId &&
+          booking.status === "pending_payment" &&
+          paymentSettings.adminPromptPayPhone
+            ? paymentSettings.adminPromptPayPhone
+            : null,
       }));
       return { rows: results };
     }
@@ -1202,6 +1217,7 @@ test("booking reads are scoped to the authenticated user", async () => {
     headers: { cookie: cookieFrom(authResponse) },
   });
   assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.adminPromptPayPhone, "0612013936");
   const query = statements.find(({ sql }) => sql.includes("AND b.id = $2"));
   assert.ok(query.sql.includes("b.user_id = $1 OR pf.id_card_number = $1"));
   assert.deepEqual(query.params, [users.get("booking-read@example.com").id, created.id]);
@@ -1211,6 +1227,44 @@ test("booking reads are scoped to the authenticated user", async () => {
     headers: { cookie: cookieFrom(otherUserAuth) },
   });
   assert.equal(privateBooking.status, 404);
+});
+
+test("admin PromptPay settings are validated and saved for payment QR codes", async () => {
+  platformSettings = null;
+  const adminAuth = await register("payment-settings-admin@example.com");
+  users.get("payment-settings-admin@example.com").role = "Admin";
+  const cookie = cookieFrom(adminAuth);
+
+  const initial = await fetch(`${baseUrl}/api/admin/settings`, { headers: { cookie } });
+  assert.equal(initial.status, 200);
+  const initialSettings = (await initial.json()).data;
+  assert.equal(initialSettings.adminPromptPayPhone, "0612013936");
+
+  const settings = {
+    siteName: "SarapatRabChang",
+    adminEmail: "admin@example.com",
+    supportPhone: "021234567",
+    announcement: "",
+    platformFeePercent: 5,
+    minPayoutAmount: 500,
+    adminPromptPayPhone: "0899999999",
+    isMaintenance: false,
+    allowRegister: true,
+  };
+  const saved = await fetch(`${baseUrl}/api/admin/settings`, {
+    method: "PATCH",
+    headers: { cookie, "content-type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  assert.equal(saved.status, 200);
+  assert.equal((await saved.json()).data.adminPromptPayPhone, "0899999999");
+
+  const incomplete = await fetch(`${baseUrl}/api/admin/settings`, {
+    method: "PATCH",
+    headers: { cookie, "content-type": "application/json" },
+    body: JSON.stringify({ ...settings, adminPromptPayPhone: "123" }),
+  });
+  assert.equal(incomplete.status, 400);
 });
 
 test("booking chat is persisted and limited to the booking participants", async () => {
@@ -1348,7 +1402,21 @@ test("booking lifecycle actions persist status and delivery evidence", async () 
   const customerBookings = await fetch(`${baseUrl}/api/bookings`, {
     headers: { cookie: cookieFrom(customerAuth) },
   });
-  assert.equal((await customerBookings.json()).data.length, 1);
+  const { data: customerBookingList } = await customerBookings.json();
+  assert.equal(customerBookingList.length, 1);
+  assert.equal(customerBookingList[0].adminPromptPayPhone, "0899999999");
+  assert.ok(
+    statements.some(({ sql }) =>
+      sql.includes("b.status = 'pending_payment'") &&
+      sql.includes('AS "adminPromptPayPhone"') &&
+      sql.includes("LEFT JOIN platform_settings"),
+    ),
+  );
+
+  const providerBooking = await fetch(`${baseUrl}/api/bookings/${created.id}`, {
+    headers: { cookie: cookieFrom(providerAuth) },
+  });
+  assert.equal((await providerBooking.json()).data.adminPromptPayPhone, null);
 
   const confirmPayment = await fetch(`${baseUrl}/api/bookings/${created.id}/actions`, {
     method: "POST",
@@ -1356,6 +1424,7 @@ test("booking lifecycle actions persist status and delivery evidence", async () 
     body: JSON.stringify({ action: "confirm_payment" }),
   });
   assert.equal(confirmPayment.status, 200);
+  assert.equal((await confirmPayment.json()).data.adminPromptPayPhone, null);
 
   const startWork = await fetch(`${baseUrl}/api/bookings/${created.id}/actions`, {
     method: "POST",

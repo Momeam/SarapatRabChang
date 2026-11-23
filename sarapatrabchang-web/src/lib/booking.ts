@@ -57,6 +57,7 @@ export interface Booking {
   timeSlot: string;
   contactName: string;
   phone: string;
+  adminPromptPayPhone: string | null;
   address: string;
   note: string;
   status: BookingStatus;
